@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff } from "@/components/icons";
 import { useSpeech, useSpeechSupported } from "@/lib/speech/use-speech";
 import { useOffline } from "./offline-provider";
 import { cn } from "@/lib/utils";

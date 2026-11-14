@@ -3,7 +3,7 @@ import * as React from "react";
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { CreditCard, QrCode, TriangleAlert } from "lucide-react";
+import { CreditCard, QrCode, TriangleAlert } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";

@@ -39,7 +39,7 @@ Também tem acerto semanal com recibo bilíngue e alerta educativo de piso diár
 | Estilo | Tailwind CSS 4.3.5 com os tokens OKLCH de `src/styles/tokens.css`, fonte Montserrat |
 | i18n | next-intl 4.15.1 (`es` padrão, `pt-BR`), troca com um toque |
 | Banco | Neon Postgres com Drizzle ORM 0.45.4 (`node-postgres` + `attachDatabasePool`). Sem `DATABASE_URL`, roda com PGlite local |
-| Auth | Neon Auth (Managed Better Auth), OTP de 6 dígitos por e-mail, sem senha |
+| Auth | Neon Auth (Managed Better Auth), e-mail + senha (sem confirmação por e-mail por enquanto); Resend reservado para e-mails futuros |
 | Multi-tenant | `tenantDb(workshopId)` obrigatório, com teste de isolamento contra Postgres real |
 | Offline | Fila IndexedDB idempotente (`client_mutation_id` UUID v7) + `/api/sync` + service worker |
 | Pagamentos | AbacatePay API v2 (webhook com segredo em tempo constante + HMAC-SHA256); modo simulado em desenvolvimento |

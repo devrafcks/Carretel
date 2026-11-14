@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Smartphone } from "lucide-react";
+import { Smartphone } from "@/components/icons";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 

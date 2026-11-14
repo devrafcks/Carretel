@@ -216,3 +216,42 @@ export async function workerHistory(tdb: TenantDb, workerId: string, sinceISO: s
 }
 
 export { lte };
+
+/** Peças produzidas por dia (últimos `days` dias, inclusive hoje) — para o gráfico de barras finas. */
+export async function productionSeries(tdb: TenantDb, days = 14) {
+  const today = todayISO();
+  const start = new Date(Date.parse(today + "T00:00:00Z") - (days - 1) * 86_400_000).toISOString().slice(0, 10);
+  const rows = await tdb.query((db, s) =>
+    db
+      .select({ day: productionLogs.workDate, pieces: sql<number>`sum(${productionLogs.pieces})::int` })
+      .from(productionLogs)
+      .where(and(s(productionLogs), gte(productionLogs.workDate, start)))
+      .groupBy(productionLogs.workDate),
+  );
+  const byDay = new Map(rows.map((r) => [r.day, r.pieces]));
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(Date.parse(start + "T00:00:00Z") + i * 86_400_000).toISOString().slice(0, 10);
+    return { day: d, pieces: byDay.get(d) ?? 0 };
+  });
+}
+
+/** Recebido no mês (pagamentos) vs. emitido no mês (recebíveis) — para o "% recebido". */
+export async function monthCollection(tdb: TenantDb) {
+  const today = todayISO();
+  const monthStart = today.slice(0, 8) + "01";
+  const paid = await tdb.query((db, s) =>
+    db
+      .select({ v: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
+      .from(payments)
+      .where(and(s(payments), gte(payments.paidOn, monthStart))),
+  );
+  const issued = await tdb.query((db, s) =>
+    db
+      .select({ v: sql<number>`coalesce(sum(${receivables.amountCents}), 0)::int` })
+      .from(receivables)
+      .where(and(s(receivables), gte(receivables.issuedOn, monthStart), ne(receivables.status, "written_off"))),
+  );
+  const paidCents = paid[0]?.v ?? 0;
+  const issuedCents = issued[0]?.v ?? 0;
+  return { paidCents, issuedCents, pct: issuedCents > 0 ? Math.min(100, (paidCents / issuedCents) * 100) : 0 };
+}

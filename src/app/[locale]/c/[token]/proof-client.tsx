@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { CircleCheck, Copy, Banknote } from "lucide-react";
+import { CircleCheck, Copy, Banknote } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";

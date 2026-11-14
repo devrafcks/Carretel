@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { Camera, X } from "lucide-react";
+import { Camera, X } from "@/components/icons";
 import { compressImage } from "@/lib/offline/image";
 
 export interface PickedPhoto {

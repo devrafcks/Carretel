@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus } from "@/components/icons";
 import { createWorkshopAction, type ActionResult } from "@/app/actions";
 import { Field, Input, Select, Checkbox } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";

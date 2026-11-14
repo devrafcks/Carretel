@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { TrendingDown, TrendingUp } from "@/components/icons";
 import { Link } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";

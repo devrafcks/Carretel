@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2 } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";

@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-2xl border border-ink/10 bg-card text-card-foreground shadow-soft dark:border-white/10", className)} {...props} />;
+  return <div className={cn("rounded-3xl border border-ink/[0.06] bg-card text-card-foreground shadow-soft dark:border-white/10", className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -39,7 +39,7 @@ export function Notice({
   role?: "status" | "alert";
 }) {
   const tones: Record<string, string> = {
-    info: "bg-in-production-bg text-in-production-fg border-in-production-border",
+    info: "bg-mint-50 text-accent-foreground border-mint-200",
     warning: "bg-rework-bg text-rework-fg border-rework-border",
     danger: "bg-overdue-calote-bg text-overdue-calote-fg border-overdue-calote-border",
     success: "bg-paid-bg text-paid-fg border-paid-border",
@@ -47,7 +47,7 @@ export function Notice({
     awaiting: "bg-awaiting-confirmation-bg text-awaiting-confirmation-fg border-awaiting-confirmation-border",
   };
   return (
-    <div role={role} className={cn("flex gap-3 rounded-xl border p-3.5", tones[tone], className)}>
+    <div role={role} className={cn("flex gap-3 rounded-2xl border p-4", tones[tone], className)}>
       {icon ? <span className="mt-0.5 shrink-0 [&_svg]:size-5">{icon}</span> : null}
       <div className="min-w-0 flex-1">{children}</div>
     </div>

@@ -14,7 +14,7 @@ export default async function BienvenidaPage({ params }: { params: Promise<{ loc
   const t = await getTranslations("onboarding");
   return (
     <Card className="rounded-3xl p-6 sm:p-8">
-      <h1 className="font-display text-3xl font-extrabold">{t("title")}</h1>
+      <h1 className="text-hero text-4xl">{t("title")}</h1>
       <p className="mt-1">{t("lead")}</p>
       <OnboardingForm />
     </Card>

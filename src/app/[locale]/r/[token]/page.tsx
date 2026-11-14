@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CircleCheck, Clock } from "lucide-react";
+import { CircleCheck, Clock } from "@/components/icons";
 import { findSettlementByToken, hitRateLimit } from "@/db/public";
 import { requestMeta, audit } from "@/lib/audit";
 import { formatDate } from "@/lib/dates";

@@ -1,9 +1,9 @@
 import * as React from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 const controlBase =
-  "w-full rounded-xl border-[1.5px] border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground aria-[invalid=true]:border-destructive disabled:bg-muted disabled:text-muted-foreground";
+  "w-full rounded-2xl border border-input/70 bg-card px-4 text-base text-foreground placeholder:text-muted-foreground aria-[invalid=true]:border-destructive disabled:bg-muted disabled:text-muted-foreground";
 
 export function Input({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn(controlBase, "min-h-12", className)} {...props} />;
@@ -26,7 +26,7 @@ export function Select({ className, children, ...props }: React.SelectHTMLAttrib
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   // eslint-disable-next-line jsx-a11y/label-has-associated-control
-  return <label className={cn("block font-semibold text-foreground", className)} {...props} />;
+  return <label className={cn("block text-[0.9375rem] font-medium text-foreground", className)} {...props} />;
 }
 
 interface FieldProps {

@@ -10,7 +10,7 @@ import { legal, legalValue } from "@/config/legal";
 import { withinRefundWindow } from "@/lib/subscription";
 import { billingMode } from "@/server/billing";
 import { Paywall, CancelSubscription, WorkshopForm, PixForm, SettingsForm, DangerZone } from "./account-client";
-import { Download } from "lucide-react";
+import { Download } from "@/components/icons";
 import { buttonVariants } from "@/components/ui/button";
 
 export default async function CuentaPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ checkout?: string }> }) {

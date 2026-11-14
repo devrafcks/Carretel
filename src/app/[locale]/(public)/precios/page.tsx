@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CircleCheck, QrCode, CreditCard } from "lucide-react";
+import { CircleCheck, QrCode, CreditCard } from "@/components/icons";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
@@ -49,7 +49,7 @@ export default async function PreciosPage({ params }: { params: Promise<{ locale
             {t("readOnly")}
           </li>
         </ul>
-        <Link href="/entrar" className={buttonVariants({ size: "lg", block: true, className: "mt-6" })}>
+        <Link href="/entrar?conta=nova" className={buttonVariants({ size: "lg", block: true, className: "mt-6" })}>
           {tl("ctaStart")}
         </Link>
       </Card>

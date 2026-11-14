@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { sortSizes } from "@/lib/utils";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CircleCheck, TriangleAlert, Link2Off } from "lucide-react";
+import { CircleCheck, TriangleAlert, Link2Off } from "@/components/icons";
 import { findProofByToken, markProofViewed, hitRateLimit } from "@/db/public";
 import { audit, requestMeta } from "@/lib/audit";
 import { buildPixBrCode } from "@/lib/pix-brcode";

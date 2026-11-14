@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Card, Notice } from "@/components/ui/card";
 import { PageHeader } from "@/components/app/page-header";
-import { Accessibility, Info } from "lucide-react";
+import { Accessibility, Info } from "@/components/icons";
 import { legal, legalValue } from "@/config/legal";
 
 const KEYS = ["altA", "altT", "altE", "altB", "altU", "altV", "altJ", "altG", "altF", "altC", "altI", "altD", "altH", "altM", "altK", "altP", "altR", "alt15"] as const;

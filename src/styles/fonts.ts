@@ -1,22 +1,29 @@
 /**
- * Tipografia: Montserrat (escolha do Rafael, 14/11/2026) no corpo e nos títulos;
- * IBM Plex Mono para ref. de lote, Pix, hash e token.
- * Montserrat tem dígitos tabulares via `tnum` → .tabular-money continua obrigatório em R$ e peças.
+ * Tipografia (14/11/2026, referências Aidency + landing de finanças):
+ *  - Outfit: corpo, interface e títulos do app (geométrica, leve, números tabulares via `tnum`)
+ *  - Young Serif: títulos grandes da landing (serifa editorial)
+ *  - IBM Plex Mono: ref. de lote, Pix, hash e token
  */
-import { Montserrat, IBM_Plex_Mono } from "next/font/google";
+import { Outfit, Young_Serif, IBM_Plex_Mono } from "next/font/google";
 
-export const fontSans = Montserrat({
+export const fontSans = Outfit({
   subsets: ["latin", "latin-ext"],
   weight: "variable",
-  style: ["normal", "italic"],
   variable: "--font-sans",
   display: "swap",
 });
 
-export const fontDisplay = Montserrat({
+export const fontDisplay = Outfit({
   subsets: ["latin", "latin-ext"],
   weight: "variable",
   variable: "--font-display",
+  display: "swap",
+});
+
+export const fontSerif = Young_Serif({
+  subsets: ["latin", "latin-ext"],
+  weight: "400",
+  variable: "--font-serif",
   display: "swap",
 });
 

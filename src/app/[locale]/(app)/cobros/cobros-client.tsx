@@ -3,7 +3,7 @@ import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import QRCode from "qrcode";
-import { Banknote, Copy, Eye, EyeOff, MessageCircle, QrCode, CircleCheck, TriangleAlert, Clock } from "lucide-react";
+import { Banknote, Copy, Eye, EyeOff, MessageCircle, QrCode, CircleCheck, TriangleAlert, Clock } from "@/components/icons";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";

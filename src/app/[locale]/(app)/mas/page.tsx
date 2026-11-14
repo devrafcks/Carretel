@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Calculator, Users, Scissors, CreditCard, Accessibility, Shield, FileText, Info, ListChecks, ChevronRight, Package } from "lucide-react";
+import { Calculator, Users, Scissors, CreditCard, Accessibility, Shield, FileText, Info, ListChecks, ChevronRight, Package } from "@/components/icons";
 import { requireWorkshop } from "@/lib/session";
 import { PageHeader } from "@/components/app/page-header";
 import { Link } from "@/i18n/navigation";
@@ -38,7 +38,7 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
           {g.map(([href, Icon, label]) => (
             <li key={href}>
               <Link href={href} className="flex min-h-14 items-center gap-3 px-4 hover:bg-muted">
-                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-in-production-bg text-in-production-fg"><Icon aria-hidden="true" className="size-5" /></span>
+                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-mint-100 text-vivid-strong"><Icon aria-hidden="true" className="size-5" /></span>
                 <span className="flex-1 font-semibold">{label}</span>
                 <ChevronRight aria-hidden="true" className="size-5 text-muted-foreground" />
               </Link>

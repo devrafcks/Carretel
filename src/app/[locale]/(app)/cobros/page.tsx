@@ -10,7 +10,7 @@ import { buildPixBrCode } from "@/lib/pix-brcode";
 import { formatDate } from "@/lib/dates";
 import { appUrl } from "@/config/brand";
 import { ReceivableList, AgingBars } from "./cobros-client";
-import { Info } from "lucide-react";
+import { Info } from "@/components/icons";
 
 export default async function CobrosPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

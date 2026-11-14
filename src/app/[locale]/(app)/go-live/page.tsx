@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CircleCheck, CircleX } from "lucide-react";
+import { CircleCheck, CircleX } from "@/components/icons";
 import { requireWorkshop } from "@/lib/session";
 import { PageHeader } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";

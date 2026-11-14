@@ -1,6 +1,6 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import { LogOut } from "lucide-react";
+import { LogOut } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 
 export function SignOutButton({ mode }: { mode: "neon" | "dev" }) {

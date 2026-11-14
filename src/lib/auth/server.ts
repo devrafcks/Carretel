@@ -1,7 +1,8 @@
 /**
- * Autenticação sem senha (OTP de 6 dígitos por e-mail).
- * - Produção: Neon Auth (Managed Better Auth) — envia o e-mail e guarda users/sessions no schema neon_auth.
- * - Dev sem NEON_AUTH_BASE_URL: modo local; o código aparece no console do servidor e na tela.
+ * Autenticação.
+ * - Produção: Neon Auth (Managed Better Auth) com e-mail + senha; guarda users/sessions no schema neon_auth.
+ *   Sem e-mail de confirmação por enquanto (RESEND_API_KEY fica reservado para envios futuros).
+ * - Dev sem NEON_AUTH_BASE_URL: modo local com código de 6 dígitos mostrado na tela e no console.
  */
 import "server-only";
 import { cookies } from "next/headers";

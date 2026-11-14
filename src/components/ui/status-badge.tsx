@@ -1,4 +1,4 @@
-import { CircleCheck, Clock, RotateCcw, Scale, Scissors, TriangleAlert, Package, Ban, CircleDot, Archive, Truck } from "lucide-react";
+import { CircleCheck, Clock, RotateCcw, Scale, Scissors, TriangleAlert, Package, Ban, CircleDot, Archive, Truck } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 export type DomainTone = "paid" | "in-production" | "awaiting-confirmation" | "overdue-calote" | "rework" | "clt-warning" | "neutral";
@@ -27,7 +27,7 @@ const toneIcon = {
 export function StatusBadge({ tone, label, icon, className }: { tone: DomainTone; label: string; icon?: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>; className?: string }) {
   const Icon = icon ?? toneIcon[tone];
   return (
-    <span className={cn("inline-flex min-h-8 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[0.9375rem] font-semibold leading-tight", toneClass[tone], className)}>
+    <span className={cn("inline-flex min-h-8 items-center gap-1.5 rounded-full border px-3 py-0.5 text-sm font-medium leading-tight", toneClass[tone], className)}>
       <Icon aria-hidden={true} className="size-4" />
       {label}
     </span>

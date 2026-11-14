@@ -1,48 +1,68 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useTransition } from "react";
 
-/** Seletor ES | PT de 1 toque. A bandeira nunca aparece sozinha: sempre com texto. */
-export function LocaleSwitch({ className }: { className?: string }) {
+/**
+ * Seletor ES | PT de 1 toque. A bandeira nunca aparece sozinha: sempre com texto.
+ *
+ * A troca é uma navegação COMPLETA (não client-side): o idioma faz parte do layout raiz
+ * (<html lang>), e remontar a raiz no cliente depois que o widget de acessibilidade moveu
+ * o #app para o wrapper dele gera NotFoundError no React. Recarregar a página é o caminho estável.
+ */
+export function LocaleSwitch({ className, tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const locale = useLocale();
   const t = useTranslations("common");
-  const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
-  const [pending, start] = useTransition();
 
-  const go = (next: "es" | "pt-BR") => {
-    if (next === locale) return;
+  const hrefFor = (next: "es" | "pt-BR") => {
     const qs = search.toString();
-    start(() => router.replace(pathname + (qs ? `?${qs}` : ""), { locale: next }));
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    return `/${next}${pathname === "/" ? "" : pathname}${qs ? `?${qs}` : ""}${hash}`;
   };
 
   return (
-    <div role="group" aria-label={t("languageLabel")} className={cn("inline-flex rounded-lg border border-border bg-card p-0.5", className)} aria-busy={pending}>
+    <div
+      role="group"
+      aria-label={t("languageLabel")}
+      className={cn(
+        "inline-flex rounded-full border p-1",
+        tone === "dark" ? "border-white/20 bg-white/10" : "border-ink/10 bg-card",
+        className,
+      )}
+    >
       {(
         [
           ["es", "ES", t("spanish")],
           ["pt-BR", "PT", t("portuguese")],
         ] as const
       ).map(([code, short, full]) => (
-        <button
+        <a
           key={code}
-          type="button"
+          href={hrefFor(code)}
+          hrefLang={code}
           lang={code}
-          onClick={() => go(code)}
-          aria-pressed={locale === code}
+          aria-current={locale === code ? "true" : undefined}
           aria-label={full}
           title={full}
+          onClick={(e) => {
+            if (code === locale) e.preventDefault();
+          }}
           className={cn(
-            "min-h-11 min-w-12 rounded-md px-2.5 text-[0.9375rem] font-semibold",
-            locale === code ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted",
+            "inline-flex min-h-10 min-w-11 items-center justify-center rounded-full px-3 text-sm font-semibold transition-colors",
+            locale === code
+              ? tone === "dark"
+                ? "bg-white text-ink"
+                : "bg-ink text-primary-foreground"
+              : tone === "dark"
+                ? "text-white/80 hover:text-white"
+                : "text-muted-foreground hover:text-foreground",
           )}
         >
           {short}
-        </button>
+        </a>
       ))}
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw } from "@/components/icons";
 import { useOffline } from "./offline-provider";
 import { Notice } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

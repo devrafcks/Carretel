@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Pencil, UserX } from "lucide-react";
+import { Pencil, UserX } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

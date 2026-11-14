@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/components/icons";
 import { requireWorkshop } from "@/lib/session";
 import { listBatches } from "@/server/queries";
 import { PageHeader } from "@/components/app/page-header";

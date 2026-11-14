@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "@/components/icons";
 import { Card, Notice } from "@/components/ui/card";
 import { PageHeader } from "./page-header";
 import { legal, legalValue, abuseChannel } from "@/config/legal";

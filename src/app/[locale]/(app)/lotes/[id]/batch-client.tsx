@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Check, Copy, ExternalLink, Eye, EyeOff, Link2Off, MessageCircle, Scissors, Truck, Ban, RotateCcw, CircleCheck, TriangleAlert, Banknote } from "lucide-react";
+import { Check, Copy, ExternalLink, Eye, EyeOff, Link2Off, MessageCircle, Scissors, Truck, Ban, RotateCcw, CircleCheck, TriangleAlert, Banknote } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";

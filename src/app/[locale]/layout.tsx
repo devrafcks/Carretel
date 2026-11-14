@@ -5,7 +5,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Toaster } from "sonner";
 import { routing } from "@/i18n/routing";
-import { fontSans, fontDisplay, fontMono } from "@/styles/fonts";
+import { fontSans, fontDisplay, fontMono, fontSerif } from "@/styles/fonts";
 import { themeInitScript } from "@/components/app/theme";
 import { ServiceWorkerRegister } from "@/components/app/sw-register";
 import { appUrl } from "@/config/brand";
@@ -45,12 +45,12 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "common" });
   return (
-    <html lang={locale} suppressHydrationWarning className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable}`}>
+    <html lang={locale} suppressHydrationWarning className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} ${fontSerif.variable}`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       {/* variáveis de fonte também no <body>: o :root de tokens.css redefine --font-sans e venceria a classe do <html> */}
-      <body className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable}`}>
+      <body className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} ${fontSerif.variable}`}>
         {/* Âncora estável: o SeeB tira #app do <body>; nós que o React insere no <body> (metadata do Next)
             precisam de um irmão que continue no <body>, senão insertBefore quebra (NotFoundError). */}
         <span id="app-anchor" hidden />
