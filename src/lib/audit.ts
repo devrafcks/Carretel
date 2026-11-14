@@ -17,7 +17,17 @@ export type AuditEvent =
   | "subscription.checkout"
   | "subscription.cancel"
   | "subscription.refund_request"
-  | "subscription.webhook";
+  | "subscription.webhook"
+  | "admin.set_password"
+  | "admin.reset_link"
+  | "admin.ban"
+  | "admin.unban"
+  | "admin.revoke_sessions"
+  | "admin.cancel_subscription"
+  | "admin.set_plan"
+  | "admin.reset_free"
+  | "admin.delete_user"
+  | "auth.password_reset_request";
 
 export async function requestMeta(): Promise<{ ip: string | null; port: number | null; ua: string | null }> {
   const h = await headers();

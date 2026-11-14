@@ -331,7 +331,22 @@
     "passwordShort": "A senha precisa de pelo menos 8 caracteres.",
     "genericError": "Não deu para concluir. Confira sua conexão e tente de novo.",
     "noAccount": "Primeira vez aqui?",
-    "haveAccount": "Já tem conta?"
+    "haveAccount": "Já tem conta?",
+    "forgot": "Esqueci minha senha",
+    "forgotTitle": "Criar uma senha nova",
+    "forgotLead": "Enviamos um código de 6 números para o e-mail da sua conta.",
+    "sendResetCode": "Enviar código",
+    "haveCode": "Já tenho o código",
+    "resetCodeLead": "Se existir uma conta com {email}, o código já está a caminho. Olhe também no spam.",
+    "newPassword": "Senha nova",
+    "confirmPassword": "Repita a senha",
+    "passwordsDiffer": "As senhas não são iguais.",
+    "saveNewPassword": "Salvar senha nova",
+    "resetDone": "Pronto. Sua senha foi trocada.",
+    "goLogin": "Entrar com a senha nova",
+    "resetInvalid": "O código não é válido ou venceu. Peça um novo.",
+    "backToLogin": "Voltar para entrar",
+    "resendCode": "Enviar outro código"
   },
   "onboarding": {
     "title": "Dados do taller",
@@ -819,7 +834,9 @@
     "plan_active": "Plano ativo",
     "plan_other": "Plano",
     "signedAs": "Conectado como {email}",
-    "manage": "Gerenciar"
+    "manage": "Gerenciar",
+    "activatePlan": "Ativar plano",
+    "memberSince": "No Carretel desde {date}"
   },
   "clients": {
     "title": "Clientes",

@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles } from "@/components/icons";
+import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield } from "@/components/icons";
 import type { AppIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
@@ -119,11 +119,13 @@ export function SideRail({
   avatarMediaId,
   authMode,
   showUpgrade = false,
+  showAdmin = false,
 }: {
   workshopName?: string;
   avatarMediaId?: string | null;
   authMode: "neon" | "dev";
   showUpgrade?: boolean;
+  showAdmin?: boolean;
 }) {
   const ts = useTranslations("subscribe");
   const t = useTranslations("nav");
@@ -174,6 +176,14 @@ export function SideRail({
             <NavLink it={it} active={it.match(pathname, tab)} />
           </li>
         ))}
+        {showAdmin ? (
+          <li>
+            <Link href="/admin" className="flex min-h-10 items-center gap-3 rounded-xl px-3 text-[0.9375rem] text-muted-foreground transition-colors hover:bg-mint-50 hover:text-foreground">
+              <Shield aria-hidden="true" className="size-5 shrink-0" />
+              Admin
+            </Link>
+          </li>
+        ) : null}
         <li>
           <SignOutNavItem mode={authMode} />
         </li>

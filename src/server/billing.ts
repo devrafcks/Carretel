@@ -263,7 +263,7 @@ function periodEndFrom(from: Date): Date {
 }
 
 /* ───── Cancelamento e reembolso ───── */
-export async function cancelSubscription(ctx: WorkshopContext): Promise<void> {
+export async function cancelSubscription(ctx: Pick<WorkshopContext, "tdb" | "workshop">): Promise<void> {
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) throw new Error("no_subscription");
   if (billingMode() === "abacatepay" && sub.abacateSubscriptionId) {

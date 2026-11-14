@@ -11,7 +11,7 @@ import {
   IconListCheck, IconLock, IconLogout, IconMenu2, IconMicrophone, IconMicrophoneOff, IconMinus, IconMoon,
   IconPackage, IconPencil, IconPlus, IconQrcode, IconRefresh, IconScale, IconScissors, IconShield, IconShieldCheck,
   IconSparkles, IconSun, IconTrash, IconTrendingDown, IconTrendingUp, IconTruckDelivery, IconUserPlus, IconUsers,
-  IconUserX, IconWallet, IconWifi, IconX, IconLayoutGrid, IconChartBar, IconSearch, IconSettings, IconHelpCircle, IconUsersGroup, IconWifiOff, IconBell, IconBellRinging, IconChecks, IconCalendarDue, IconLanguage, IconKeyboard, IconContrast, IconHandFinger, IconBuildingStore, IconVolume, IconHeart, IconLogin2,
+  IconUserX, IconWallet, IconWifi, IconX, IconLayoutGrid, IconChartBar, IconSearch, IconSettings, IconHelpCircle, IconUsersGroup, IconWifiOff, IconBell, IconBellRinging, IconChecks, IconCalendarDue, IconLanguage, IconKeyboard, IconContrast, IconHandFinger, IconBuildingStore, IconVolume, IconHeart, IconLogin2, IconKey, IconMail,
   type Icon as TablerIcon,
   type IconProps,
 } from "@tabler/icons-react";
@@ -102,3 +102,5 @@ export const Store = soft(IconBuildingStore, "Store");
 export const Volume2 = soft(IconVolume, "Volume2");
 export const Heart = soft(IconHeart, "Heart");
 export const LogIn = soft(IconLogin2, "LogIn");
+export const KeyRound = soft(IconKey, "KeyRound");
+export const Mail = soft(IconMail, "Mail");

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/card";
 import { Info, Eye, EyeOff } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import { Link } from "@/i18n/navigation";
 
 type Mode = "neon" | "dev";
 type Tab = "login" | "signup";
@@ -182,6 +183,14 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
             />
           )}
         </Field>
+
+        {!isSignup ? (
+          <p className="-mt-1 text-right text-sm">
+            <Link href="/esqueci-senha" className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
+              {t("forgot")}
+            </Link>
+          </p>
+        ) : null}
 
         {formError ? (
           <Notice tone="danger" role="alert">

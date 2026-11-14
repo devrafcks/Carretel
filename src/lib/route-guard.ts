@@ -20,6 +20,7 @@ export const APP_SEGMENTS = new Set([
   "go-live",
   "calculadora",
   "notificaciones",
+  "admin",
 ]);
 
 /** Páginas em que quem não tem conta deve cair direto em "Criar conta". */
