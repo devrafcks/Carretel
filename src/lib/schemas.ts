@@ -119,7 +119,6 @@ export const workshopCreateSchema = z.object({
   pixCity: optText(15),
   acceptTerms: z.literal(true),
   acceptPrivacy: z.literal(true),
-  acceptNoForcedLabor: z.literal(true),
   locale: z.enum(["es", "pt-BR"]),
 });
 

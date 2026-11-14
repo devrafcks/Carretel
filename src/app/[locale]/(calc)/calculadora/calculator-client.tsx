@@ -91,14 +91,15 @@ function CalculatorInner({ loggedIn, profile, fromServer }: { loggedIn: boolean;
   );
 
   return (
-    <div className="mt-6 space-y-5">
+    <div className="mt-6 grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="space-y-5">
       {!profile ? (
         <Notice tone="info">
           <p>{t("example")}</p>
         </Notice>
       ) : null}
-      <Card className="p-4">
-        <h2 className="font-display text-lg">{t("workshopProfile")}</h2>
+      <Card className="p-6">
+        <h2 className="text-lg font-medium">{t("workshopProfile")}</h2>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {money("cf", t("fixed"), fixed, setFixed)}
           {money("cp", t("payroll"), payroll, setPayroll)}
@@ -148,8 +149,8 @@ function CalculatorInner({ loggedIn, profile, fromServer }: { loggedIn: boolean;
         </div>
       </Card>
 
-      <Card className="p-4">
-        <h2 className="font-display text-lg">{t("offer")}</h2>
+      <Card className="p-6">
+        <h2 className="text-lg font-medium">{t("offer")}</h2>
         <fieldset className="mt-3">
           <legend className="font-semibold">{t("paceMode")}</legend>
           <div className="mt-1.5 grid grid-cols-2 gap-2">
@@ -164,7 +165,7 @@ function CalculatorInner({ loggedIn, profile, fromServer }: { loggedIn: boolean;
                 type="button"
                 aria-pressed={paceMode === k}
                 onClick={() => setPaceMode(k)}
-                className={cn("min-h-12 rounded-lg border-[1.5px] px-3 font-semibold", paceMode === k ? "border-primary bg-primary text-primary-foreground" : "border-input bg-card")}
+                className={cn("min-h-12 rounded-full border px-3 font-medium transition-colors", paceMode === k ? "border-primary bg-primary text-primary-foreground" : "border-ink/10 bg-card hover:border-ink/30")}
               >
                 {label}
               </button>
@@ -177,11 +178,12 @@ function CalculatorInner({ loggedIn, profile, fromServer }: { loggedIn: boolean;
           {numField("qt", t("quantity"), qty, setQty, err === "quantity" ? t("errors.quantity") : null)}
         </div>
       </Card>
+      </div>
 
-      <section aria-live="polite" aria-label={t("title")}>
+      <section aria-live="polite" aria-label={t("title")} className="xl:sticky xl:top-24">
         {r ? (
-          <Card className={cn("p-5", r.profitable ? "border-paid-border" : "border-overdue-calote-border")}>
-            <div className={cn("flex items-start gap-3 rounded-lg p-3", r.profitable ? "bg-paid-bg text-paid-fg" : "bg-overdue-calote-bg text-overdue-calote-fg")}>
+          <Card className="p-6">
+            <div className={cn("flex items-start gap-3 rounded-2xl p-4", r.profitable ? "bg-paid-bg text-paid-fg" : "bg-overdue-calote-bg text-overdue-calote-fg")}>
               {r.profitable ? <TrendingUp aria-hidden="true" className="mt-0.5 size-6 shrink-0" /> : <TrendingDown aria-hidden="true" className="mt-0.5 size-6 shrink-0" />}
               <p className="text-lg font-bold">
                 {r.profitable
@@ -189,22 +191,22 @@ function CalculatorInner({ loggedIn, profile, fromServer }: { loggedIn: boolean;
                   : t("loss", { amount: f(Math.abs(r.batchMarginCents)), missing: f(r.missingPerPieceCents), pph: Math.ceil(r.piecesPerHourToBreakEven) })}
               </p>
             </div>
-            <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <dl className="mt-5 grid grid-cols-2 gap-4">
               <div>
                 <dt className="text-muted-foreground">{t("costPerMinute")}</dt>
-                <dd className="tabular-money text-lg font-bold">{formatBRL(Math.round(r.costPerMinuteCents * 100) / 100, locale)}</dd>
+                <dd className="tabular-money text-2xl font-light">{formatBRL(Math.round(r.costPerMinuteCents * 100) / 100, locale)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t("costPerPiece")}</dt>
-                <dd className="tabular-money text-lg font-bold">{f(r.costPerPieceCents)}</dd>
+                <dd className="tabular-money text-2xl font-light">{f(r.costPerPieceCents)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t("minPrice")}</dt>
-                <dd className="tabular-money text-lg font-bold">{f(r.minHealthyPriceCents)}</dd>
+                <dd className="tabular-money text-2xl font-light">{f(r.minHealthyPriceCents)}</dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">{t("breakEven")}</dt>
-                <dd className="tabular-money text-lg font-bold">{r.piecesPerHourToBreakEven.toFixed(1).replace(".", ",")}</dd>
+                <dd className="tabular-money text-2xl font-light">{r.piecesPerHourToBreakEven.toFixed(1).replace(".", ",")}</dd>
               </div>
             </dl>
             <Link

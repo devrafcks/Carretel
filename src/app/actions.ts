@@ -73,7 +73,6 @@ export async function createWorkshopAction(_: ActionResult | null, form: FormDat
     pixCity: form.get("pixCity") || undefined,
     acceptTerms: form.get("acceptTerms") === "on",
     acceptPrivacy: form.get("acceptPrivacy") === "on",
-    acceptNoForcedLabor: form.get("acceptNoForcedLabor") === "on",
     locale,
   });
   if (!parsed.success) {
@@ -99,7 +98,6 @@ export async function createWorkshopAction(_: ActionResult | null, form: FormDat
     acceptances: [
       { document: "terms", version: legal.documentVersions.terms, locale },
       { document: "privacy", version: legal.documentVersions.privacy, locale },
-      { document: "no_forced_labor", version: legal.documentVersions.no_forced_labor, locale },
     ],
     ip: meta.ip,
     userAgent: meta.ua,

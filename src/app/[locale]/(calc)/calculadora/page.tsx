@@ -13,9 +13,9 @@ export default async function CalculadoraPage({ params }: { params: Promise<{ lo
   const ctx = await loadWorkshopContext();
   const settings = ctx ? await ctx.tdb.first(workshopSettings) : undefined;
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-      <PageHeader tone="sun" illustration="/illustrations/calculadora.svg" kicker={t("offer")} title={t("title")} subtitle={t("lead")} />
+    <>
+      <PageHeader kicker={t("offer")} title={t("title")} subtitle={t("lead")} />
       <Calculator loggedIn={Boolean(ctx)} profile={settings?.calculatorProfile ?? null} />
-    </div>
+    </>
   );
 }

@@ -1,8 +1,10 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users } from "@/components/icons";
-import { BrandMark } from "@/components/brand/mark";
+import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help } from "@/components/icons";
+import type { AppIcon } from "@/components/icons";
+import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -59,61 +61,108 @@ export function BottomNav() {
   );
 }
 
-const railItems = [
-  { href: "/hoy", key: "hoy", icon: Home },
-  { href: "/produccion", key: "produccion", icon: Scissors },
-  { href: "/cobros", key: "cobros", icon: Wallet },
-  { href: "/calculadora", key: "calc", icon: Calculator },
-  { href: "/clientes", key: "clients", icon: Users },
-  { href: "/mas", key: "mas", icon: Menu },
-] as const;
+type NavKey = "hoy" | "lotes" | "produccion" | "cobros" | "clients" | "team" | "calc" | "account" | "help";
+type Item = { href: string; key: NavKey; icon: AppIcon; match: (path: string, tab: string | null) => boolean };
 
-/** Barra lateral de ícones (computador) — bloco preto no item ativo, como nas referências. */
-export function SideRail() {
+const starts = (p: string) => (path: string) => path === p || path.startsWith(p + "/");
+
+const groups: { label: "groupDay" | "groupPeople" | "groupTools"; items: Item[] }[] = [
+  {
+    label: "groupDay",
+    items: [
+      { href: "/hoy", key: "hoy", icon: Home, match: starts("/hoy") },
+      { href: "/lotes", key: "lotes", icon: Package, match: starts("/lotes") },
+      { href: "/produccion", key: "produccion", icon: Scissors, match: (p, tab) => starts("/produccion")(p) && tab !== "equipo" },
+      { href: "/cobros", key: "cobros", icon: Wallet, match: starts("/cobros") },
+    ],
+  },
+  {
+    label: "groupPeople",
+    items: [
+      { href: "/clientes", key: "clients", icon: Users, match: starts("/clientes") },
+      { href: "/produccion?tab=equipo", key: "team", icon: Team, match: (p, tab) => starts("/produccion")(p) && tab === "equipo" },
+    ],
+  },
+  {
+    label: "groupTools",
+    items: [{ href: "/calculadora", key: "calc", icon: Calculator, match: starts("/calculadora") }],
+  },
+];
+
+const footer: Item[] = [
+  { href: "/cuenta", key: "account", icon: CreditCard, match: starts("/cuenta") },
+  { href: "/mas", key: "help", icon: Help, match: starts("/mas") },
+];
+
+function NavLink({ it, active }: { it: Item; active: boolean }) {
   const t = useTranslations("nav");
-  const tm = useTranslations("more");
-  const pathname = usePathname();
-  const label = (k: string) => (k === "calc" ? tm("calculator") : k === "clients" ? tm("clients") : t(k as "hoy"));
   return (
-    <nav aria-label={t("main")} className="sticky top-0 hidden h-dvh w-24 shrink-0 flex-col items-center gap-3 border-r border-ink/[0.06] bg-card py-6 lg:flex">
-      <Link href="/hoy" aria-label="Carretel" className="mb-4 inline-flex size-12 items-center justify-center text-primary">
-        <BrandMark className="size-9" />
+    <Link
+      href={it.href}
+      aria-current={active ? "page" : undefined}
+      className={cn(
+        "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[0.9375rem] transition-colors",
+        active ? "bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:bg-mint-50 hover:text-foreground",
+      )}
+    >
+      <it.icon aria-hidden="true" className="size-5 shrink-0" />
+      {t(it.key)}
+    </Link>
+  );
+}
+
+/** Sidebar do computador: grupos com rótulo, ação principal no topo, conta e ajuda embaixo. */
+export function SideRail({ workshopName }: { workshopName?: string }) {
+  const t = useTranslations("nav");
+  const pathname = usePathname();
+  const tab = useSearchParams().get("tab");
+  return (
+    <nav aria-label={t("main")} className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-ink/[0.06] bg-card px-4 py-5 lg:flex">
+      <Link href="/hoy" aria-label="Carretel" className="inline-flex min-h-11 items-center px-2">
+        <BrandLockup />
       </Link>
       <Link
         href="/lotes/nuevo"
-        aria-label={t("newBatchAria")}
-        className="mb-3 inline-flex size-14 items-center justify-center rounded-2xl bg-vivid-strong text-primary-foreground shadow-soft transition-transform hover:-translate-y-0.5"
+        className="mt-5 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-vivid-strong px-5 font-medium text-primary-foreground shadow-soft transition-colors hover:bg-vivid-strong/90"
       >
-        <Plus aria-hidden="true" className="size-7" />
+        <Plus aria-hidden="true" className="size-5" />
+        {t("newBatchAria")}
       </Link>
-      <ul className="flex flex-col gap-2">
-        {railItems.map((it) => {
-          const active = pathname.startsWith(it.href);
-          return (
-            <li key={it.key}>
-              <Link
-                href={it.href}
-                aria-current={active ? "page" : undefined}
-                title={label(it.key)}
-                className={cn(
-                  "group flex w-[5.25rem] flex-col items-center gap-1 rounded-2xl py-2 text-[0.6875rem] transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <span
-                  className={cn(
-                    "inline-flex size-12 items-center justify-center rounded-2xl border transition-colors",
-                    active ? "border-primary bg-primary text-primary-foreground" : "border-ink/10 bg-card group-hover:border-ink/30",
-                  )}
-                >
-                  <it.icon aria-hidden="true" className="size-[1.375rem]" />
-                </span>
-                <span className="max-w-full truncate">{label(it.key)}</span>
-              </Link>
-            </li>
-          );
-        })}
+
+      <div className="mt-6 flex-1 space-y-6 overflow-y-auto">
+        {groups.map((g) => (
+          <div key={g.label}>
+            <p className="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">{t(g.label)}</p>
+            <ul className="mt-2 space-y-1">
+              {g.items.map((it) => (
+                <li key={it.key}>
+                  <NavLink it={it} active={it.match(pathname, tab)} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <ul className="space-y-1 border-t border-ink/[0.06] pt-4">
+        {footer.map((it) => (
+          <li key={it.key}>
+            <NavLink it={it} active={it.match(pathname, tab)} />
+          </li>
+        ))}
       </ul>
+      {workshopName ? (
+        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-mint-50 px-3 py-2.5">
+          <span aria-hidden="true" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
+            {workshopName
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((w) => w[0]?.toUpperCase())
+              .join("")}
+          </span>
+          <span className="min-w-0 truncate text-sm font-medium">{workshopName}</span>
+        </div>
+      ) : null}
     </nav>
   );
 }

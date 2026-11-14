@@ -64,9 +64,18 @@
     "hoy": "Hoje",
     "produccion": "Produção",
     "cobros": "Cobranças",
-    "mas": "Mais",
+    "mas": "Menu",
     "newBatch": "Corte",
-    "newBatchAria": "Novo corte"
+    "newBatchAria": "Novo corte",
+    "lotes": "Cortes",
+    "clients": "Clientes",
+    "team": "Equipe",
+    "calc": "Calculadora",
+    "account": "Conta",
+    "help": "Ajuda e info",
+    "groupDay": "Dia a dia",
+    "groupPeople": "Pessoas",
+    "groupTools": "Ferramentas"
   },
   "status": {
     "paid": "Pago",
@@ -341,7 +350,6 @@
     "acceptTitle": "Para começar",
     "acceptTerms": "Li e aceito os <terms></terms>.",
     "acceptPrivacy": "Li e aceito a <privacy></privacy>.",
-    "acceptNoForcedLabor": "Declaro que no meu taller não há trabalho forçado, jornada exaustiva nem pessoas impedidas de sair, e que trato minha equipe com dignidade.",
     "termsLink": "Termos de uso",
     "privacyLink": "Política de privacidade",
     "acceptRequired": "Para continuar, marque as três caixas.",
@@ -734,7 +742,7 @@
     "goBack": "Voltar para Conta"
   },
   "more": {
-    "title": "Mais",
+    "title": "Menu",
     "calculator": "Calculadora de preço",
     "clients": "Clientes",
     "team": "Equipe",
@@ -745,10 +753,26 @@
     "terms": "Termos",
     "about": "Quem somos",
     "golive": "Checklist de lançamento (interno)",
-    "theme": "Tema",
-    "themeLight": "Claro (taller)",
-    "themeDark": "Escuro (noite)",
-    "install": "Instalar no celular"
+    "install": "Instalar no celular",
+    "lead": "Tudo do seu taller num lugar só.",
+    "sectionWorkshop": "Seu taller",
+    "sectionAccount": "Conta",
+    "sectionHelp": "Ajuda e informações",
+    "batchesDesc": "Veja todos os cortes, abertos e fechados.",
+    "clientsDesc": "Quem manda corte para você e quanto cada um deve.",
+    "teamDesc": "Costureiras, produção da semana e vales.",
+    "calculatorDesc": "Antes de aceitar: o corte dá lucro?",
+    "accountDesc": "Plano, dados do taller, chave Pix e exportar dados.",
+    "a11yDesc": "Letra grande, contraste e leitura em voz alta.",
+    "privacyDesc": "Que dados guardamos e como cuidamos deles.",
+    "termsDesc": "Plano, cancelamento e regras de uso.",
+    "aboutDesc": "Por que o Carretel existe.",
+    "goliveDesc": "Só em desenvolvimento.",
+    "plan_free": "Plano grátis",
+    "plan_active": "Plano ativo",
+    "plan_other": "Plano",
+    "signedAs": "Conectado como {email}",
+    "manage": "Gerenciar"
   },
   "clients": {
     "title": "Clientes",
@@ -810,7 +834,12 @@
     "dpo": "Encarregado de dados (LGPD)",
     "forum": "Foro",
     "abuse": "Denúncias de abuso",
-    "pendingSources": "As referências a leis deste texto serão conferidas com o texto oficial antes de publicar."
+    "pendingSources": "As referências a leis deste texto serão conferidas com o texto oficial antes de publicar.",
+    "summaryTitle": "Em resumo",
+    "toc": "Nesta página",
+    "contactTitle": "Contato e responsável",
+    "readAlso": "Leia também",
+    "draftShort": "Rascunho em revisão jurídica"
   },
   "golive": {
     "title": "Checklist de lançamento",

@@ -112,10 +112,6 @@ export function OnboardingForm() {
             })}
           </span>
         </label>
-        <label className="flex min-h-12 items-start gap-3">
-          <Checkbox name="acceptNoForcedLabor" required />
-          <span>{t("onboarding.acceptNoForcedLabor")}</span>
-        </label>
       </fieldset>
 
       <div aria-live="polite">

@@ -11,7 +11,7 @@ import {
   IconListCheck, IconLock, IconLogout, IconMenu2, IconMicrophone, IconMicrophoneOff, IconMinus, IconMoon,
   IconPackage, IconPencil, IconPlus, IconQrcode, IconRefresh, IconScale, IconScissors, IconShield, IconShieldCheck,
   IconSparkles, IconSun, IconTrash, IconTrendingDown, IconTrendingUp, IconTruckDelivery, IconUserPlus, IconUsers,
-  IconUserX, IconWallet, IconWifi, IconX, IconLayoutGrid, IconChartBar, IconSearch, IconSettings,
+  IconUserX, IconWallet, IconWifi, IconX, IconLayoutGrid, IconChartBar, IconSearch, IconSettings, IconHelpCircle, IconUsersGroup,
   type Icon as TablerIcon,
   type IconProps,
 } from "@tabler/icons-react";
@@ -87,3 +87,5 @@ export const LayoutGrid = soft(IconLayoutGrid, "LayoutGrid");
 export const ChartBar = soft(IconChartBar, "ChartBar");
 export const Search = soft(IconSearch, "Search");
 export const Settings = soft(IconSettings, "Settings");
+export const Help = soft(IconHelpCircle, "Help");
+export const Team = soft(IconUsersGroup, "Team");
