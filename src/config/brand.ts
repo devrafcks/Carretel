@@ -45,6 +45,15 @@ export const brand: BrandConfig = {
   planPriceCents: 3500,
 };
 
+/**
+ * Endereço público do app, sempre só o domínio (protocolo + host).
+ * Tolera variável configurada com caminho ou barra no fim (ex.: "https://x.app/pt-BR/") — o idioma é somado pelo app.
+ */
 export function appUrl(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const raw = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").trim();
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return raw.replace(/\/+$/, "");
+  }
 }
