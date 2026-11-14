@@ -1,14 +1,15 @@
 import { setRequestLocale } from "next-intl/server";
-import { PublicFooter, PublicHeader } from "@/components/app/public-shell";
+import { SiteHeader } from "@/components/marketing/site-header";
+import { SiteFooter } from "@/components/marketing/site-footer";
 
 export default async function PublicLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   return (
     <>
-      <PublicHeader />
+      <SiteHeader />
       <main id="conteudo">{children}</main>
-      <PublicFooter />
+      <SiteFooter />
     </>
   );
 }

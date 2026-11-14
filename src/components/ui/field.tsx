@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const controlBase =
-  "w-full rounded-lg border-[1.5px] border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground aria-[invalid=true]:border-destructive disabled:bg-muted disabled:text-muted-foreground";
+  "w-full rounded-xl border-[1.5px] border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground aria-[invalid=true]:border-destructive disabled:bg-muted disabled:text-muted-foreground";
 
 export function Input({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn(controlBase, "min-h-12", className)} {...props} />;

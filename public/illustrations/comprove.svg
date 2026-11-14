@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-labelledby="cmp-title">
+  <title id="cmp-title">Celular com comprovante de entrega confirmado e mensagem enviada</title>
+  <defs>
+    <pattern id="cmp-dots" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="2" fill="#121D29"/></pattern>
+  </defs>
+  <rect width="480" height="480" rx="40" fill="#F2B33D"/>
+  <circle cx="110" cy="120" r="130" fill="#FEFCF8" opacity="0.55"/>
+  <circle cx="400" cy="400" r="110" fill="url(#cmp-dots)" opacity="0.35"/>
+  <path d="M300 -20 L 380 -20 L 160 500 L 80 500 Z" fill="#C8562B"/>
+  <!-- caixa entregue -->
+  <g transform="translate(40 290)">
+    <path d="M0 40 L 80 0 L 160 40 L 80 80 Z" fill="#E7C08A"/>
+    <path d="M0 40 V 130 L 80 170 V 80 Z" fill="#B98552"/>
+    <path d="M160 40 V 130 L 80 170 V 80 Z" fill="#D29D63"/>
+    <path d="M40 20 L 120 60 V 92" stroke="#121D29" stroke-width="8" fill="none"/>
+  </g>
+  <!-- celular -->
+  <g transform="rotate(-6 270 230)">
+    <rect x="190" y="60" width="160" height="300" rx="26" fill="#121D29"/>
+    <rect x="202" y="78" width="136" height="264" rx="16" fill="#FEFCF8"/>
+    <rect x="216" y="96" width="70" height="10" rx="5" fill="#1C4066"/>
+    <rect x="216" y="116" width="104" height="8" rx="4" fill="#C9C1B4"/>
+    <rect x="216" y="132" width="88" height="8" rx="4" fill="#C9C1B4"/>
+    <path d="M216 156 h 104" stroke="#C9C1B4" stroke-width="3" stroke-dasharray="8 6"/>
+    <text x="216" y="194" font-family="Montserrat, Arial, sans-serif" font-size="26" font-weight="800" fill="#121D29">R$ 900</text>
+    <rect x="216" y="214" width="108" height="64" rx="12" fill="#E2F2E5"/>
+    <circle cx="242" cy="246" r="16" fill="#2E9E6A"/>
+    <path d="M234 246 l 6 6 l 11 -12" stroke="#FEFCF8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <rect x="264" y="236" width="48" height="8" rx="4" fill="#143C1F"/>
+    <rect x="264" y="250" width="34" height="6" rx="3" fill="#4F6C54"/>
+    <rect x="216" y="296" width="108" height="30" rx="15" fill="#1C4066"/>
+  </g>
+  <!-- balão de mensagem -->
+  <g transform="translate(300 300)">
+    <path d="M0 0 h 140 a 20 20 0 0 1 20 20 v 50 a 20 20 0 0 1 -20 20 h -96 l -30 26 v -26 h -14 a 20 20 0 0 1 -20 -20 v -50 a 20 20 0 0 1 20 -20 z" transform="translate(-20 0)" fill="#2E9E6A"/>
+    <rect x="6" y="22" width="96" height="8" rx="4" fill="#FEFCF8"/>
+    <rect x="6" y="38" width="120" height="8" rx="4" fill="#FEFCF8" opacity="0.8"/>
+    <rect x="6" y="54" width="70" height="8" rx="4" fill="#FEFCF8" opacity="0.8"/>
+  </g>
+  <path d="M90 70 v 30 M75 85 h 30" stroke="#121D29" stroke-width="6" stroke-linecap="round"/>
+</svg>

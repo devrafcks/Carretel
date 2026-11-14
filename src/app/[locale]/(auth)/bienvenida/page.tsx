@@ -13,8 +13,8 @@ export default async function BienvenidaPage({ params }: { params: Promise<{ loc
   if (await loadWorkshopContext()) redirect(`/${locale}/hoy`);
   const t = await getTranslations("onboarding");
   return (
-    <Card className="p-5 sm:p-6">
-      <h1 className="font-display">{t("title")}</h1>
+    <Card className="rounded-3xl p-6 sm:p-8">
+      <h1 className="font-display text-3xl font-extrabold">{t("title")}</h1>
       <p className="mt-1">{t("lead")}</p>
       <OnboardingForm />
     </Card>

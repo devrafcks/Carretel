@@ -2,7 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("rounded-lg border border-border bg-card text-card-foreground shadow-[var(--shadow-card)]", className)} {...props} />;
+  return <div className={cn("rounded-2xl border border-ink/10 bg-card text-card-foreground shadow-soft dark:border-white/10", className)} {...props} />;
 }
 
 export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -47,7 +47,7 @@ export function Notice({
     awaiting: "bg-awaiting-confirmation-bg text-awaiting-confirmation-fg border-awaiting-confirmation-border",
   };
   return (
-    <div role={role} className={cn("flex gap-3 rounded-lg border p-3", tones[tone], className)}>
+    <div role={role} className={cn("flex gap-3 rounded-xl border p-3.5", tones[tone], className)}>
       {icon ? <span className="mt-0.5 shrink-0 [&_svg]:size-5">{icon}</span> : null}
       <div className="min-w-0 flex-1">{children}</div>
     </div>

@@ -30,7 +30,7 @@ export function setTheme(t: "light" | "dark") {
   listeners.forEach((l) => l());
 }
 
-export const themeInitScript = `try{if(localStorage.getItem("${KEY}")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
+export const themeInitScript = `document.documentElement.classList.add("js");try{if(localStorage.getItem("${KEY}")==="dark")document.documentElement.classList.add("dark")}catch(e){}`;
 
 export function ThemeToggle({ className }: { className?: string }) {
   const t = useTranslations("more");

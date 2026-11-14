@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Clock, Mic, Camera, ChevronRight, Truck } from "lucide-react";
+import { Clock, Mic, Camera, ChevronRight, Truck, Wallet, Scissors, Users } from "lucide-react";
 import { requireWorkshop } from "@/lib/session";
 import { dashboardSummary, listBatches } from "@/server/queries";
 import { Link } from "@/i18n/navigation";
@@ -26,12 +26,23 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-display">{t("hoy.title")}</h1>
-        <p className="text-muted-foreground">
-          {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date())}
-        </p>
-      </div>
+      {/* faixa de boas-vindas */}
+      <section className="anim-rise relative overflow-hidden rounded-3xl bg-primary p-5 text-primary-foreground shadow-lift sm:p-7">
+        <div className="absolute -right-10 -top-10 size-48 rounded-full border-[28px] border-white/5" aria-hidden="true" />
+        <div className="relative flex items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-sun">
+              {new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date())}
+            </p>
+            <h1 className="mt-1 font-display text-2xl font-extrabold leading-tight sm:text-3xl">{t("hoy.greeting", { name: ctx.workshop.name })}</h1>
+            <Link href="/lotes/nuevo" className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-sun px-5 font-extrabold text-ink transition-transform hover:-translate-y-0.5">
+              {t("hoy.emptyCta")}
+            </Link>
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/illustrations/hero.svg" alt="" width={720} height={720} className="anim-float hidden size-32 shrink-0 rounded-[1.75rem] object-cover sm:block" />
+        </div>
+      </section>
 
       {welcome ? (
         <Notice tone="success" role="status">
@@ -42,11 +53,14 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       <PendingSyncNote />
 
       {/* 3 cards: Me deben · En producción · Pago del sábado */}
-      <section aria-label={t("hoy.title")} className="grid gap-3 sm:grid-cols-3">
-        <Link href="/cobros" className="group block rounded-lg">
-          <Card className={cn("ficha-corner h-full p-4", s.owedCents > 0 && "border-primary")}>
-            <p className="font-semibold text-muted-foreground">{t("hoy.owedLabel")}</p>
-            <p className="mt-1 text-[2rem] font-bold leading-tight">
+      <section aria-label={t("hoy.title")} className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <Link href="/cobros" className="anim-rise delay-1 group col-span-2 block rounded-2xl sm:col-span-1">
+          <Card className={cn("lift h-full p-5", s.owedCents > 0 && "border-vivid/40")}>
+            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-rework-bg text-vivid-strong">
+              <Wallet aria-hidden="true" className="size-6" />
+            </span>
+            <p className="mt-3 text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">{t("hoy.owedLabel")}</p>
+            <p className="mt-1 text-[2rem] font-extrabold leading-tight">
               <Money cents={s.owedCents} locale={locale} />
             </p>
             <p className="mt-1">{t("hoy.owedSub", { count: s.openCount })}</p>
@@ -57,17 +71,23 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             ) : null}
           </Card>
         </Link>
-        <Link href="/lotes" className="block rounded-lg">
-          <Card className="h-full p-4">
-            <p className="font-semibold text-muted-foreground">{t("hoy.productionLabel")}</p>
-            <p className="mt-1 text-[2rem] font-bold leading-tight tabular-money">{t("common.pieces", { count: s.piecesInProduction })}</p>
+        <Link href="/lotes" className="anim-rise delay-2 block rounded-2xl">
+          <Card className="lift h-full p-5">
+            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-in-production-bg text-in-production-fg">
+              <Scissors aria-hidden="true" className="size-6" />
+            </span>
+            <p className="mt-3 text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">{t("hoy.productionLabel")}</p>
+            <p className="mt-1 text-2xl font-extrabold leading-tight tabular-money sm:text-[2rem]">{t("common.pieces", { count: s.piecesInProduction })}</p>
             <p className="mt-1">{t("hoy.productionSub", { count: s.batchesInProduction })}</p>
           </Card>
         </Link>
-        <Link href="/produccion?tab=acerto" className="block rounded-lg">
-          <Card className="h-full p-4">
-            <p className="font-semibold text-muted-foreground">{t("hoy.payrollLabel")}</p>
-            <p className="mt-1 text-[2rem] font-bold leading-tight">
+        <Link href="/produccion?tab=acerto" className="anim-rise delay-3 block rounded-2xl">
+          <Card className="lift h-full p-5">
+            <span className="inline-flex size-11 items-center justify-center rounded-xl bg-paid-bg text-paid-fg">
+              <Users aria-hidden="true" className="size-6" />
+            </span>
+            <p className="mt-3 text-sm font-bold uppercase tracking-[0.12em] text-muted-foreground">{t("hoy.payrollLabel")}</p>
+            <p className="mt-1 text-2xl font-extrabold leading-tight sm:text-[2rem]">
               <Money cents={Math.max(0, s.payrollPendingCents)} locale={locale} />
             </p>
             <p className="mt-1">{t("hoy.payrollSub", { date: formatDate(s.period.end, locale) })}</p>
@@ -91,8 +111,8 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
 
       {s.totalBatches === 0 ? (
         <>
-          <Card className="border-primary p-4">
-            <h2 className="font-display text-xl">{t("hoy.onboardingTitle")}</h2>
+          <Card className="border-vivid/40 p-5">
+            <h2 className="font-display text-xl font-extrabold">{t("hoy.onboardingTitle")}</h2>
             <p className="mt-1">{t("hoy.onboardingBody")}</p>
             <ul className="mt-3 flex flex-wrap gap-3 text-muted-foreground" aria-hidden="true">
               <li className="inline-flex items-center gap-1.5">
@@ -145,7 +165,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
                 {t("common.seeAll")}
               </Link>
             </div>
-            <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
               {recent.map(({ batch: b, clientName }) => (
                 <li key={b.id}>
                   <Link href={`/lotes/${b.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-muted">

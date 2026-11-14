@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-labelledby="hero-title">
+  <title id="hero-title">Dona de taller sorrindo com o celular na mão, ao lado da máquina de costura</title>
+  <defs>
+    <pattern id="hero-dots" width="10" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="2.2" fill="#121D29"/>
+    </pattern>
+    <pattern id="hero-dots-light" width="9" height="9" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.8" fill="#FEFCF8"/>
+    </pattern>
+    <pattern id="hero-dots-skin" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.5" fill="#8E5A3E"/>
+    </pattern>
+    <clipPath id="hero-clip"><rect width="720" height="720" rx="0"/></clipPath>
+  </defs>
+  <g clip-path="url(#hero-clip)">
+    <!-- fundo -->
+    <rect width="720" height="720" fill="#EFE7DB"/>
+    <path d="M150 720 L300 720 L640 0 L490 0 Z" fill="#2E9E6A"/>
+    <circle cx="440" cy="330" r="245" fill="#F2B33D"/>
+    <circle cx="590" cy="160" r="92" fill="url(#hero-dots)"/>
+    <circle cx="120" cy="190" r="70" fill="#C8562B"/>
+    <circle cx="120" cy="190" r="70" fill="url(#hero-dots-light)" opacity="0.5"/>
+
+    <!-- corpo -->
+    <path d="M250 720 C 262 560, 330 478, 432 468 C 534 478, 604 560, 618 720 Z" fill="#1C4066"/>
+    <path d="M432 468 C 400 470, 372 476, 350 486 L 400 560 L 432 520 L 464 560 L 514 486 C 492 476, 464 470, 432 468 Z" fill="#FEFCF8"/>
+    <path d="M300 600 C 330 640, 360 660, 380 720 L 330 720 Z" fill="url(#hero-dots-light)" opacity="0.35"/>
+
+    <!-- pescoço -->
+    <path d="M396 392 L468 392 L470 478 C 450 492, 414 492, 394 478 Z" fill="#B97A57"/>
+    <path d="M396 400 L468 400 L468 440 C 448 452, 416 452, 396 440 Z" fill="url(#hero-dots-skin)" opacity="0.7"/>
+
+    <!-- cabeça -->
+    <ellipse cx="432" cy="320" rx="80" ry="94" fill="#C98B67"/>
+    <!-- cabelo -->
+    <path d="M348 318 C 342 226, 404 190, 462 200 C 526 212, 540 282, 520 338 C 512 300, 488 270, 446 264 C 404 260, 372 282, 360 330 Z" fill="#121D29"/>
+    <circle cx="500" cy="196" r="44" fill="#121D29"/>
+    <circle cx="500" cy="196" r="44" fill="url(#hero-dots-light)" opacity="0.18"/>
+    <path d="M468 214 C 486 222, 500 236, 508 252" stroke="#C8562B" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <!-- orelha e brinco -->
+    <ellipse cx="352" cy="338" rx="14" ry="20" fill="#B97A57"/>
+    <circle cx="350" cy="366" r="8" fill="#F2B33D"/>
+    <!-- rosto -->
+    <path d="M398 330 q 12 -12 24 0" stroke="#121D29" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M446 330 q 12 -12 24 0" stroke="#121D29" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <path d="M410 372 q 24 22 48 0" stroke="#121D29" stroke-width="6" stroke-linecap="round" fill="none"/>
+    <circle cx="396" cy="356" r="10" fill="#E9897A" opacity="0.7"/>
+    <circle cx="474" cy="356" r="10" fill="#E9897A" opacity="0.7"/>
+
+    <!-- celular com comprovante -->
+    <g transform="rotate(-8 520 570)">
+      <rect x="462" y="468" width="122" height="208" rx="18" fill="#121D29"/>
+      <rect x="472" y="484" width="102" height="176" rx="10" fill="#FEFCF8"/>
+      <rect x="484" y="498" width="60" height="8" rx="4" fill="#1C4066"/>
+      <rect x="484" y="514" width="78" height="6" rx="3" fill="#C9C1B4"/>
+      <rect x="484" y="526" width="66" height="6" rx="3" fill="#C9C1B4"/>
+      <circle cx="523" cy="580" r="28" fill="#2E9E6A"/>
+      <path d="M509 580 l10 10 l20 -22" stroke="#FEFCF8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <rect x="484" y="624" width="78" height="20" rx="10" fill="#1C4066"/>
+    </g>
+    <!-- mão -->
+    <path d="M440 600 C 446 572, 476 566, 490 580 L 512 600 C 520 610, 512 622, 500 618 L 486 612 C 488 630, 476 650, 452 648 C 434 646, 434 620, 440 600 Z" fill="#C98B67"/>
+    <path d="M488 590 l 26 8 M486 604 l 24 8" stroke="#8E5A3E" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- máquina de costura -->
+    <rect x="34" y="612" width="300" height="44" rx="10" fill="#121D29"/>
+    <path d="M60 612 V 486 C 60 452, 84 434, 118 434 H 288 C 314 434, 330 450, 330 476 V 540 H 290 V 612 Z" fill="#C8562B"/>
+    <path d="M60 520 H 290" stroke="#121D29" stroke-width="0" />
+    <rect x="76" y="460" width="190" height="22" rx="11" fill="#FEFCF8" opacity="0.9"/>
+    <rect x="292" y="540" width="14" height="52" fill="#121D29"/>
+    <rect x="296" y="590" width="6" height="22" fill="#9AA3AD"/>
+    <circle cx="96" cy="560" r="34" fill="#F2B33D"/>
+    <circle cx="96" cy="560" r="12" fill="#121D29"/>
+    <path d="M60 612 V 560 C 80 590, 120 600, 180 612 Z" fill="url(#hero-dots)" opacity="0.25"/>
+    <!-- tecido com ponto reto -->
+    <path d="M150 612 C 200 596, 260 626, 330 604 C 380 590, 420 612, 470 604 L 470 640 C 410 652, 360 632, 320 646 C 260 664, 200 640, 150 652 Z" fill="#7FA3D8"/>
+    <path d="M170 626 h 18 M206 624 h 18 M242 628 h 18 M278 626 h 18 M314 622 h 18 M350 618 h 18 M386 622 h 18 M422 626 h 18" stroke="#FEFCF8" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- carretel -->
+    <g transform="translate(616 560)">
+      <rect x="0" y="0" width="78" height="16" rx="5" fill="#121D29"/>
+      <rect x="10" y="16" width="58" height="92" fill="#2E9E6A"/>
+      <path d="M10 30 H68 M10 44 H68 M10 58 H68 M10 72 H68 M10 86 H68 M10 100 H68" stroke="#1F7A50" stroke-width="5"/>
+      <rect x="0" y="108" width="78" height="16" rx="5" fill="#121D29"/>
+    </g>
+    <path d="M626 640 C 560 680, 520 700, 470 690" stroke="#2E9E6A" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+    <!-- detalhes -->
+    <path d="M232 140 v 34 M215 157 h 34" stroke="#FEFCF8" stroke-width="6" stroke-linecap="round"/>
+    <path d="M640 380 v 26 M627 393 h 26" stroke="#121D29" stroke-width="5" stroke-linecap="round"/>
+    <path d="M300 300 v 22 M289 311 h 22" stroke="#C8562B" stroke-width="5" stroke-linecap="round"/>
+  </g>
+</svg>

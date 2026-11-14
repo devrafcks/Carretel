@@ -16,7 +16,7 @@ export function BottomNav() {
   const t = useTranslations("nav");
   const pathname = usePathname();
   return (
-    <nav aria-label={t("main")} className="fixed inset-x-0 bottom-0 z-[100] border-t border-border bg-card safe-bottom">
+    <nav aria-label={t("main")} className="fixed inset-x-0 bottom-0 z-[100] border-t border-ink/10 bg-card shadow-[0_-8px_24px_-16px_var(--ink)] safe-bottom">
       <ul className="mx-auto grid max-w-3xl grid-cols-5 items-end">
         {items.map((it, i) =>
           it === null ? (
@@ -24,7 +24,7 @@ export function BottomNav() {
               <Link
                 href="/lotes/nuevo"
                 aria-label={t("newBatchAria")}
-                className="-mt-5 mb-1.5 inline-flex min-h-14 min-w-14 flex-col items-center justify-center rounded-xl border-2 border-card bg-primary px-3 text-primary-foreground shadow-[0_2px_0_var(--border)]"
+                className="-mt-6 mb-1.5 inline-flex min-h-16 min-w-16 flex-col items-center justify-center rounded-2xl border-4 border-card bg-vivid-strong px-3 text-primary-foreground shadow-lift transition-transform hover:-translate-y-0.5"
               >
                 <Plus aria-hidden="true" className="size-6" />
                 <span className="text-sm font-bold leading-none">{t("newBatch")}</span>

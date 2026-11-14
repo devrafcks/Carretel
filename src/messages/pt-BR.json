@@ -22,7 +22,7 @@
     "yes": "Sim",
     "no": "Não",
     "today": "Hoje",
-    "pieces": "{count, plural, one {# peça} other {# peças}}",
+    "pieces": "{count, plural, =0 {0 peças} one {# peça} other {# peças}}",
     "perPiece": "por peça",
     "total": "Total",
     "errorGeneric": "Algo deu errado. Tente de novo.",
@@ -50,7 +50,7 @@
     "share": "Compartilhar",
     "open": "Abrir",
     "seeAll": "Ver tudo",
-    "days": "{count, plural, one {# dia} other {# dias}}",
+    "days": "{count, plural, =0 {0 dias} one {# dia} other {# dias}}",
     "client": "Cliente",
     "noClient": "Sem cliente",
     "reference": "Ref.",
@@ -147,7 +147,104 @@
     "installTitle": "Instale no seu celular",
     "installIos": "No iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”.",
     "installAndroid": "No Android: toque em “Instalar” quando aparecer, ou use o menu ⋮ → “Instalar app”.",
-    "installButton": "Instalar app"
+    "installButton": "Instalar app",
+    "navHow": "Como funciona",
+    "navPricing": "Preços",
+    "navCalc": "Calculadora",
+    "navFaq": "Perguntas",
+    "badge": "Para talleres de costura · Español e Português",
+    "titleA": "O caderno do seu taller.",
+    "titleB": "Registre, comprove e cobre.",
+    "trust1": "Sem CNPJ",
+    "trust2": "Funciona sem sinal",
+    "trust3": "Español e Português",
+    "trust4": "R$ 35/mês",
+    "floatConfirm": "Carlos confirmou a entrega",
+    "floatConfirmTime": "hoje · 10:32",
+    "floatPix": "Pix recebido",
+    "floatPieces": "300 peças · ref. 1234",
+    "marquee": [
+      "Corte recebido",
+      "Grade P · M · G",
+      "Foto do pacote",
+      "Entrega confirmada",
+      "Pix copia e cola",
+      "Vales",
+      "Acerto do sábado",
+      "Quem me deve"
+    ],
+    "showKicker": "O taller na palma da mão",
+    "showTitle": "Todo o seu taller num lugar só",
+    "showBody": "Cortes, entregas, cobranças e o acerto da semana. Pensado para o celular, com botões grandes e letra clara.",
+    "howKicker": "Como funciona",
+    "howTitleA": "Só três coisas,",
+    "howTitleB": "bem feitas.",
+    "step": "Passo {n}",
+    "darkKicker": "Do caderno para o celular",
+    "darkTitleA": "Menos discussão,",
+    "darkTitleB": "mais prova.",
+    "darkCardTitle": "Acerto semanal sem briga",
+    "darkCardBody": "Produção por pessoa menos vales, com recibo em espanhol ou português para mandar no WhatsApp. Se o pagamento diário ficar abaixo do mínimo, o app avisa.",
+    "calcKicker": "Antes de aceitar o corte",
+    "calcTitleA": "Esse corte dá",
+    "calcTitleB": "lucro ou prejuízo?",
+    "calcBody": "Coloque o custo do seu taller, o ritmo e o preço oferecido. Em 10 segundos você sabe o preço mínimo saudável e quantas peças por hora precisa para empatar.",
+    "calcCta": "Testar a calculadora grátis",
+    "factsTitle": "Feito para a rotina do taller",
+    "fact1Label": "segundos para registrar um corte",
+    "fact2Label": "idiomas, troca com um toque",
+    "fact3Label": "CNPJ para começar",
+    "fact4Label": "reais por mês, sem fidelidade",
+    "pricingKicker": "Preços",
+    "pricingTitleA": "Comece grátis,",
+    "pricingTitleB": "pague quando valer.",
+    "planFreeName": "Para começar",
+    "planFreePrice": "Grátis",
+    "planFreeNote": "3 cortes ou 30 dias",
+    "planFreeCta": "Criar conta grátis",
+    "planProName": "Plano completo",
+    "planProNote": "por mês · Pix Automático ou cartão",
+    "planProCta": "Começar agora",
+    "planProBadge": "Recomendado",
+    "planFeatures": [
+      "Cortes com foto, grade e preço",
+      "Comprovante com aceite do cliente",
+      "Cobranças pelo WhatsApp com Pix",
+      "Produção, vales e acerto semanal",
+      "Calculadora de preço justo",
+      "Exportar seus dados quando quiser"
+    ],
+    "faqTitle": "Perguntas frequentes",
+    "faq": [
+      [
+        "Preciso de CNPJ para usar?",
+        "Não. Você começa só com seu e-mail. CPF, RNM ou CNPJ são opcionais."
+      ],
+      [
+        "Funciona sem internet?",
+        "Sim. O que você anota sem sinal fica salvo no celular e é enviado sozinho quando o sinal volta."
+      ],
+      [
+        "Meu cliente precisa instalar alguma coisa?",
+        "Não. Ele recebe um link pelo WhatsApp, abre no navegador e toca em “Confirmo o recebimento”."
+      ],
+      [
+        "O app mexe no meu dinheiro?",
+        "Não. O Pix vai direto do cliente para a sua chave. O app só monta o código e registra o pagamento."
+      ],
+      [
+        "Posso cancelar quando quiser?",
+        "Sim, na tela Conta, em 3 toques. Se cancelar, seus dados continuam disponíveis para ver e exportar."
+      ],
+      [
+        "Funciona em espanhol e em português?",
+        "Sim. Você troca o idioma com um toque e o comprovante sai no idioma do seu cliente."
+      ]
+    ],
+    "finalA": "Largue o caderno.",
+    "finalB": "Registre. Comprove. Cobre.",
+    "finalBody": "Comece hoje com 3 cortes grátis, sem cartão e sem CNPJ.",
+    "footerTagline": "O caderno digital do taller de costura."
   },
   "pricing": {
     "title": "Um plano, um preço",

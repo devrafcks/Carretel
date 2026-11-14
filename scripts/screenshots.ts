@@ -25,19 +25,21 @@ async function main() {
   // bloqueia o widget externo nas capturas
   await page.route("**/seeb-widget.pages.dev/**", (r) => r.abort());
 
-  await page.goto(`${BASE}/es/hoy`, { waitUntil: "networkidle" });
-  await page.screenshot({ path: path.join(out, "hoy.png") });
-  console.log("✓ public/screenshots/hoy.png");
-
   await page.goto(`${BASE}/es/lotes?f=all`, { waitUntil: "networkidle" });
-  const first = page.locator('a[href*="/es/lotes/"]').filter({ hasNotText: "Nuevo" }).first();
-  await first.click();
+  await page.locator('main a[href*="/es/lotes/"]').filter({ hasNotText: "+" }).first().click();
   await page.waitForLoadState("networkidle");
   const proofHref = await page.locator('a[href*="/c/"]').first().getAttribute("href");
-  if (proofHref) {
-    await page.goto(`${BASE}${proofHref.replace("/pt-BR/", "/es/")}`, { waitUntil: "networkidle" });
-    await page.screenshot({ path: path.join(out, "comprobante.png") });
-    console.log("✓ public/screenshots/comprobante.png");
+  for (const [loc, suffix] of [["es", ""], ["pt-BR", "-pt"]] as const) {
+    await page.goto(`${BASE}/${loc}/hoy`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: path.join(out, `hoy${suffix}.png`) });
+    console.log(`✓ public/screenshots/hoy${suffix}.png`);
+    if (proofHref) {
+      await page.goto(`${BASE}${proofHref.replace(/^\/(es|pt-BR)\//, `/${loc}/`)}`, { waitUntil: "networkidle" });
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: path.join(out, `comprobante${suffix}.png`) });
+      console.log(`✓ public/screenshots/comprobante${suffix}.png`);
+    }
   }
   await browser.close();
 }

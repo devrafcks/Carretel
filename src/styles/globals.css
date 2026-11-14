@@ -89,3 +89,141 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* ───────── Direção 2 (referências: crescemaistech.com.br + ilustrações chapadas com retícula) ───────── */
+:root {
+  --vivid: oklch(0.55 0.15 42); /* terracota do carretel — títulos de destaque (≥ 3:1 em texto grande) */
+  --vivid-strong: oklch(0.48 0.14 40);
+  --ink: oklch(0.2280 0.0280 250.00);
+  --leaf: oklch(0.62 0.12 155);
+  --sun: oklch(0.80 0.13 80);
+  --grid-line: oklch(0.2280 0.0280 250.00 / 0.06);
+  --shadow-soft: 0 1px 2px oklch(0.2280 0.0280 250 / 0.06), 0 12px 32px -12px oklch(0.2280 0.0280 250 / 0.18);
+  --shadow-lift: 0 2px 4px oklch(0.2280 0.0280 250 / 0.06), 0 24px 48px -16px oklch(0.2280 0.0280 250 / 0.28);
+}
+.dark {
+  --vivid: oklch(0.74 0.13 45);
+  --vivid-strong: oklch(0.80 0.12 50);
+  --grid-line: oklch(0.93 0.015 85 / 0.06);
+}
+
+@theme inline {
+  --color-vivid: var(--vivid);
+  --color-vivid-strong: var(--vivid-strong);
+  --color-ink: var(--ink);
+  --color-leaf: var(--leaf);
+  --color-sun: var(--sun);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .bg-grid-fade {
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Animações (desligadas por prefers-reduced-motion no tokens.css) */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+@keyframes float-tilt {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@keyframes pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.06); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes draw-line {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes stitch {
+  to { background-position: 40px 0; }
+}
+
+.anim-rise { animation: rise 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-float { animation: float-y 6s ease-in-out infinite; }
+.anim-float-tilt { animation: float-tilt 7s ease-in-out infinite; }
+.anim-spin-slow { animation: spin-slow 24s linear infinite; }
+.anim-pop { animation: pop 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-marquee { animation: marquee 32s linear infinite; }
+.delay-1 { animation-delay: 0.12s; }
+.delay-2 { animation-delay: 0.24s; }
+.delay-3 { animation-delay: 0.36s; }
+.delay-4 { animation-delay: 0.5s; }
+.delay-5 { animation-delay: 0.7s; }
+
+/* Revelar ao rolar: só esconde quando há JS (classe js no <html>); sem JS o conteúdo aparece. */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.js .reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+.js .reveal-scale {
+  opacity: 0;
+  transform: translateY(40px) scale(0.96);
+  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.js .reveal-scale[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+.js .reveal-line {
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.js .reveal-line[data-visible="true"] {
+  transform: scaleY(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal,
+  .js .reveal-scale,
+  .js .reveal-line {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stitch-animated {
+  height: 3px;
+  background-image: linear-gradient(90deg, currentColor 0 18px, transparent 18px 40px);
+  background-size: 40px 3px;
+  animation: stitch 1.2s linear infinite;
+}
+
+.lift {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+}

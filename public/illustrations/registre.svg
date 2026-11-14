@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" role="img" aria-labelledby="reg-title">
+  <title id="reg-title">Pacote de corte com etiqueta de 300 peças e celular fotografando</title>
+  <defs>
+    <pattern id="reg-dots" width="9" height="9" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="2" fill="#121D29"/></pattern>
+    <pattern id="reg-dots-l" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2.5" cy="2.5" r="1.6" fill="#FEFCF8"/></pattern>
+  </defs>
+  <rect width="480" height="480" rx="40" fill="#1C4066"/>
+  <circle cx="370" cy="110" r="120" fill="#2B4F76"/>
+  <circle cx="90" cy="400" r="80" fill="url(#reg-dots-l)" opacity="0.35"/>
+  <path d="M-20 330 L 500 160 L 500 240 L -20 410 Z" fill="#F2B33D"/>
+  <!-- pacote de tecido cortado -->
+  <g transform="translate(70 150)">
+    <rect x="0" y="120" width="240" height="44" rx="8" fill="#7FA3D8"/>
+    <rect x="10" y="84" width="230" height="44" rx="8" fill="#C8562B"/>
+    <rect x="0" y="48" width="240" height="44" rx="8" fill="#FEFCF8"/>
+    <rect x="14" y="12" width="226" height="44" rx="8" fill="#2E9E6A"/>
+    <path d="M20 70 h 16 M48 70 h 16 M76 70 h 16 M104 70 h 16 M132 70 h 16 M160 70 h 16 M188 70 h 16" stroke="#1C4066" stroke-width="5" stroke-linecap="round"/>
+    <rect x="0" y="120" width="240" height="44" rx="8" fill="url(#reg-dots)" opacity="0.18"/>
+    <!-- fita amarrando -->
+    <rect x="104" y="4" width="22" height="168" fill="#121D29"/>
+    <!-- etiqueta -->
+    <g transform="rotate(-10 230 40)">
+      <rect x="170" y="-36" width="118" height="70" rx="10" fill="#FEFCF8"/>
+      <circle cx="186" cy="-1" r="7" fill="#121D29"/>
+      <text x="204" y="-6" font-family="Montserrat, Arial, sans-serif" font-size="30" font-weight="800" fill="#121D29">300</text>
+      <text x="205" y="20" font-family="Montserrat, Arial, sans-serif" font-size="14" font-weight="700" fill="#C8562B">P·M·G</text>
+    </g>
+  </g>
+  <!-- celular com câmera -->
+  <g transform="rotate(10 380 330)">
+    <rect x="320" y="230" width="120" height="210" rx="20" fill="#121D29"/>
+    <rect x="330" y="246" width="100" height="178" rx="12" fill="#FEFCF8"/>
+    <rect x="340" y="258" width="80" height="90" rx="8" fill="#EFE7DB"/>
+    <path d="M352 330 l 18 -26 l 14 18 l 10 -12 l 16 20 z" fill="#2E9E6A"/>
+    <circle cx="400" cy="280" r="9" fill="#F2B33D"/>
+    <circle cx="380" cy="392" r="20" fill="#C8562B"/>
+    <rect x="374" y="380" width="12" height="18" rx="6" fill="#FEFCF8"/>
+  </g>
+  <path d="M60 80 v 30 M45 95 h 30" stroke="#F2B33D" stroke-width="6" stroke-linecap="round"/>
+  <path d="M430 60 v 22 M419 71 h 22" stroke="#FEFCF8" stroke-width="5" stroke-linecap="round"/>
+</svg>

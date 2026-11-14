@@ -147,7 +147,104 @@
     "installTitle": "Instale en su celular",
     "installIos": "En iPhone: toque Compartir y luego “Agregar a inicio”.",
     "installAndroid": "En Android: toque “Instalar” cuando aparezca, o use el menú ⋮ → “Instalar app”.",
-    "installButton": "Instalar app"
+    "installButton": "Instalar app",
+    "navHow": "Cómo funciona",
+    "navPricing": "Precios",
+    "navCalc": "Calculadora",
+    "navFaq": "Preguntas",
+    "badge": "Para talleres de costura · Español y Português",
+    "titleA": "El cuaderno de su taller.",
+    "titleB": "Registre, compruebe y cobre.",
+    "trust1": "Sin CNPJ",
+    "trust2": "Funciona sin señal",
+    "trust3": "Español y Português",
+    "trust4": "R$ 35/mes",
+    "floatConfirm": "Carlos confirmó la entrega",
+    "floatConfirmTime": "hoy · 10:32",
+    "floatPix": "Pix recibido",
+    "floatPieces": "300 piezas · ref. 1234",
+    "marquee": [
+      "Corte recibido",
+      "Grade P · M · G",
+      "Foto del paquete",
+      "Entrega confirmada",
+      "Pix copia y pega",
+      "Adelantos",
+      "Pago del sábado",
+      "Quién me debe"
+    ],
+    "showKicker": "El taller en la palma de la mano",
+    "showTitle": "Todo su taller en un solo lugar",
+    "showBody": "Cortes, entregas, cobros y el pago de la semana. Pensado para el celular, con botones grandes y letra clara.",
+    "howKicker": "Cómo funciona",
+    "howTitleA": "Solo tres cosas,",
+    "howTitleB": "bien hechas.",
+    "step": "Paso {n}",
+    "darkKicker": "Del cuaderno al celular",
+    "darkTitleA": "Menos discusión,",
+    "darkTitleB": "más prueba.",
+    "darkCardTitle": "Pago semanal sin pelea",
+    "darkCardBody": "Producción por persona menos adelantos, con recibo en español o portugués para enviar por WhatsApp. Si el pago diario queda por debajo del mínimo, el app avisa.",
+    "calcKicker": "Antes de aceptar el corte",
+    "calcTitleA": "¿Este corte da",
+    "calcTitleB": "ganancia o pérdida?",
+    "calcBody": "Ponga el costo de su taller, el ritmo y el precio que le ofrecen. En 10 segundos sabe el precio mínimo saludable y cuántas piezas por hora necesita para empatar.",
+    "calcCta": "Probar la calculadora gratis",
+    "factsTitle": "Hecho para la rutina del taller",
+    "fact1Label": "segundos para registrar un corte",
+    "fact2Label": "idiomas, cambio con un toque",
+    "fact3Label": "CNPJ para empezar",
+    "fact4Label": "reales por mes, sin fidelidad",
+    "pricingKicker": "Precios",
+    "pricingTitleA": "Empiece gratis,",
+    "pricingTitleB": "pague cuando valga.",
+    "planFreeName": "Para empezar",
+    "planFreePrice": "Gratis",
+    "planFreeNote": "3 cortes o 30 días",
+    "planFreeCta": "Crear cuenta gratis",
+    "planProName": "Plan completo",
+    "planProNote": "por mes · Pix Automático o tarjeta",
+    "planProCta": "Empezar ahora",
+    "planProBadge": "Recomendado",
+    "planFeatures": [
+      "Cortes con foto, grade y precio",
+      "Comprobante con aceptación del cliente",
+      "Cobros por WhatsApp con Pix",
+      "Producción, adelantos y pago semanal",
+      "Calculadora de precio justo",
+      "Exportar sus datos cuando quiera"
+    ],
+    "faqTitle": "Preguntas frecuentes",
+    "faq": [
+      [
+        "¿Necesito CNPJ para usar?",
+        "No. Puede empezar solo con su correo. CPF, RNM o CNPJ son opcionales."
+      ],
+      [
+        "¿Funciona sin internet?",
+        "Sí. Lo que anota sin señal queda guardado en el celular y se envía solo cuando vuelve la señal."
+      ],
+      [
+        "¿Mi cliente necesita instalar algo?",
+        "No. Recibe un enlace por WhatsApp, abre en el navegador y toca “Confirmo el recibimiento”."
+      ],
+      [
+        "¿El app toca mi dinero?",
+        "No. El Pix va directo del cliente a su llave. El app solo arma el código y registra el pago."
+      ],
+      [
+        "¿Puedo cancelar cuando quiera?",
+        "Sí, en la pantalla Cuenta, en 3 toques. Si cancela, sus datos siguen disponibles para ver y exportar."
+      ],
+      [
+        "¿Sirve en español y en portugués?",
+        "Sí. Usted cambia el idioma con un toque y el comprobante sale en el idioma de su cliente."
+      ]
+    ],
+    "finalA": "Deje el cuaderno.",
+    "finalB": "Registre. Compruebe. Cobre.",
+    "finalBody": "Empiece hoy con 3 cortes gratis, sin tarjeta y sin CNPJ.",
+    "footerTagline": "El cuaderno digital del taller de costura."
   },
   "pricing": {
     "title": "Un plan, un precio",
