@@ -1,0 +1,11 @@
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
+  '@parcel/watcher': true
+  '@swc/core': true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - '@better-auth/kysely-adapter@1.7.23'
+  - '@playwright/test@1.65.1'
+  - playwright-core@1.65.1
+  - playwright@1.65.1

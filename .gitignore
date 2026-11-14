@@ -1,0 +1,48 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+/test-results
+/playwright-report
+
+# next.js
+/.next/
+/out/
+/build
+
+# local data (PGlite + uploads em dev)
+/.data
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+.pnpm-debug.log*
+
+# env files (o .env.example vai para o repo, sem valores)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# neon local context
+.neon
+
+# briefing originals (copiados para docs/)
+/PESQUISA-E-CONTEXTO-CLAUDE.md
+/identidade-visual.md
+/PROMPT-CLAUDE-CODE.md
+/tokens.css
+
+# ferramentas locais
+/.claude
