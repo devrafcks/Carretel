@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { BrandLockup } from "@/components/brand/mark";
 import { LocaleSwitch } from "./locale-switch";
 import { buttonVariants } from "@/components/ui/button";
-import { legal, legalValue } from "@/config/legal";
+import { legal } from "@/config/legal";
 
 export async function PublicHeader({ loggedIn = false }: { loggedIn?: boolean }) {
   const t = await getTranslations("landing");
@@ -50,22 +50,21 @@ export async function PublicFooter() {
         </nav>
         <hr className="stitch-rule" />
         <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.company")}:</dt>
-            <dd>{legalValue(legal.companyName)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.cnpj")}:</dt>
-            <dd className="tabular-money">{legalValue(legal.cnpj)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.address")}:</dt>
-            <dd>{legalValue(legal.address)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.email")}:</dt>
-            <dd>{legalValue(legal.supportEmail)}</dd>
-          </div>
+          {(
+            [
+              [t("legal.company"), legal.companyName],
+              [t("legal.cnpj"), legal.cnpj],
+              [t("legal.address"), legal.address],
+              [t("legal.email"), legal.supportEmail],
+            ] as [string, string][]
+          )
+            .filter(([, v]) => v.trim() !== "")
+            .map(([k, v]) => (
+              <div key={k} className="flex gap-2">
+                <dt className="font-semibold">{k}:</dt>
+                <dd className="tabular-money break-words">{v}</dd>
+              </div>
+            ))}
         </dl>
         <p className="text-muted-foreground">© {new Date().getFullYear()} Carretel</p>
       </div>

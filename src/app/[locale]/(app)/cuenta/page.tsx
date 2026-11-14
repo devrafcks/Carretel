@@ -6,7 +6,7 @@ import { Card, Notice } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/lib/dates";
 import { brand } from "@/config/brand";
-import { legal, legalValue } from "@/config/legal";
+import { legal, dpoContact } from "@/config/legal";
 import { withinRefundWindow } from "@/lib/subscription";
 import { billingIsTestMode, billingMode, pixAutomaticoAvailable, reconcileSubscription } from "@/server/billing";
 import { redirect } from "next/navigation";
@@ -132,24 +132,21 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
       <Card className="p-4">
         <h2 className="font-display text-lg">{t("account.legal")}</h2>
         <dl className="mt-2 space-y-1">
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.company")}:</dt>
-            <dd>{legalValue(legal.companyName)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.cnpj")}:</dt>
-            <dd>{legalValue(legal.cnpj)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.email")}:</dt>
-            <dd>{legalValue(legal.supportEmail)}</dd>
-          </div>
-          <div className="flex gap-2">
-            <dt className="font-semibold">{t("legal.dpo")}:</dt>
-            <dd>
-              {legalValue(legal.dpoName)} {legal.dpoEmail ? `· ${legal.dpoEmail}` : ""}
-            </dd>
-          </div>
+          {(
+            [
+              [t("legal.company"), legal.companyName],
+              [t("legal.cnpj"), legal.cnpj],
+              [t("legal.email"), legal.supportEmail],
+              [t("legal.dpo"), dpoContact()],
+            ] as [string, string][]
+          )
+            .filter(([, v]) => v.trim() !== "")
+            .map(([k, v]) => (
+              <div key={k} className="flex flex-wrap gap-x-2">
+                <dt className="font-semibold">{k}:</dt>
+                <dd className="break-words">{v}</dd>
+              </div>
+            ))}
         </dl>
       </Card>
     </div>

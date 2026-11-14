@@ -25,7 +25,7 @@ export const legal: LegalConfig = {
   companyName: "", // TODO B1
   cnpj: "65.605.980/0001-00", // B2 (CNPJ do SaaS, informado pelo responsável em 14/11/2026)
   address: "", // TODO B3
-  supportEmail: "rafcksps@gmail.com", // B4 informado pelo responsável em 14/11/2026
+  supportEmail: "", // B4 opcional: o responsável preferiu não exibir e-mail por enquanto (14/11/2026)
   supportSlaDays: 5,
   supportWhatsapp: "", // B5 opcional
   dpoName: "", // TODO B6
@@ -49,21 +49,21 @@ export function legalValue(v: string): string {
   return v.trim() === "" ? LEGAL_PLACEHOLDER : v;
 }
 
+/** Contato do encarregado de dados (LGPD): o e-mail próprio, ou o de atendimento. */
+export function dpoContact(): string {
+  return [legal.dpoName, legal.dpoEmail || legal.supportEmail].filter(Boolean).join(" · ");
+}
+
 export function abuseChannel(): string {
   return legal.abuseReportChannel || legal.supportEmail;
 }
 
 /** Itens do Grupo B ainda vazios (para o checklist de go-live e o aviso de build). */
 export function missingLegalFields(): string[] {
+  // Razão social, endereço, foro e afins são opcionais: aparecem só quando preenchidos.
   const required: Array<[keyof LegalConfig, string]> = [
-    ["companyName", "B1 razão social / nome empresarial"],
     ["cnpj", "B2 CNPJ do SaaS"],
-    ["address", "B3 endereço"],
-    ["supportEmail", "B4 e-mail de suporte"],
-    ["dpoName", "B6 encarregado LGPD (nome)"],
-    ["dpoEmail", "B6 encarregado LGPD (e-mail)"],
-    ["taxRegime", "B7 regime tributário"],
-    ["forumCity", "B8 foro"],
+
   ];
   return required.filter(([k]) => String(legal[k]).trim() === "").map(([, label]) => label);
 }

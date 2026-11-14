@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Check } from "@/components/icons";
 import { Link } from "@/i18n/navigation";
-import { legal, legalValue, abuseChannel } from "@/config/legal";
+import { legal, abuseChannel, dpoContact } from "@/config/legal";
 import type { LegalDoc } from "@/content/legal";
 
 const slug = (i: number) => `secao-${i + 1}`;
@@ -9,15 +9,17 @@ const slug = (i: number) => `secao-${i + 1}`;
 /** Página de documento legal: resumo no topo, índice fixo ao lado (computador), seções numeradas e contato no fim. */
 export async function LegalPage({ doc, version, related }: { doc: LegalDoc; version?: string; related?: { href: string; label: string } }) {
   const t = await getTranslations("legal");
-  const contact = [
-    [t("company"), legal.companyName],
-    [t("cnpj"), legal.cnpj],
-    [t("address"), legal.address],
-    [t("email"), legal.supportEmail],
-    [t("dpo"), [legal.dpoName, legal.dpoEmail].filter(Boolean).join(" · ")],
-    [t("forum"), legal.forumCity],
-    [t("abuse"), abuseChannel()],
-  ] as const;
+  const contact = (
+    [
+      [t("company"), legal.companyName],
+      [t("cnpj"), legal.cnpj],
+      [t("address"), legal.address],
+      [t("email"), legal.supportEmail],
+      [t("dpo"), dpoContact()],
+      [t("forum"), legal.forumCity],
+      [t("abuse"), abuseChannel()],
+    ] as [string, string][]
+  ).filter(([, v]) => v.trim() !== "");
 
   return (
     <article className="container-wide pb-24 pt-12 sm:pt-16">
@@ -108,11 +110,11 @@ export async function LegalPage({ doc, version, related }: { doc: LegalDoc; vers
               {contact.map(([k, v]) => (
                 <div key={k}>
                   <dt className="text-sm text-muted-foreground">{k}</dt>
-                  <dd className="mt-0.5 font-medium">{legalValue(v)}</dd>
+                  <dd className="mt-0.5 break-words font-medium">{v}</dd>
                 </div>
               ))}
             </dl>
-            <p className="mt-6 text-sm text-muted-foreground">{t("sla", { days: legal.supportSlaDays })}</p>
+            {legal.supportEmail ? <p className="mt-6 text-sm text-muted-foreground">{t("sla", { days: legal.supportSlaDays })}</p> : null}
           </section>
 
           {related ? (

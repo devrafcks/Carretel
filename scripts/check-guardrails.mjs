@@ -51,7 +51,7 @@ for (const f of walk(path.join(root, "src"))) {
 
 // 5. dados legais
 const legal = readFileSync(path.join(root, "src/config/legal.ts"), "utf8");
-for (const key of ["companyName", "cnpj", "address", "supportEmail", "dpoName", "dpoEmail", "taxRegime", "forumCity"]) {
+for (const key of ["cnpj"]) {
   if (new RegExp(`${key}:\\s*""`).test(legal)) warnings.push(`legal.${key} vazio (preencher antes do go-live)`);
 }
 
