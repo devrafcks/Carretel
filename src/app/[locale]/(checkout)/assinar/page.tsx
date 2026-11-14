@@ -15,8 +15,9 @@ export const dynamic = "force-dynamic";
  * sem sessão → passo "Conta" (entrar ou criar ali mesmo); sem taller → passo "Taller"; senão → "Pagamento".
  * O botão de upgrade do painel cai aqui já logado, então começa direto no pagamento.
  */
-export default async function AssinarPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function AssinarPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ checkout?: string }> }) {
   const { locale } = await params;
+  const { checkout } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("subscribe");
   const user = await currentUser();
@@ -54,6 +55,7 @@ export default async function AssinarPage({ params }: { params: Promise<{ locale
       billing={billingMode()}
       testMode={billingIsTestMode()}
       pixAvailable={pixAutomaticoAvailable()}
+      canceledNotice={checkout === "cancel"}
       trialDays={brand.cardTrialDays}
       trialEligible={!(ctx?.subscription && (ctx.subscription.abacateSubscriptionId || ctx.subscription.firstChargedAt || ctx.subscription.trialEndsAt))}
       priceCents={brand.planPriceCents}

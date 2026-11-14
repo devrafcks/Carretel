@@ -136,7 +136,7 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
       customerId = customer.id;
     } catch (err) {
       // sem cliente pré-cadastrado o checkout pede os dados; não bloqueia a assinatura
-      console.error(JSON.stringify({ level: "warn", msg: "abacate_customer_failed", err: String(err) }));
+      console.warn(JSON.stringify({ level: "warn", msg: "abacate_customer_failed", err: String(err) }));
     }
   }
 
@@ -148,8 +148,8 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
       methods: [method],
       ...(customerId ? { customerId } : {}),
       externalId,
-      completionUrl: `${appUrl()}/${locale}/cuenta?checkout=ok`,
-      returnUrl: `${appUrl()}/${locale}/cuenta?checkout=cancel`,
+      completionUrl: `${appUrl()}/${locale}/assinar/concluido`,
+      returnUrl: `${appUrl()}/${locale}/assinar?checkout=cancel`,
       ...(method === "CARD" ? { retryPolicy: { maxRetry: 3, retryEvery: 2 }, card: { maxInstallments: 1 } } : {}),
       metadata: { workshopId: ctx.workshop.id },
     },
@@ -207,7 +207,7 @@ export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "
       remote = await abacate<RemoteSubscription>("/subscriptions/get", { query: { id: sub.abacateSubscriptionId } });
     }
   } catch (err) {
-    console.error(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
+    console.warn(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
     return null;
   }
   if (!remote) return null;

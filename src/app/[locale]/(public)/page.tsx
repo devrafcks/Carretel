@@ -35,7 +35,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
   const tc = await getTranslations("common");
   const features = t.raw("planFeatures") as string[];
   const faq = t.raw("faq") as [string, string][];
-  const shot = (name: string) => `/screenshots/${name}${locale === "pt-BR" ? "-pt" : ""}.png`;
+  const shot = (name: string) => `/screenshots/${name}${locale === "pt-BR" ? "-pt" : ""}.png?v=3`;
   const dot = <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />;
 
   return (

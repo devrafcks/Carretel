@@ -23,6 +23,7 @@ type Props = {
   pixAvailable: boolean;
   trialDays: number;
   trialEligible: boolean;
+  canceledNotice?: boolean;
   priceCents: number;
 };
 
@@ -62,6 +63,12 @@ export function SubscribeFlow(props: Props) {
           );
         })}
       </ol>
+
+      {props.canceledNotice ? (
+        <p role="status" className="mx-auto mt-6 max-w-xl rounded-2xl bg-awaiting-confirmation-bg px-4 py-3 text-center text-sm text-awaiting-confirmation-fg">
+          {t("canceledNotice")}
+        </p>
+      ) : null}
 
       <div className="mt-7">
         {current === "account" ? (

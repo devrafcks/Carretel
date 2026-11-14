@@ -20,7 +20,8 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
   setRequestLocale(locale);
   const ctx = await requireWorkshop();
   const t = await getTranslations();
-  // confere com a AbacatePay (volta do checkout, cancelamento pelo portal etc.) — funciona mesmo sem webhook
+  if (checkout === "ok") redirect(`/${locale}/assinar/concluido`);
+  // confere com a AbacatePay (cancelamento pelo portal etc.) — funciona mesmo sem webhook
   if (ctx.subscription && billingMode() === "abacatepay") {
     const next = await reconcileSubscription(ctx, { force: true });
     if (next && next !== ctx.workshop.planStatus) redirect(`/${locale}/cuenta?checkout=${checkout === "ok" ? "done" : "sync"}`);
