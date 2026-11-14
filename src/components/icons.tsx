@@ -11,7 +11,7 @@ import {
   IconListCheck, IconLock, IconLogout, IconMenu2, IconMicrophone, IconMicrophoneOff, IconMinus, IconMoon,
   IconPackage, IconPencil, IconPlus, IconQrcode, IconRefresh, IconScale, IconScissors, IconShield, IconShieldCheck,
   IconSparkles, IconSun, IconTrash, IconTrendingDown, IconTrendingUp, IconTruckDelivery, IconUserPlus, IconUsers,
-  IconUserX, IconWallet, IconWifi, IconX, IconLayoutGrid, IconChartBar, IconSearch, IconSettings, IconHelpCircle, IconUsersGroup, IconWifiOff, IconBell, IconBellRinging, IconChecks, IconCalendarDue,
+  IconUserX, IconWallet, IconWifi, IconX, IconLayoutGrid, IconChartBar, IconSearch, IconSettings, IconHelpCircle, IconUsersGroup, IconWifiOff, IconBell, IconBellRinging, IconChecks, IconCalendarDue, IconLanguage, IconKeyboard, IconContrast, IconHandFinger, IconBuildingStore, IconVolume, IconHeart,
   type Icon as TablerIcon,
   type IconProps,
 } from "@tabler/icons-react";
@@ -94,3 +94,10 @@ export const Bell = soft(IconBell, "Bell");
 export const BellRinging = soft(IconBellRinging, "BellRinging");
 export const CheckAll = soft(IconChecks, "CheckAll");
 export const CalendarDue = soft(IconCalendarDue, "CalendarDue");
+export const Languages = soft(IconLanguage, "Languages");
+export const Keyboard = soft(IconKeyboard, "Keyboard");
+export const Contrast = soft(IconContrast, "Contrast");
+export const HandFinger = soft(IconHandFinger, "HandFinger");
+export const Store = soft(IconBuildingStore, "Store");
+export const Volume2 = soft(IconVolume, "Volume2");
+export const Heart = soft(IconHeart, "Heart");

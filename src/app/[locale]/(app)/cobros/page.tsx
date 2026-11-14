@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/dates";
 import { appUrl } from "@/config/brand";
 import { ReceivableList, AgingBars } from "./cobros-client";
 import { Info } from "@/components/icons";
+import { Link } from "@/i18n/navigation";
 
 export default async function CobrosPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -81,8 +82,13 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
         </Notice>
       ) : null}
       {!hasPix && items.length > 0 ? (
-        <Notice tone="warning">
-          <p>{t("cobros.pixError")}</p>
+        <Notice tone="info" icon={<Info />}>
+          <p>
+            {t("cobros.pixMissing")}{" "}
+            <Link href="/cuenta" className="font-medium underline underline-offset-4">
+              {t("cobros.pixMissingCta")}
+            </Link>
+          </p>
         </Notice>
       ) : null}
 

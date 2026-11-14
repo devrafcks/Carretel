@@ -50,6 +50,7 @@ function fail(err: unknown): { ok: false; error: string; field?: string } {
   const msg = String((err as Error)?.message ?? err);
   if (msg.includes("delivery_proof_locked")) return { ok: false, error: "proof_locked" };
   if (msg.includes("settlement_locked")) return { ok: false, error: "settlement_locked" };
+  if (msg === "pix_unavailable" || msg === "already_subscribed" || msg === "billing_disabled") return { ok: false, error: msg };
   console.error(JSON.stringify({ level: "error", msg: "action_failed", err: msg }));
   return { ok: false, error: "server_error" };
 }

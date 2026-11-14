@@ -1,8 +1,10 @@
 "use client";
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Pencil, UserX } from "@/components/icons";
+import { Pencil, UserX, Plus } from "@/components/icons";
+import { formatBRL } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,33 +15,37 @@ import { FichaIllustration } from "@/components/brand/illustrations";
 import { anonymizeClientAction, createClientAction, updateClientAction } from "@/app/actions";
 import { initials } from "@/lib/utils";
 
-type C = { id: string; name: string; phone: string; locale: "es" | "pt-BR"; notes: string };
+type C = { id: string; name: string; phone: string; locale: "es" | "pt-BR"; notes: string; owedCents?: number; batches?: number; openBatches?: number; volumeCents?: number };
 
 export function ClientsManager({ clients, canWrite }: { clients: C[]; canWrite: boolean }) {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const [edit, setEdit] = React.useState<C | "new" | null>(null);
   const [pending, start] = React.useTransition();
   return (
     <div className="space-y-4">
       {canWrite ? (
-        <Button onClick={() => setEdit("new")} block size="lg">
-          {t("clients.add")}
+        <Button onClick={() => setEdit("new")}>
+          <Plus aria-hidden="true" />
+          {t("clients.addShort")}
         </Button>
       ) : null}
       {clients.length === 0 ? (
         <EmptyState illustration={<FichaIllustration />} title={t("clients.empty")} />
       ) : (
-        <ul className="anim-rise divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
+        <ul className="anim-rise grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {clients.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 px-4 py-3">
-              <span aria-hidden="true" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary font-bold">
+            <li key={c.id} className="flex flex-col rounded-3xl border border-ink/[0.06] bg-card p-5 shadow-soft">
+              <div className="flex items-center gap-3">
+              <span aria-hidden="true" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-mint-100 font-medium text-accent-foreground">
                 {initials(c.name)}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{c.name}</p>
-                <p className="text-muted-foreground">
-                  {c.phone || "—"} · <span lang={c.locale}>{c.locale === "es" ? "Español" : "Português"}</span>
+                <p className="truncate font-medium">{c.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {c.phone ? `${c.phone} · ` : ""}
+                  <span lang={c.locale}>{c.locale === "es" ? "Español" : "Português"}</span>
                 </p>
               </div>
               {canWrite ? (
@@ -64,6 +70,21 @@ export function ClientsManager({ clients, canWrite }: { clients: C[]; canWrite: 
                   </Button>
                 </>
               ) : null}
+              </div>
+              <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-ink/[0.06] pt-4">
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("clients.owes")}</dt>
+                  <dd className={cn("mt-0.5 font-medium tabular-money", (c.owedCents ?? 0) > 0 && "text-overdue-calote-fg")}>{formatBRL(c.owedCents ?? 0, locale)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("clients.openBatches")}</dt>
+                  <dd className="mt-0.5 font-medium tabular-money">{c.openBatches ?? 0}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">{t("clients.volume")}</dt>
+                  <dd className="mt-0.5 font-medium tabular-money">{formatBRL(c.volumeCents ?? 0, locale)}</dd>
+                </div>
+              </dl>
             </li>
           ))}
         </ul>

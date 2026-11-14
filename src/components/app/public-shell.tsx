@@ -28,7 +28,7 @@ export async function PublicHeader({ loggedIn = false }: { loggedIn?: boolean })
 export async function PublicFooter() {
   const t = await getTranslations();
   const links = [
-    ["/precios", t("landing.footerPricing")],
+    ["/#precios", t("landing.footerPricing")],
     ["/accesibilidad", t("landing.footerA11y")],
     ["/privacidad", t("landing.footerPrivacy")],
     ["/terminos", t("landing.footerTerms")],

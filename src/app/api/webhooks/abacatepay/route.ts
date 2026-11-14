@@ -4,9 +4,9 @@
  * HMAC-SHA256 (base64) do corpo com ABACATEPAY_PUBLIC_KEY; 4) idempotência por id (log_…);
  * 5) máquina de estados; 6) 2xx rápido.
  */
-import { verifyAbacateWebhook } from "@/lib/webhook";
+import { ABACATEPAY_PUBLIC_HMAC_KEY, verifyAbacateWebhook } from "@/lib/webhook";
 import { markWebhookProcessed, recordWebhookEvent } from "@/db/public";
-import { applySubscriptionEvent, eventType, workshopIdFromExternal, type AbacateEvent } from "@/server/billing";
+import { applySubscriptionEvent, eventExternalId, eventType, workshopIdFromExternal, type AbacateEvent } from "@/server/billing";
 
 export async function POST(req: Request) {
   const raw = await req.text();
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     secretHeader: req.headers.get("x-webhook-secret") ?? url.searchParams.get("webhookSecret"),
     signatureHeader: req.headers.get("x-webhook-signature"),
     expectedSecret: process.env.ABACATEPAY_WEBHOOK_SECRET,
-    publicKey: process.env.ABACATEPAY_PUBLIC_KEY,
+    publicKey: process.env.ABACATEPAY_PUBLIC_KEY || ABACATEPAY_PUBLIC_HMAC_KEY,
   });
   if (!v.ok) return new Response(null, { status: v.reason === "config" ? 503 : 401 });
 
@@ -28,12 +28,15 @@ export async function POST(req: Request) {
   }
   if (!evt.id) return new Response(null, { status: 400 });
 
-  const ext = (evt.data as Record<string, unknown> | undefined)?.externalId;
+  // eventos de outro ambiente (ex.: chave de teste recebendo evento de produção) são ignorados
+  const liveKey = (process.env.ABACATEPAY_API_KEY ?? "").startsWith("abc_prod_");
+  if (typeof evt.devMode === "boolean" && evt.devMode === liveKey) return Response.json({ ok: true, ignored: "environment" });
+
   const inserted = await recordWebhookEvent({
     id: evt.id,
     type: eventType(evt),
     payload: evt,
-    workshopId: typeof ext === "string" ? workshopIdFromExternal(ext) : null,
+    workshopId: workshopIdFromExternal(eventExternalId(evt)),
   });
   if (!inserted) return Response.json({ ok: true, duplicate: true });
 

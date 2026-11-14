@@ -95,6 +95,35 @@ export async function listClients(tdb: TenantDb) {
   return tdb.select(clients, isNull(clients.anonymizedAt), { orderBy: asc(clients.name) });
 }
 
+/** Por cliente: quanto deve hoje, cortes em aberto e total já trabalhado (para a lista de clientes). */
+export async function clientStats(tdb: TenantDb) {
+  const [owed, work] = await Promise.all([
+    tdb.query((db, s) =>
+      db
+        .select({ clientId: receivables.clientId, owed: sql<number>`coalesce(sum(${receivables.amountCents} - ${receivables.paidCents}), 0)::int` })
+        .from(receivables)
+        .where(and(s(receivables), inArray(receivables.status, ["open", "partially_paid", "awaiting_confirmation", "disputed"])))
+        .groupBy(receivables.clientId),
+    ),
+    tdb.query((db, s) =>
+      db
+        .select({
+          clientId: batches.clientId,
+          total: sql<number>`count(*)::int`,
+          open: sql<number>`count(*) filter (where ${batches.status} in ('received', 'in_production', 'ready'))::int`,
+          volume: sql<number>`coalesce(sum(${batches.totalCents}), 0)::bigint`,
+        })
+        .from(batches)
+        .where(and(s(batches), ne(batches.status, "canceled")))
+        .groupBy(batches.clientId),
+    ),
+  ]);
+  const map = new Map<string, { owedCents: number; batches: number; openBatches: number; volumeCents: number }>();
+  for (const w of work) if (w.clientId) map.set(w.clientId, { owedCents: 0, batches: w.total, openBatches: w.open, volumeCents: Number(w.volume) });
+  for (const o of owed) if (o.clientId) map.set(o.clientId, { ...(map.get(o.clientId) ?? { batches: 0, openBatches: 0, volumeCents: 0 }), owedCents: o.owed });
+  return map;
+}
+
 export async function listWorkers(tdb: TenantDb, includeInactive = false) {
   return tdb.select(workers, includeInactive ? undefined : eq(workers.active, true), { orderBy: asc(workers.name) });
 }

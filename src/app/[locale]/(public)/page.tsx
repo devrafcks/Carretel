@@ -56,11 +56,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_46%_58%_at_50%_42%,var(--background)_55%,transparent_100%)]"
         />
         <div className="container-wide flex min-h-[44rem] flex-col items-center pb-64 pt-16 text-center sm:min-h-[52rem] sm:pb-64 sm:pt-24">
-          <p className="anim-rise inline-flex max-w-full items-center gap-2 rounded-full border border-mint-200 bg-mint-50 px-4 py-1.5 text-sm text-accent-foreground">
-            <span className="font-semibold">{t("heroBadgeTag")}:</span>
-            <span className="truncate">{t("heroBadge")}</span>
-          </p>
-          <h1 className="text-hero anim-rise delay-1 mt-7 max-w-5xl text-[2.9rem] text-balance text-foreground sm:text-7xl xl:text-[5.5rem]">
+          <h1 className="text-hero anim-rise delay-1 max-w-5xl text-[2.9rem] text-balance text-foreground sm:text-7xl xl:text-[5.5rem]">
             {t("titleA")} <span className="text-vivid-strong">{t("titleB")}</span>
           </h1>
           <p className="anim-rise delay-2 mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">{t("lead")}</p>

@@ -1,22 +1,30 @@
 /**
- * Assinatura R$ 35/mês — AbacatePay API v2 (Modo Teste).
- * Sem ABACATEPAY_API_KEY: modo SIMULADO (só fora de produção) para exercitar o fluxo inteiro
- * freemium → paywall → completed → renovação → falha → read_only → cancelamento.
- * ATENÇÃO: conferir na doc (https://docs.abacatepay.com) os nomes exatos de endpoints/campos antes do go-live.
+ * Assinatura R$ 35/mês — AbacatePay API v2 (docs: https://docs.abacatepay.com, conferido em 14/11/2026).
+ *
+ * Fluxo:
+ * 1) produto com `cycle: "MONTHLY"` (criado sozinho na primeira vez, por externalId) — um sem teste (Pix
+ *    Automático ou cartão) e um com `trialDays` para o cartão;
+ * 2) cliente (POST /customers/create devolve o existente se o e-mail já estiver cadastrado);
+ * 3) checkout de assinatura (POST /subscriptions/create) → o taller paga na página da AbacatePay;
+ * 4) ativação por webhook (subscription.completed / trial_started / renewed / payment_failed / cancelled)
+ *    e, como reforço (localhost não recebe webhook), por conciliação: GET /subscriptions/list?checkoutId=…
+ *
+ * O ambiente vem da chave: abc_dev_… = Modo Teste (nada é cobrado), abc_prod_… = produção.
+ * Sem chave: modo SIMULADO (só fora de produção) para exercitar o fluxo inteiro.
  */
 import "server-only";
 import { eq } from "drizzle-orm";
 import { subscriptions, type PlanStatus } from "@/db/schema";
-import {
-  findSubscriptionByRefs,
-  setPlanStatus,
-  updateSubscriptionById,
-} from "@/db/public";
+import { findSubscriptionByRefs, setPlanStatus, updateSubscriptionById } from "@/db/public";
 import type { WorkshopContext } from "@/lib/session";
 import { nextPlanStatus, type SubscriptionEventType } from "@/lib/subscription";
-import { appUrl } from "@/config/brand";
+import { appUrl, brand } from "@/config/brand";
 
 const API = "https://api.abacatepay.com/v2";
+const PRODUCT_EXTERNAL_ID = "carretel-mensal";
+const PRODUCT_TRIAL_EXTERNAL_ID = "carretel-mensal-teste-cartao";
+/** Folga depois do vencimento do ciclo antes de bloquear (o banco/cartão pode demorar). */
+const GRACE_DAYS = 3;
 
 export function billingMode(): "abacatepay" | "simulated" | "disabled" {
   if (process.env.ABACATEPAY_API_KEY) return "abacatepay";
@@ -24,28 +32,88 @@ export function billingMode(): "abacatepay" | "simulated" | "disabled" {
   return "disabled";
 }
 
-function yyyymm(d = new Date()) {
-  return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+/**
+ * Pix Automático precisa ser liberado pela AbacatePay para cada loja. Enquanto não estiver, a API responde
+ * "PIX Automático is not available for this store". Guardamos isso para mostrar o aviso no lugar do botão.
+ * ABACATEPAY_PIX_AUTOMATICO=on|off força o comportamento.
+ */
+let pixUnavailableSince: number | null = null;
+export function pixAutomaticoAvailable(): boolean {
+  const flag = process.env.ABACATEPAY_PIX_AUTOMATICO;
+  if (flag === "off") return false;
+  if (flag === "on") return true;
+  // revalida de hora em hora (a AbacatePay pode liberar a qualquer momento)
+  return !(pixUnavailableSince && Date.now() - pixUnavailableSince < 3_600_000);
 }
 
-async function abacate<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(API + path, {
-    method: "POST",
+export function billingIsTestMode(): boolean {
+  return (process.env.ABACATEPAY_API_KEY ?? "").startsWith("abc_dev_");
+}
+
+class AbacateError extends Error {
+  constructor(
+    public status: number,
+    public apiError: string,
+  ) {
+    super(`abacatepay_${status}: ${apiError}`);
+  }
+}
+
+async function abacate<T>(path: string, init: { body?: unknown; query?: Record<string, string> } = {}): Promise<T> {
+  const url = new URL(API + path);
+  for (const [k, v] of Object.entries(init.query ?? {})) url.searchParams.set(k, v);
+  const res = await fetch(url, {
+    method: init.body === undefined ? "GET" : "POST",
     headers: { Authorization: `Bearer ${process.env.ABACATEPAY_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: init.body === undefined ? undefined : JSON.stringify(init.body),
     cache: "no-store",
   });
-  const json = (await res.json().catch(() => ({}))) as { data?: T; error?: unknown };
-  if (!res.ok || json.error) throw new Error(`abacatepay_${res.status}`);
+  const json = (await res.json().catch(() => ({}))) as { data?: T; error?: string | null; success?: boolean };
+  if (!res.ok || json.error) throw new AbacateError(res.status, String(json.error ?? "unknown"));
   return json.data as T;
 }
 
+/* ───── Produto (criado uma vez por ambiente) ───── */
+type Product = { id: string; externalId: string; status?: string; cycle?: string | null };
+const productCache = new Map<string, string>();
+
+async function ensureProduct(trial: boolean): Promise<string> {
+  const envId = trial ? process.env.ABACATEPAY_PRODUCT_ID_MONTHLY_CARD_TRIAL : process.env.ABACATEPAY_PRODUCT_ID_MONTHLY;
+  if (envId && !envId.includes("xxx")) return envId;
+  const externalId = trial ? PRODUCT_TRIAL_EXTERNAL_ID : PRODUCT_EXTERNAL_ID;
+  const cacheKey = `${billingIsTestMode() ? "dev" : "prod"}:${externalId}`;
+  const cached = productCache.get(cacheKey);
+  if (cached) return cached;
+
+  const found = await abacate<Product[]>("/products/list", { query: { externalId, limit: "1" } });
+  let id = found.find((p) => p.externalId === externalId && p.status !== "INACTIVE")?.id;
+  if (!id) {
+    const created = await abacate<Product>("/products/create", {
+      body: {
+        externalId,
+        name: trial ? `${brand.brandName} — plano mensal (cartão, ${brand.cardTrialDays} dias grátis)` : `${brand.brandName} — plano mensal`,
+        description: "Caderno digital do taller de costura: cortes, comprovantes de entrega, acerto da equipe e cobranças.",
+        price: brand.planPriceCents,
+        currency: "BRL",
+        cycle: "MONTHLY",
+        ...(trial ? { trialDays: brand.cardTrialDays } : {}),
+      },
+    });
+    id = created.id;
+  }
+  productCache.set(cacheKey, id);
+  return id;
+}
+
+/* ───── Checkout ───── */
 export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD", locale: string): Promise<string> {
-  const externalId = `ws_${ctx.workshop.id}_${yyyymm()}`;
   const mode = billingMode();
   if (mode === "disabled") throw new Error("billing_disabled");
+  // um externalId novo por tentativa (a API devolve o checkout antigo se o externalId se repetir)
+  const externalId = `ws_${ctx.workshop.id}_${method}_${Date.now().toString(36)}`;
 
   let sub = await ctx.tdb.first(subscriptions);
+  if (sub && (sub.status === "active" || sub.status === "trialing") && sub.abacateSubscriptionId) throw new Error("already_subscribed");
   if (!sub) {
     sub = await ctx.tdb.insert(subscriptions, { status: "pending_checkout", externalId, method });
   } else {
@@ -54,31 +122,40 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
   }
   await setPlanStatus(ctx.workshop.id, nextPlanStatus(ctx.workshop.planStatus, "local.checkout_opened"));
 
-  if (mode === "simulated") {
-    return `/${locale}/cuenta/pago-simulado?method=${method}`;
-  }
+  if (mode === "simulated") return `/${locale}/cuenta/pago-simulado?method=${method}`;
 
   let customerId = sub.abacateCustomerId;
   if (!customerId) {
-    const customer = await abacate<{ id: string }>("/customers/create", {
-      email: ctx.user.email,
-      name: ctx.workshop.name,
-      metadata: { workshopId: ctx.workshop.id },
-    });
-    customerId = customer.id;
+    try {
+      const customer = await abacate<{ id: string }>("/customers/create", {
+        body: { email: ctx.user.email, name: ctx.workshop.name, metadata: { workshopId: ctx.workshop.id } },
+      });
+      customerId = customer.id;
+    } catch (err) {
+      // sem cliente pré-cadastrado o checkout pede os dados; não bloqueia a assinatura
+      console.error(JSON.stringify({ level: "warn", msg: "abacate_customer_failed", err: String(err) }));
+    }
   }
-  const productId =
-    method === "CARD" && process.env.ABACATEPAY_PRODUCT_ID_MONTHLY_CARD_TRIAL
-      ? process.env.ABACATEPAY_PRODUCT_ID_MONTHLY_CARD_TRIAL
-      : process.env.ABACATEPAY_PRODUCT_ID_MONTHLY;
+
+  if (method === "PIX" && !pixAutomaticoAvailable()) throw new Error("pix_unavailable");
+  const productId = await ensureProduct(method === "CARD");
   const checkout = await abacate<{ id: string; url: string }>("/subscriptions/create", {
-    items: [{ id: productId, quantity: 1 }],
-    customerId,
-    externalId,
-    completionUrl: `${appUrl()}/${locale}/cuenta?checkout=ok`,
-    returnUrl: `${appUrl()}/${locale}/cuenta?checkout=cancel`,
-    methods: [method],
-    retryPolicy: { maxRetry: 3, retryEvery: 2 },
+    body: {
+      items: [{ id: productId, quantity: 1 }],
+      methods: [method],
+      ...(customerId ? { customerId } : {}),
+      externalId,
+      completionUrl: `${appUrl()}/${locale}/cuenta?checkout=ok`,
+      returnUrl: `${appUrl()}/${locale}/cuenta?checkout=cancel`,
+      ...(method === "CARD" ? { retryPolicy: { maxRetry: 3, retryEvery: 2 }, card: { maxInstallments: 1 } } : {}),
+      metadata: { workshopId: ctx.workshop.id },
+    },
+  }).catch((err: unknown) => {
+    if (err instanceof AbacateError && /PIX Autom/i.test(err.apiError)) {
+      pixUnavailableSince = Date.now();
+      throw new Error("pix_unavailable");
+    }
+    throw err;
   });
   await ctx.tdb.update(
     subscriptions,
@@ -88,20 +165,90 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
   return checkout.url;
 }
 
+/* ───── Conciliação (não depende de webhook) ───── */
+type RemoteSubscription = { id: string; checkoutId?: string; status: "PENDING" | "ACTIVE" | "CANCELLED"; method?: "PIX" | "CARD"; trialEndsAt?: string | null; createdAt?: string };
+
+/**
+ * Confere na AbacatePay o estado real da assinatura deste taller e aplica no banco.
+ * Usado ao voltar do checkout e ao abrir a tela Conta. Idempotente.
+ */
+export async function reconcileSubscription(ctx: WorkshopContext): Promise<PlanStatus | null> {
+  if (billingMode() !== "abacatepay") return null;
+  const sub = await ctx.tdb.first(subscriptions);
+  if (!sub) return null;
+  let remote: RemoteSubscription | undefined;
+  try {
+    if (sub.abacateSubscriptionId) {
+      remote = await abacate<RemoteSubscription>("/subscriptions/get", { query: { id: sub.abacateSubscriptionId } });
+    } else if (sub.abacateCheckoutId) {
+      const list = await abacate<RemoteSubscription[]>("/subscriptions/list", { query: { checkoutId: sub.abacateCheckoutId, limit: "5" } });
+      remote = list.find((s) => s.status === "ACTIVE") ?? list[0];
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
+    return null;
+  }
+  if (!remote) return null;
+
+  const current = ctx.workshop.planStatus;
+  const now = new Date();
+  if (remote.status === "ACTIVE") {
+    const trialEnds = remote.trialEndsAt ? new Date(remote.trialEndsAt) : null;
+    const inTrial = Boolean(trialEnds && trialEnds > now);
+    const already = (current === "active" || current === "trialing") && sub.abacateSubscriptionId === remote.id;
+    if (already) return current;
+    const event: SubscriptionEventType = inTrial ? "subscription.trial_started" : "subscription.completed";
+    const next = nextPlanStatus(current, event);
+    await updateSubscriptionById(sub.id, {
+      status: next,
+      abacateSubscriptionId: remote.id,
+      method: remote.method ?? sub.method,
+      trialEndsAt: inTrial ? trialEnds : null,
+      currentPeriodEnd: inTrial ? trialEnds : periodEndFrom(now),
+      firstChargedAt: sub.firstChargedAt ?? (inTrial ? null : now),
+    });
+    await setPlanStatus(ctx.workshop.id, next);
+    return next;
+  }
+  if (remote.status === "CANCELLED" && current !== "canceled" && current !== "read_only") {
+    const next = nextPlanStatus(current, "subscription.cancelled");
+    await updateSubscriptionById(sub.id, { status: next, canceledAt: sub.canceledAt ?? now });
+    await setPlanStatus(ctx.workshop.id, next);
+    return next;
+  }
+  return current;
+}
+
+function periodEndFrom(from: Date): Date {
+  const d = new Date(from);
+  d.setMonth(d.getMonth() + 1);
+  d.setDate(d.getDate() + GRACE_DAYS);
+  return d;
+}
+
+/* ───── Cancelamento e reembolso ───── */
 export async function cancelSubscription(ctx: WorkshopContext): Promise<void> {
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) throw new Error("no_subscription");
   if (billingMode() === "abacatepay" && sub.abacateSubscriptionId) {
-    await abacate("/subscriptions/cancel", { id: sub.abacateSubscriptionId });
+    try {
+      await abacate("/subscriptions/cancel", { body: { id: sub.abacateSubscriptionId } });
+    } catch (err) {
+      // já cancelada lá: segue e alinha aqui
+      if (!(err instanceof AbacateError && /not active|not found/i.test(err.apiError))) throw err;
+    }
   }
   await ctx.tdb.update(subscriptions, { status: "canceled", canceledAt: new Date(), updatedAt: new Date() }, eq(subscriptions.id, sub.id));
   await setPlanStatus(ctx.workshop.id, nextPlanStatus(ctx.workshop.planStatus, "subscription.cancelled"));
 }
 
+/**
+ * A API da AbacatePay não estorna cobranças de assinatura (só o cliente, pelo Portal, ou o painel).
+ * Aqui registramos o pedido (prazo de 7 dias) e cancelamos; o estorno é feito pelo painel da AbacatePay.
+ */
 export async function requestRefund(ctx: WorkshopContext): Promise<void> {
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) throw new Error("no_subscription");
-  // Endpoint de reembolso NÃO verificado na doc: fluxo manual com SLA ≤ 7 dias (C3.8).
   await ctx.tdb.update(subscriptions, { refundRequestedAt: new Date(), updatedAt: new Date() }, eq(subscriptions.id, sub.id));
   await cancelSubscription(ctx);
 }
@@ -111,6 +258,7 @@ export interface AbacateEvent {
   id: string;
   event?: string;
   type?: string;
+  devMode?: boolean;
   data?: Record<string, unknown>;
 }
 
@@ -127,6 +275,10 @@ export function eventType(evt: AbacateEvent): string {
   return evt.event ?? evt.type ?? "unknown";
 }
 
+export function eventExternalId(evt: AbacateEvent): string | null {
+  return pick(evt.data, "checkout.externalId", "payment.externalId", "subscription.externalId", "externalId");
+}
+
 export function workshopIdFromExternal(externalId: string | null): string | null {
   const m = externalId?.match(/^ws_([0-9a-f-]{36})_/);
   return m?.[1] ?? null;
@@ -135,10 +287,11 @@ export function workshopIdFromExternal(externalId: string | null): string | null
 export async function applySubscriptionEvent(evt: AbacateEvent): Promise<{ workshopId: string | null; status?: PlanStatus }> {
   const type = eventType(evt) as SubscriptionEventType;
   const data = evt.data ?? {};
-  const externalId = pick(data, "externalId", "subscription.externalId", "checkout.externalId", "billing.externalId");
-  const subscriptionId = pick(data, "subscription.id", "subscriptionId", "id");
-  const checkoutId = pick(data, "checkout.id", "checkoutId", "billing.id");
-  const method = pick(data, "method", "subscription.method", "payment.method");
+  const externalId = eventExternalId(evt);
+  const subscriptionId = pick(data, "subscription.id", "subscriptionId");
+  const checkoutId = pick(data, "checkout.id", "subscription.checkoutId", "checkoutId");
+  const method = pick(data, "subscription.method", "method");
+  const trialEndsAt = pick(data, "subscription.trialEndsAt");
 
   const sub = await findSubscriptionByRefs({ externalId, subscriptionId, checkoutId });
   const workshopId = sub?.workshopId ?? workshopIdFromExternal(externalId);
@@ -148,16 +301,17 @@ export async function applySubscriptionEvent(evt: AbacateEvent): Promise<{ works
   const current = await getWorkshopPlan(workshopId);
   const next = nextPlanStatus(current ?? "free", type);
   const now = new Date();
-  const monthAhead = new Date(now.getTime() + 31 * 86_400_000);
   const set: Partial<typeof subscriptions.$inferInsert> = { status: next };
   if (subscriptionId?.startsWith("subs_")) set.abacateSubscriptionId = subscriptionId;
+  if (checkoutId?.startsWith("bill_")) set.abacateCheckoutId = checkoutId;
   if (method === "PIX" || method === "CARD") set.method = method;
   if (type === "subscription.completed" || type === "subscription.renewed" || type === "checkout.completed") {
-    set.currentPeriodEnd = monthAhead;
+    set.currentPeriodEnd = periodEndFrom(now);
+    set.trialEndsAt = null;
     if (!sub.firstChargedAt) set.firstChargedAt = now;
   }
   if (type === "subscription.trial_started") {
-    set.trialEndsAt = new Date(now.getTime() + 7 * 86_400_000);
+    set.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : new Date(now.getTime() + brand.cardTrialDays * 86_400_000);
     set.currentPeriodEnd = set.trialEndsAt;
   }
   if (type === "subscription.cancelled") set.canceledAt = now;

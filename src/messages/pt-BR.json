@@ -274,7 +274,9 @@
     "bentoAppTitle": "Feito para o celular",
     "bentoAppBody": "Botões grandes, letra clara e funciona sem sinal.",
     "compareKicker": "Antes e depois",
-    "compareTitle": "Do caderno para o celular"
+    "compareTitle": "Do caderno para o celular",
+    "footerProduct": "Produto",
+    "footerCompany": "Empresa"
   },
   "pricing": {
     "title": "Um plano, um preço",
@@ -591,7 +593,9 @@
     "disputed": "com divergência",
     "paidRecently": "Pagos recentemente",
     "remaining": "Falta {amount}",
-    "readOnlyNote": "Modo leitura: seus links continuam funcionando e você pode registrar pagamentos de dívidas antigas."
+    "readOnlyNote": "Modo leitura: seus links continuam funcionando e você pode registrar pagamentos de dívidas antigas.",
+    "pixMissing": "Cadastre sua chave Pix para mandar o Pix Copia e Cola junto com a cobrança.",
+    "pixMissingCta": "Ir para Conta"
   },
   "proof": {
     "titleFor": "Comprovante de entrega",
@@ -726,7 +730,7 @@
     "paywallTitle": "Ative seu plano",
     "paywallLead": "R$ 35 por mês. Escolha como pagar:",
     "payPix": "Pix Automático",
-    "payPixNote": "Garantia de 7 dias (CDC art. 49)",
+    "payPixNote": "Débito automático todo mês. Reembolso em 7 dias.",
     "payCard": "Cartão",
     "payCardNote": "7 dias grátis",
     "cancel": "Cancelar assinatura",
@@ -777,7 +781,12 @@
     "avatarSending": "Enviando…",
     "avatarSaved": "Foto atualizada.",
     "avatarRemoved": "Foto removida.",
-    "avatarError": "Não deu para salvar a foto. Tente de novo."
+    "avatarError": "Não deu para salvar a foto. Tente de novo.",
+    "checkoutDone": "Pronto! Seu plano está ativo. Obrigado por confiar no Carretel.",
+    "checkoutConfirming": "Você voltou do pagamento. Estamos confirmando com a AbacatePay; leva alguns segundos.",
+    "refreshNow": "Atualizar agora",
+    "testModeNote": "Modo de teste: nada é cobrado. No checkout, use o botão “Simular pagamento” ou o cartão 4242 4242 4242 4242 (qualquer validade futura e CVV).",
+    "pixSoon": "Em liberação. Por enquanto, use cartão."
   },
   "more": {
     "title": "Menu",
@@ -823,7 +832,11 @@
     "save": "Salvar cliente",
     "saved": "Cliente salvo",
     "anonymize": "Remover dados pessoais",
-    "anonymizeConfirm": "Apaga nome e telefone. Os cortes e cobranças ficam como “Cliente #…”."
+    "anonymizeConfirm": "Apaga nome e telefone. Os cortes e cobranças ficam como “Cliente #…”.",
+    "addShort": "Novo cliente",
+    "owes": "Te deve",
+    "openBatches": "Cortes abertos",
+    "volume": "Total trabalhado"
   },
   "a11y": {
     "title": "Acessibilidade",
@@ -856,7 +869,37 @@
       "altP": "Parar animações",
       "altR": "Redefinir tudo",
       "alt15": "Filtros para daltonismo (normal, protanopia, deuteranopia, tritanopia, monocromático)"
-    }
+    },
+    "builtInKicker": "Já vem no app",
+    "builtInTitle": "Acessível sem instalar nada",
+    "f": [
+      [
+        "Leitor de tela",
+        "Botões e ícones com nome, títulos em ordem e avisos que são lidos sozinhos."
+      ],
+      [
+        "Teclado",
+        "Tudo funciona com Tab e Enter, com o foco sempre visível."
+      ],
+      [
+        "Letra grande",
+        "Respeita o zoom do celular e do navegador sem quebrar a tela."
+      ],
+      [
+        "Toques grandes",
+        "Botões de pelo menos 44 pixels, para usar com pressa ou de luva."
+      ],
+      [
+        "Não depende de cor",
+        "Situações com texto e ícone, não só com cor."
+      ],
+      [
+        "Falar em vez de digitar",
+        "Quantidade, preço e prazo podem ser ditados pelo microfone."
+      ]
+    ],
+    "panelKicker": "Painel extra",
+    "shortcutsHint": "Com o painel aberto, use estas combinações:"
   },
   "legal": {
     "privacyTitle": "Política de privacidade",
@@ -913,7 +956,9 @@
     "rate_limited": "Muitas tentativas. Tente em alguns minutos.",
     "billing_disabled": "A cobrança ainda não está configurada.",
     "no_subscription": "Não há assinatura para cancelar.",
-    "not_simulated": "Só no modo simulado."
+    "not_simulated": "Só no modo simulado.",
+    "pix_unavailable": "O Pix Automático ainda não foi liberado na conta de cobrança. Por enquanto, use cartão.",
+    "already_subscribed": "Seu plano já está ativo."
   },
   "theme": {
     "toggle": "Mudar tema",
@@ -970,5 +1015,53 @@
         "b": "Feche a semana da equipe em Produção → Acerto."
       }
     }
+  },
+  "aboutPage": {
+    "kicker": "Quem somos",
+    "titleA": "Feito para quem",
+    "titleB": "toca o taller.",
+    "lead": "O Carretel nasceu para o lado mais fraco da cadeia da costura: o dono do taller, que recebe o corte, paga a equipe por peça e muitas vezes leva calote.",
+    "missionKicker": "O que fazemos",
+    "mission": "Fazemos só três coisas, e bem feitas.",
+    "p1t": "Registrar",
+    "p1b": "Cada corte em 20 segundos: foto do pacote, quantidade por voz, grade e preço por peça.",
+    "p2t": "Comprovar",
+    "p2b": "Um link com fotos e valor. O cliente confirma pelo WhatsApp e ficam a data, a hora e o registro.",
+    "p3t": "Cobrar",
+    "p3b": "Quem te deve e há quanto tempo, com mensagem pronta e Pix Copia e Cola. O pagamento cai direto na sua chave.",
+    "principlesKicker": "Como pensamos",
+    "principlesTitle": "Decisões que não negociamos",
+    "pr": [
+      [
+        "Bilíngue de verdade",
+        "Espanhol e português em tudo, com um toque. O cliente recebe o comprovante no idioma dele."
+      ],
+      [
+        "Celular primeiro",
+        "Botões grandes, letra clara e poucas telas. Feito para usar entre uma máquina e outra."
+      ],
+      [
+        "Funciona sem sinal",
+        "O que é anotado sem internet fica guardado e é enviado sozinho quando o sinal volta."
+      ],
+      [
+        "Sem CNPJ para começar",
+        "Comece com seu e-mail. Documento só se você quiser, e guardado criptografado."
+      ],
+      [
+        "Não toca no seu dinheiro",
+        "O Pix dos seus clientes vai direto para a sua chave. O Carretel não recebe nem retém nada."
+      ],
+      [
+        "Seus dados são seus",
+        "Exporte tudo quando quiser. Se parar de pagar, continua vendo e exportando."
+      ]
+    ],
+    "companyTitle": "Quem está por trás",
+    "companyBody": "O Carretel é um produto brasileiro, feito em São Paulo para os talleres de costura da cidade.",
+    "ctaTitle": "Teste nos seus próximos cortes",
+    "ctaBody": "Grátis para começar, sem cartão.",
+    "ctaStart": "Começar grátis",
+    "ctaCalc": "Ver a calculadora"
   }
 }

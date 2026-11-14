@@ -198,7 +198,7 @@ function LogForm({ worker, batches, ops, onDone }: { worker: WorkerCard; batches
         <div className="mt-1.5 grid grid-cols-2 gap-2">
           {batchOps.map((o) => (
             // eslint-disable-next-line jsx-a11y/label-has-associated-control -- o texto vem de expressões t() dentro do label
-            <label key={o.id} className={cn("flex min-h-12 items-center gap-2 rounded-lg border-[1.5px] px-3", opKey === o.id ? "border-primary bg-in-production-bg" : "border-input")}>
+            <label key={o.id} className={cn("flex min-h-12 items-center gap-2 rounded-2xl border px-3", opKey === o.id ? "border-primary bg-mint-50" : "border-input")}>
               <input type="radio" name="op" className="size-5 accent-primary" checked={opKey === o.id} onChange={() => setOpKey(o.id)} />
               <span>
                 <span className="block font-semibold">{t(`machines.${o.machine}` as "machines.recta")}</span>
@@ -207,7 +207,7 @@ function LogForm({ worker, batches, ops, onDone }: { worker: WorkerCard; batches
             </label>
           ))}
           {MACHINES.filter((m) => !batchOps.some((o) => o.machine === m)).map((m) => (
-            <label key={m} className={cn("flex min-h-12 items-center gap-2 rounded-lg border-[1.5px] border-dashed px-3", opKey === `new:${m}` ? "border-primary bg-in-production-bg" : "border-input")}>
+            <label key={m} className={cn("flex min-h-12 items-center gap-2 rounded-2xl border border-dashed px-3", opKey === `new:${m}` ? "border-primary bg-mint-50" : "border-input")}>
               <input type="radio" name="op" className="size-5 accent-primary" checked={opKey === `new:${m}`} onChange={() => setOpKey(`new:${m}`)} />
               <span className="font-semibold">{t(`machines.${m}`)}</span>
             </label>
@@ -231,7 +231,7 @@ function LogForm({ worker, batches, ops, onDone }: { worker: WorkerCard; batches
             inputMode="numeric"
             value={pieces || ""}
             onChange={(e) => setPieces(Number(e.target.value.replace(/\D/g, "")) || 0)}
-            className="tabular-money h-14 w-full min-w-0 rounded-lg border-[1.5px] border-input bg-card text-center text-3xl font-bold"
+            className="tabular-money h-14 w-full min-w-0 rounded-2xl border border-input bg-card text-center text-3xl font-bold"
           />
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2">
@@ -381,11 +381,11 @@ export function SettlementPanel({
       {previews.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-ink/20 bg-card px-4 py-8 text-center text-muted-foreground">{t("production.settleNothing")}</p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="grid gap-4 lg:grid-cols-2">
           {previews.map((p) => (
             <li key={p.workerId}>
-              <Card className="anim-rise p-5">
-                <p className="text-lg font-bold">{p.name}</p>
+              <Card className="anim-rise flex h-full flex-col p-5">
+                <p className="text-lg font-medium">{p.name}</p>
                 <dl className="mt-2 grid grid-cols-3 gap-2">
                   <div>
                     <dt className="text-muted-foreground">{t("receipt.production")}</dt>
@@ -397,10 +397,10 @@ export function SettlementPanel({
                   </div>
                   <div>
                     <dt className="text-muted-foreground">{t("receipt.net")}</dt>
-                    <dd className="tabular-money text-xl font-bold">{f(p.net)}</dd>
+                    <dd className={cn("tabular-money text-xl font-bold", p.net < 0 && "text-overdue-calote-fg")}>{f(p.net)}</dd>
                   </div>
                 </dl>
-                <p className="mt-2 text-muted-foreground tabular-money">
+                <p className="mb-4 mt-2 text-muted-foreground tabular-money">
                   {t("production.perDay", { amount: f(p.perDay), days: t("common.days", { count: p.daysWorked }) })} · {t("common.pieces", { count: p.pieces })}
                 </p>
                 {p.belowMinWage ? (
@@ -414,7 +414,7 @@ export function SettlementPanel({
                   </Notice>
                 ) : null}
                 {canWrite ? (
-                  <Button className="mt-3" block disabled={pending} onClick={() => run(() => closeSettlementAction(p.workerId, period))}>
+                  <Button className="mt-auto self-start" disabled={pending} onClick={() => run(() => closeSettlementAction(p.workerId, period))}>
                     {t("production.settleCalc")}
                   </Button>
                 ) : null}
@@ -431,7 +431,7 @@ export function SettlementPanel({
         {settlements.length === 0 ? (
           <p className="text-muted-foreground">{t("production.noHistory")}</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="grid gap-3 lg:grid-cols-2">
             {settlements.map((s) => {
               const url = `${baseUrl}/${locale}/r/${s.token}`;
               const msg = receiptMessage(locale as "es" | "pt-BR", { worker: s.workerName, grossCents: s.gross, advancesCents: s.advances, netCents: s.net, url });

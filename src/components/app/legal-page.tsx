@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, Check, Info } from "@/components/icons";
+import { ArrowRight, Check } from "@/components/icons";
 import { Link } from "@/i18n/navigation";
 import { legal, legalValue, abuseChannel } from "@/config/legal";
 import type { LegalDoc } from "@/content/legal";
@@ -30,14 +30,6 @@ export async function LegalPage({ doc, version, related }: { doc: LegalDoc; vers
         </p>
         <h1 className="text-hero mt-4 text-5xl text-balance sm:text-6xl">{doc.title}</h1>
         <p className="mt-5 max-w-2xl text-lg text-muted-foreground">{doc.lead}</p>
-        {version ? (
-          <p className="mt-5 inline-flex items-start gap-2 rounded-full border border-ink/10 bg-card px-4 py-2 text-sm text-muted-foreground">
-            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            <span>
-              <span className="font-medium text-foreground">{t("draftShort")}.</span> {t("pendingSources")}
-            </span>
-          </p>
-        ) : null}
       </header>
 
       {/* resumo */}

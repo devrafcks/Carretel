@@ -8,7 +8,9 @@ import { formatDate } from "@/lib/dates";
 import { brand } from "@/config/brand";
 import { legal, legalValue } from "@/config/legal";
 import { withinRefundWindow } from "@/lib/subscription";
-import { billingMode } from "@/server/billing";
+import { billingIsTestMode, billingMode, pixAutomaticoAvailable, reconcileSubscription } from "@/server/billing";
+import { redirect } from "next/navigation";
+import { CircleCheck, Clock } from "@/components/icons";
 import { Paywall, CancelSubscription, WorkshopForm, PixForm, SettingsForm, DangerZone } from "./account-client";
 import { Download } from "@/components/icons";
 import { AvatarEditor } from "@/components/app/avatar-editor";
@@ -20,6 +22,11 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
   setRequestLocale(locale);
   const ctx = await requireWorkshop();
   const t = await getTranslations();
+  // confere com a AbacatePay (volta do checkout, cancelamento pelo portal etc.) — funciona mesmo sem webhook
+  if (ctx.subscription && billingMode() === "abacatepay") {
+    const next = await reconcileSubscription(ctx);
+    if (next && next !== ctx.workshop.planStatus) redirect(`/${locale}/cuenta?checkout=${checkout === "ok" ? "done" : "sync"}`);
+  }
   const ws = ctx.workshop;
   const sub = ctx.subscription;
   const settings = await ctx.tdb.first(workshopSettings);
@@ -67,12 +74,27 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
           <StatusBadge tone={tone} label={t(`status.plan.${status}`)} />
         </div>
         <p className="mt-2 text-lg font-semibold tabular-money">{statusText}</p>
+        {(checkout === "done" || checkout === "ok") && (status === "active" || status === "trialing") ? (
+          <Notice tone="success" className="mt-3" icon={<CircleCheck />} role="status">
+            <p className="font-medium">{t("account.checkoutDone")}</p>
+          </Notice>
+        ) : null}
+        {checkout === "ok" && status === "pending_checkout" ? (
+          <Notice tone="info" className="mt-3" icon={<Clock />} role="status">
+            <p>
+              {t("account.checkoutConfirming")}{" "}
+              <a href={`/${locale}/cuenta?checkout=ok`} className="font-medium underline underline-offset-4">
+                {t("account.refreshNow")}
+              </a>
+            </p>
+          </Notice>
+        ) : null}
         {checkout === "cancel" ? (
           <Notice tone="danger" className="mt-3" role="alert">
             <p>{t("account.checkoutFailed")}</p>
           </Notice>
         ) : null}
-        {showPaywall ? <Paywall mode={billingMode()} /> : null}
+        {showPaywall ? <Paywall mode={billingMode()} testMode={billingIsTestMode()} pixAvailable={pixAutomaticoAvailable()} /> : null}
         {canCancel ? <CancelSubscription refundEligible={withinRefundWindow(sub?.firstChargedAt)} /> : null}
       </Card>
 

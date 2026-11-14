@@ -7,16 +7,17 @@ export async function SiteFooter() {
   const t = await getTranslations();
   const cols = [
     {
-      title: "Carretel",
+      title: t("landing.footerProduct"),
       links: [
+        ["/#produto", t("landing.demoKicker")],
         ["/#como-funciona", t("landing.navHow")],
         ["/calculadora", t("landing.navCalc")],
-        ["/precios", t("landing.footerPricing")],
+        ["/#precios", t("landing.footerPricing")],
         ["/entrar", t("landing.login")],
       ],
     },
     {
-      title: t("landing.footerAbout"),
+      title: t("landing.footerCompany"),
       links: [
         ["/quienes-somos", t("landing.footerAbout")],
         ["/accesibilidad", t("landing.footerA11y")],
@@ -55,18 +56,21 @@ export async function SiteFooter() {
       </div>
       <div className="border-t border-white/10">
         <dl className="container-wide flex flex-wrap gap-x-6 gap-y-1 py-5 text-sm text-primary-foreground/70">
-          <div className="flex gap-1.5">
-            <dt>{t("legal.company")}:</dt>
-            <dd>{legalValue(legal.companyName)}</dd>
-          </div>
-          <div className="flex gap-1.5">
-            <dt>{t("legal.cnpj")}:</dt>
-            <dd>{legalValue(legal.cnpj)}</dd>
-          </div>
-          <div className="flex gap-1.5">
-            <dt>{t("legal.email")}:</dt>
-            <dd>{legalValue(legal.supportEmail)}</dd>
-          </div>
+          {/* só mostra o que já foi preenchido em config/legal.ts */}
+          {(
+            [
+              [t("legal.company"), legal.companyName],
+              [t("legal.cnpj"), legal.cnpj],
+              [t("legal.email"), legal.supportEmail],
+            ] as const
+          )
+            .filter(([, v]) => v.trim() !== "")
+            .map(([k, v]) => (
+              <div key={k} className="flex gap-1.5">
+                <dt>{k}:</dt>
+                <dd>{legalValue(v)}</dd>
+              </div>
+            ))}
           <div className="ml-auto">© {new Date().getFullYear()} Carretel</div>
         </dl>
       </div>

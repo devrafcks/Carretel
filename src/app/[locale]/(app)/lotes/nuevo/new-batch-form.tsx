@@ -314,7 +314,7 @@ export function NewBatchForm({ clients, initialPriceCents, initialQuantity }: { 
           <legend className="font-semibold">{t("batch.supplies")}</legend>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {(["client", "workshop"] as const).map((v) => (
-              <label key={v} className={cn("flex min-h-12 items-center gap-3 rounded-lg border-[1.5px] px-3", suppliesBy === v ? "border-primary bg-in-production-bg" : "border-input")}>
+              <label key={v} className={cn("flex min-h-12 items-center gap-3 rounded-2xl border px-3", suppliesBy === v ? "border-primary bg-mint-50" : "border-input")}>
                 <input type="radio" name="suppliesBy" value={v} checked={suppliesBy === v} onChange={() => setSuppliesBy(v)} className="size-5 accent-primary" />
                 {v === "client" ? t("batch.suppliesClient") : t("batch.suppliesWorkshop")}
               </label>

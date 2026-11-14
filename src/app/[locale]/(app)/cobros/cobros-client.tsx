@@ -82,7 +82,7 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: {
 
   return (
     <>
-      <ul className="space-y-3">
+      <ul className="grid items-start gap-4 xl:grid-cols-2">
         {items.map((i) => {
           const tone = i.days > 15 ? "late" : i.days > 7 ? "watch" : "ok";
           const msg = chargeMessage(i.clientLocale, { client: i.clientName, amountCents: i.openCents, deliveredOn: i.issuedOn, days: i.days, pix: i.pix, url: i.proofUrl });

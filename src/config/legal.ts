@@ -23,7 +23,7 @@ export interface LegalConfig {
 
 export const legal: LegalConfig = {
   companyName: "", // TODO B1
-  cnpj: "", // TODO B2 (CNPJ do SaaS, não do taller)
+  cnpj: "65.605.980/0001-00", // B2 (CNPJ do SaaS, informado pelo responsável em 14/11/2026)
   address: "", // TODO B3
   supportEmail: "", // TODO B4
   supportSlaDays: 5,

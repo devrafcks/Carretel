@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ChevronRight } from "@/components/icons";
+import { ChevronRight, Plus } from "@/components/icons";
 import { requireWorkshop } from "@/lib/session";
 import { listBatches } from "@/server/queries";
 import { PageHeader } from "@/components/app/page-header";
@@ -31,8 +31,9 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
         backHref="/hoy"
         backLabel={t("common.back")}
         action={
-          <Link href="/lotes/nuevo" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-sun px-5 font-extrabold text-ink transition-transform hover:-translate-y-0.5">
-            {t("hoy.emptyCta")}
+          <Link href="/lotes/nuevo" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-primary px-5 font-medium text-primary-foreground transition-colors hover:bg-primary/85">
+            <Plus aria-hidden="true" className="size-5" />
+            {t("nav.newBatchAria")}
           </Link>
         }
       />
