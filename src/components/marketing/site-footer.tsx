@@ -32,7 +32,7 @@ export async function SiteFooter() {
   ] as const;
   return (
     <footer className="bg-ink text-primary-foreground">
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <div className="container-wide grid gap-10 py-16 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <span className="inline-flex items-center gap-2">
             <BrandMark className="size-8 text-sun" />
@@ -57,7 +57,7 @@ export async function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-white/10">
-        <dl className="mx-auto flex max-w-6xl flex-wrap gap-x-6 gap-y-1 px-4 py-5 text-sm text-primary-foreground/70 sm:px-6">
+        <dl className="container-wide flex flex-wrap gap-x-6 gap-y-1 py-5 text-sm text-primary-foreground/70">
           <div className="flex gap-1.5">
             <dt>{t("legal.company")}:</dt>
             <dd>{legalValue(legal.companyName)}</dd>

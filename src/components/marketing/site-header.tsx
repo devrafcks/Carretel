@@ -9,7 +9,7 @@ export async function SiteHeader() {
   const t = await getTranslations("landing");
   return (
     <header className="sticky top-0 z-[100] border-b border-border/60 bg-background">
-      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="container-wide flex items-center gap-3 py-3">
         <Link href="/" className="mr-auto inline-flex min-h-12 items-center" aria-label="Carretel">
           <BrandLockup />
         </Link>
