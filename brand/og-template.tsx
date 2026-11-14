@@ -29,13 +29,12 @@ export function OgCard({ locale }: { locale: string }) {
       <div style={{ width: 28, height: "100%", background: C.primary, display: "flex" }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <svg width="72" height="72" viewBox="0 0 32 32" fill="none" stroke={C.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 5h13l5 5v17H7z" />
-            <path d="M20 5v5h5" />
-            <path d="M10.5 16h2.5M15 16h2.5" />
-            <path d="M19.5 16h1a1.5 1.5 0 0 1 1.5 1.5V23" stroke={C.accentForeground} />
+          <svg width="72" height="72" viewBox="0 0 32 32" fill="none">
+            <path d="M23.5 8.5A10 10 0 1 0 23.5 23.5" stroke={C.primary} strokeWidth="6" strokeLinecap="round" />
+            <circle cx="16" cy="16" r="2.6" fill={C.accentForeground} />
+            <path d="M27.2 23.5h2.3" stroke={C.accentForeground} strokeWidth="3" strokeLinecap="round" />
           </svg>
-          <div style={{ fontSize: 48, fontWeight: 700, color: C.foreground, letterSpacing: -0.5 }}>Carretel</div>
+          <div style={{ fontSize: 52, fontWeight: 700, color: C.primary, letterSpacing: -1.5 }}>carretel</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontSize: 76, fontWeight: 700, color: C.foreground, lineHeight: 1.05, letterSpacing: -1.5 }}>{headline}</div>

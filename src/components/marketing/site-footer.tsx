@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { BrandMark } from "@/components/brand/mark";
+import { BrandLockup } from "@/components/brand/mark";
 import { legal, legalValue } from "@/config/legal";
 
 export async function SiteFooter() {
@@ -34,10 +34,7 @@ export async function SiteFooter() {
     <footer className="bg-ink text-primary-foreground">
       <div className="container-wide grid gap-10 py-16 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
-          <span className="inline-flex items-center gap-2">
-            <BrandMark className="size-8 text-sun" />
-            <span className="font-display text-2xl font-extrabold">Carretel</span>
-          </span>
+          <BrandLockup inverted />
           <p className="mt-3 max-w-xs text-primary-foreground/80">{t("landing.footerTagline")}</p>
           <div className="stitch-animated mt-5 w-40 text-sun" aria-hidden="true" />
         </div>

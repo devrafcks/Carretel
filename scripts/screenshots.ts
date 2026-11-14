@@ -26,7 +26,7 @@ async function main() {
   await page.route("**/seeb-widget.pages.dev/**", (r) => r.abort());
 
   await page.goto(`${BASE}/es/lotes?f=all`, { waitUntil: "networkidle" });
-  await page.locator('main a[href*="/es/lotes/"]').filter({ hasNotText: "+" }).first().click();
+  await page.locator('main a[href*="/es/lotes/"]').filter({ hasText: /Entregado|Cerrado/ }).first().click();
   await page.waitForLoadState("networkidle");
   const proofHref = await page.locator('a[href*="/c/"]').first().getAttribute("href");
   for (const [loc, suffix] of [["es", ""], ["pt-BR", "-pt"]] as const) {

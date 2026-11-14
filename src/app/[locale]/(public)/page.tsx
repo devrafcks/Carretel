@@ -3,6 +3,7 @@ import { ArrowRight, Calculator, Check, CircleCheck, Plus, Sparkles, Banknote, S
 import { Link } from "@/i18n/navigation";
 import { Reveal, CountUp } from "@/components/motion/reveal";
 import { PhoneMockup } from "@/components/marketing/phone";
+import { RoundBadge, StitchWave } from "@/components/marketing/round-badge";
 import { InstallHint } from "@/components/app/install-hint";
 import { cn } from "@/lib/utils";
 
@@ -65,14 +66,13 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
 
           {/* ilustração sem moldura, fundida ao fundo, + cartões flutuantes */}
           <div className="relative mx-auto w-full max-w-[44rem] pt-12 lg:self-end lg:pl-6 lg:pt-28">
-            <div className="absolute right-0 top-8 z-10 hidden text-right font-display leading-none text-primary lg:block">
-              <span className="block text-sm font-extrabold uppercase tracking-[0.18em]">{t("planFreeNote")}</span>
-              <span className="block text-5xl font-black">{t("planFreePrice")}</span>
+            <div className="absolute right-0 top-6 z-10 hidden lg:block">
+              <RoundBadge ring={`${t("planFreeNote")} · ${t("trust1")} · `} value={t("planFreePrice")} />
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/illustrations/hero-cutout.svg" alt="" width={720} height={720} className="anim-pop delay-2 relative block h-auto w-full" fetchPriority="high" />
             <div className="anim-float absolute left-0 top-16 sm:-left-4 lg:left-[-3.5rem] lg:top-1/4" aria-hidden="true">
-              <div className="anim-pop delay-4 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3 shadow-lift">
+              <div className="anim-pop delay-4 flex items-center gap-3 rounded-2xl border-2 border-ink bg-card px-4 py-3 shadow-[5px_5px_0_var(--ink)]">
                 <span className="inline-flex size-10 items-center justify-center rounded-xl bg-paid-solid text-paid-solid-fg">
                   <CircleCheck className="size-6" />
                 </span>
@@ -83,7 +83,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
               </div>
             </div>
             <div className="anim-float-tilt absolute bottom-10 right-0 lg:bottom-24" aria-hidden="true">
-              <div className="anim-pop delay-5 rounded-2xl bg-ink px-5 py-4 text-primary-foreground shadow-lift">
+              <div className="anim-pop delay-5 rounded-2xl border-2 border-ink bg-ink px-5 py-4 text-primary-foreground shadow-[5px_5px_0_var(--vivid)]">
                 <span className="flex items-center gap-2 text-sm font-bold text-sun">
                   <Banknote className="size-4" /> {t("floatPix")}
                 </span>
@@ -96,6 +96,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
         </div>
       </section>
 
+      <StitchWave className="-mb-px -mt-px bg-secondary" />
       {/* ───────── MARQUEE ───────── */}
       <section aria-label={t("featuresTitle")} className="overflow-hidden border-y border-ink bg-ink py-5 text-primary-foreground">
         <div className="anim-marquee flex w-max gap-10 whitespace-nowrap">
@@ -118,7 +119,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
             <div className="absolute -bottom-32 -left-20 size-80 rounded-full bg-in-production-solid/40" aria-hidden="true" />
             <div className="relative grid items-end gap-10 lg:grid-cols-[1fr_1.15fr]">
               <div className="pb-12">
-                <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-sun">{t("showKicker")}</p>
+                <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-sun">{t("showKicker")}</p>
                 <h2 className="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">{t("showTitle")}</h2>
                 <p className="mt-4 max-w-md text-lg text-primary-foreground/85">{t("showBody")}</p>
                 <Link href="/entrar" className={cn(pill, "mt-8 bg-sun text-ink hover:-translate-y-0.5")}>
@@ -143,7 +144,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section id="como-funciona" className="scroll-mt-20 bg-secondary/60 py-20">
         <div className="container-wide">
           <Reveal>
-            <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-vivid-strong">{t("howKicker")}</p>
+            <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-vivid-strong">{t("howKicker")}</p>
             <h2 className="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
               {t("howTitleA")} <span className="text-vivid">{t("howTitleB")}</span>
             </h2>
@@ -151,12 +152,15 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           <ol className="mt-12 grid gap-6 md:grid-cols-3">
             {steps.map((s, i) => (
               <Reveal as="li" key={s.title} delay={i * 140}>
-                <article className="lift h-full overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft">
+                <article className="h-full overflow-hidden rounded-[2rem] border-2 border-ink bg-card shadow-[6px_6px_0_var(--ink)] transition-transform duration-200 hover:-translate-x-0.5 hover:-translate-y-1">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={s.img} alt="" width={480} height={480} loading="lazy" className="block aspect-[4/3] w-full object-cover" />
                   <div className="p-6">
-                    <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-muted-foreground">{t("step", { n: i + 1 })}</p>
-                    <h3 className="mt-1 font-display text-2xl font-extrabold">{s.title}</h3>
+                    <div className="flex items-baseline gap-3">
+                      <span className="font-display text-5xl font-black leading-none text-vivid">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{t("step", { n: i + 1 })}</span>
+                    </div>
+                    <h3 className="mt-3 font-display text-2xl font-extrabold">{s.title}</h3>
                     <p className="mt-2 text-muted-foreground">{s.body}</p>
                   </div>
                 </article>
@@ -173,7 +177,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
         <div className="container-wide relative grid gap-16 lg:grid-cols-2">
           <div>
             <Reveal>
-              <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-sun">{t("darkKicker")}</p>
+              <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-sun">{t("darkKicker")}</p>
               <h2 className="mt-3 font-display text-4xl font-extrabold leading-[1.05] sm:text-6xl">
                 {t("darkTitleA")}
                 <br />
@@ -231,7 +235,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           </div>
         </Reveal>
         <Reveal className="order-1 lg:order-2">
-          <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-vivid-strong">{t("calcKicker")}</p>
+          <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-vivid-strong">{t("calcKicker")}</p>
           <h2 className="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
             {t("calcTitleA")} <span className="text-vivid">{t("calcTitleB")}</span>
           </h2>
@@ -271,7 +275,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section id="precios" className="scroll-mt-20 py-20">
         <div className="container-wide">
           <Reveal className="text-center">
-            <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-vivid-strong">{t("pricingKicker")}</p>
+            <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-vivid-strong">{t("pricingKicker")}</p>
             <h2 className="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">
               {t("pricingTitleA")} <span className="text-vivid">{t("pricingTitleB")}</span>
             </h2>
@@ -296,8 +300,8 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
               </div>
             </Reveal>
             <Reveal delay={150}>
-              <div className="lift relative flex h-full flex-col overflow-hidden rounded-[2rem] bg-primary p-8 text-primary-foreground shadow-lift">
-                <span className="absolute right-6 top-6 rounded-full bg-sun px-3 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-ink">{t("planProBadge")}</span>
+              <div className="lift relative flex h-full flex-col rounded-[2rem] bg-primary p-8 text-primary-foreground shadow-lift">
+                <RoundBadge ring={`${t("planProBadge")} · ${t("trust1")} · `} value="R$35" sub={t("trust4").replace(/^R\$ ?35/, "").trim() || undefined} className="absolute -right-4 -top-4 size-28 bg-sun text-ink sm:size-32 [&_span]:text-ink" />
                 <p className="text-sm font-extrabold uppercase tracking-[0.16em] text-primary-foreground/70">{t("planProName")}</p>
                 <p className="mt-4 font-display">
                   <span className="text-2xl font-bold">R$ </span>
@@ -326,7 +330,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section id="faq" className="scroll-mt-20 bg-secondary/60 py-20">
         <div className="container-wide grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <Reveal>
-            <p className="text-sm font-extrabold uppercase tracking-[0.2em] text-vivid-strong">{t("navFaq")}</p>
+            <p className="font-mono text-sm font-semibold uppercase tracking-[0.18em] text-vivid-strong">{t("navFaq")}</p>
             <h2 className="mt-3 font-display text-4xl font-extrabold leading-tight sm:text-5xl">{t("faqTitle")}</h2>
             <div className="mt-8 hidden lg:block">
               <InstallHint />

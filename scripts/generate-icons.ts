@@ -17,16 +17,14 @@ const CREAM = "#FEFCF8";
 
 // Traço da marca (mesma geometria de brand/logo-mark.svg), em creme
 const MARK_PATHS =
-  '<g fill="none" stroke="' +
-  CREAM +
-  '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-  '<path d="M7 5h13l5 5v17H7z"/><path d="M20 5v5h5"/><path d="M10.5 16h2.5M15 16h2.5"/>' +
-  '<path d="M19.5 16h1a1.5 1.5 0 0 1 1.5 1.5V23"/></g>';
+  '<path d="M23.5 8.5A10 10 0 1 0 23.5 23.5" fill="none" stroke="' + CREAM + '" stroke-width="6" stroke-linecap="round"/>' +
+  '<circle cx="16" cy="16" r="2.6" fill="#F2B33D"/>' +
+  '<path d="M27.2 23.5h2.3" stroke="#F2B33D" stroke-width="3" stroke-linecap="round"/>';
 
 /** Ícone com a marca ocupando `markRatio` do lado (a marca vai de x=7..25, y=5..27 na grade 32). */
 function iconSvg(size: number, markRatio: number): string {
   const markBox = size * markRatio;
-  const scale = markBox / 22; // conteúdo útil ≈ 22 unidades (5..27)
+  const scale = markBox / 24; // conteúdo útil ≈ 24 unidades (4..29.5)
   const offset = (size - 32 * scale) / 2;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +

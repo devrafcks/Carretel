@@ -14,8 +14,8 @@ export default async function AuthLayout({ children, params }: { children: React
       {/* painel ilustrado (desktop) */}
       <aside className="relative hidden overflow-hidden bg-primary p-10 text-primary-foreground lg:flex lg:flex-col">
         <div className="absolute -right-24 -top-24 size-96 rounded-full border-[56px] border-white/5" aria-hidden="true" />
-        <Link href="/" className="relative inline-flex min-h-12 items-center text-primary-foreground [&_span]:text-primary-foreground" aria-label="Carretel">
-          <BrandLockup />
+        <Link href="/" className="relative inline-flex min-h-12 items-center" aria-label="Carretel">
+          <BrandLockup inverted />
         </Link>
         <div className="relative my-auto">
           {/* eslint-disable-next-line @next/next/no-img-element */}
