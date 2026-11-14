@@ -82,9 +82,11 @@ export function computeAccess(i: AccessInput): Access {
     case "free":
     case "pending_checkout":
     default: {
+      // 3 lotes completos (receber → entregar → cobrar): esgotar a cota só bloqueia o 4º lote;
+      // passar dos 30 dias bloqueia a escrita (modo leitura), mas nunca o "Registrar pago".
       const exhausted = freeRemaining === 0 || freeExpired;
       return {
-        canWrite: !exhausted,
+        canWrite: !freeExpired,
         canCreateBatch: !exhausted,
         canMarkPaid: true,
         reason: exhausted ? "free_exhausted" : "ok",

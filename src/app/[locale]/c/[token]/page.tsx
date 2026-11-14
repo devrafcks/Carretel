@@ -9,6 +9,7 @@ import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { verificationCode } from "@/lib/crypto";
 import { BrandMark } from "@/components/brand/mark";
+import { PageHeader } from "@/components/app/page-header";
 import { Card, Notice } from "@/components/ui/card";
 import { brand } from "@/config/brand";
 import { ProofActions, PixBox } from "./proof-client";
@@ -66,7 +67,14 @@ export default async function ProofPage({ params }: { params: Promise<{ locale: 
 
   return (
     <ProofShell {...shell}>
-      <Card className="ficha-corner p-5">
+      <PageHeader
+        tone="indigo"
+        illustration="/illustrations/comprove.svg"
+        kicker={s.workshop.name}
+        title={t("proof.titleFor")}
+        subtitle={<span className="tabular-money">{t("common.pieces", { count: s.delivery.quantity })} · {formatBRL(s.delivery.amountCents, locale)}</span>}
+      />
+      <Card className="anim-rise delay-1 ficha-corner rounded-3xl p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-muted-foreground">{t("proof.from")}</p>
@@ -190,9 +198,10 @@ function ProofShell({ children, title, other, token }: { children: React.ReactNo
         <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3">
           <span className="inline-flex items-center gap-2 text-primary">
             <BrandMark />
-            <span className="font-display text-lg font-semibold text-foreground">{title}</span>
+            <span className="font-display text-lg font-extrabold text-foreground">Carretel</span>
+            <span className="sr-only">{title}</span>
           </span>
-          <a href={`/${other}/c/${token}`} lang={other} className="inline-flex min-h-12 items-center rounded-lg border border-border px-3 font-semibold">
+          <a href={`/${other}/c/${token}`} lang={other} className="inline-flex min-h-12 items-center rounded-full border border-ink/15 bg-card px-4 font-bold shadow-soft">
             {other === "es" ? "Español" : "Português"}
           </a>
         </div>

@@ -59,3 +59,16 @@ describe("acesso", () => {
     expect(withinRefundWindow(new Date("2026-11-01T00:00:00Z"), now)).toBe(false);
   });
 });
+
+describe("freemium de 3 lotes completos", () => {
+  it("com a cota usada ainda produz, entrega e cobra os 3 lotes; só bloqueia o 4º", () => {
+    const a = computeAccess({ planStatus: "free", freeBatchesUsed: 3, freeStartedAt: new Date("2026-11-10T00:00:00Z"), now: new Date("2026-11-14T00:00:00Z"), freeBatchLimit: 3, freeDaysLimit: 30 });
+    expect(a.canWrite).toBe(true);
+    expect(a.canCreateBatch).toBe(false);
+  });
+  it("depois de 30 dias vira só leitura (menos Registrar pago)", () => {
+    const a = computeAccess({ planStatus: "free", freeBatchesUsed: 1, freeStartedAt: new Date("2026-10-01T00:00:00Z"), now: new Date("2026-11-14T00:00:00Z"), freeBatchLimit: 3, freeDaysLimit: 30 });
+    expect(a.canWrite).toBe(false);
+    expect(a.canMarkPaid).toBe(true);
+  });
+});

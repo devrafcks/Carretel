@@ -18,7 +18,7 @@ export default async function PagoSimuladoPage({ params, searchParams }: { param
   const t = await getTranslations();
   return (
     <div className="space-y-4">
-      <PageHeader title={t("account.simulatedTitle")} backHref="/cuenta" backLabel={t("common.back")} />
+      <PageHeader tone="sun" illustration="/illustrations/cobre.svg" title={t("account.simulatedTitle")} backHref="/cuenta" backLabel={t("common.back")} />
       <Notice tone="info">
         <p>{t("account.simulatedLead")}</p>
       </Notice>

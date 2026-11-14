@@ -54,7 +54,7 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("account.title")} backHref="/mas" backLabel={t("common.back")} />
+      <PageHeader tone="ink" illustration="/illustrations/hero.svg" kicker={t(`status.plan.${status}`)} title={ws.name} subtitle={t("account.title")} backHref="/mas" backLabel={t("common.back")} />
 
       <Card className="p-4" id="plan">
         <div className="flex flex-wrap items-center justify-between gap-2">

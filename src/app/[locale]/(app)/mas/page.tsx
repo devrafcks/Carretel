@@ -32,13 +32,13 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
   ] as const;
   return (
     <div className="space-y-5">
-      <PageHeader title={t("more.title")} />
+      <PageHeader tone="indigo" illustration="/illustrations/hero.svg" title={t("more.title")} />
       {groups.map((g, i) => (
-        <ul key={i} className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <ul key={i} className="anim-rise delay-1 divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
           {g.map(([href, Icon, label]) => (
             <li key={href}>
               <Link href={href} className="flex min-h-14 items-center gap-3 px-4 hover:bg-muted">
-                <Icon aria-hidden="true" className="size-5 text-primary" />
+                <span className="inline-flex size-10 items-center justify-center rounded-xl bg-in-production-bg text-in-production-fg"><Icon aria-hidden="true" className="size-5" /></span>
                 <span className="flex-1 font-semibold">{label}</span>
                 <ChevronRight aria-hidden="true" className="size-5 text-muted-foreground" />
               </Link>

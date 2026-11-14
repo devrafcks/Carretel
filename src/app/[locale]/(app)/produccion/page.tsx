@@ -56,14 +56,14 @@ export default async function ProduccionPage({ params, searchParams }: { params:
 
   return (
     <div>
-      <PageHeader title={t("production.title")} />
-      <nav aria-label={t("production.title")} className="mb-5 grid grid-cols-3 rounded-lg border border-border bg-card p-0.5">
+      <PageHeader tone="terracota" illustration="/illustrations/acerto.svg" kicker={labels[tab]} title={t("production.title")} subtitle={t("production.settlePeriod", { start: formatDate(period.start, locale), end: formatDate(period.end, locale) })} />
+      <nav aria-label={t("production.title")} className="anim-rise delay-1 mb-5 grid grid-cols-3 gap-1 rounded-full border border-ink/10 bg-card p-1 shadow-soft">
         {TABS.map((k) => (
           <Link
             key={k}
             href={k === "hoy" ? "/produccion" : `/produccion?tab=${k}`}
             aria-current={tab === k ? "page" : undefined}
-            className={cn("inline-flex min-h-12 items-center justify-center rounded-md px-2 font-semibold", tab === k ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+            className={cn("inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-full px-2 text-[0.9375rem] font-bold leading-tight transition-colors", tab === k ? "bg-primary text-primary-foreground shadow-soft" : "hover:bg-muted")}
           >
             {labels[k]}
           </Link>

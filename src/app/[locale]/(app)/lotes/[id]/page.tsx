@@ -28,6 +28,9 @@ export default async function LoteDetailPage({ params }: { params: Promise<{ loc
   return (
     <div className="space-y-5">
       <PageHeader
+        tone="indigo"
+        illustration={b.status === "delivered" || b.status === "closed" ? "/illustrations/comprove.svg" : "/illustrations/registre.svg"}
+        kicker={t(`status.batch.${b.status}`)}
         title={t("batch.detailTitle", { ref: b.reference ?? t("batch.noRef") })}
         subtitle={`${d.client?.name ?? t("common.noClient")} · ${t("batch.received", { date: formatDate(b.createdAt, locale, { year: "numeric" }) })}`}
         backHref="/lotes"

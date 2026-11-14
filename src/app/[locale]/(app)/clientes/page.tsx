@@ -12,7 +12,7 @@ export default async function ClientesPage({ params }: { params: Promise<{ local
   const clients = await listClients(ctx.tdb);
   return (
     <div>
-      <PageHeader title={t("clients.title")} backHref="/mas" backLabel={t("common.back")} />
+      <PageHeader tone="leaf" illustration="/illustrations/comprove.svg" title={t("clients.title")} backHref="/mas" backLabel={t("common.back")} />
       <ClientsManager canWrite={ctx.access.canWrite} clients={clients.map((c) => ({ id: c.id, name: c.name, phone: c.phoneE164 ?? "", locale: c.preferredLocale, notes: c.notes ?? "" }))} />
     </div>
   );

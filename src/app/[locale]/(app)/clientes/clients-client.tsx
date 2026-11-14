@@ -30,7 +30,7 @@ export function ClientsManager({ clients, canWrite }: { clients: C[]; canWrite: 
       {clients.length === 0 ? (
         <EmptyState illustration={<FichaIllustration />} title={t("clients.empty")} />
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <ul className="anim-rise divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
           {clients.map((c) => (
             <li key={c.id} className="flex items-center gap-3 px-4 py-3">
               <span aria-hidden="true" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-secondary font-bold">

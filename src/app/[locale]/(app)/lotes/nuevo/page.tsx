@@ -18,7 +18,7 @@ export default async function NuevoCortePage({ params, searchParams }: { params:
 
   return (
     <div>
-      <PageHeader title={t("batch.newTitle")} backHref="/hoy" backLabel={t("common.back")} />
+      <PageHeader tone="indigo" illustration="/illustrations/registre.svg" kicker={t("landing.f1Title")} title={t("batch.newTitle")} backHref="/hoy" backLabel={t("common.back")} />
       {!ctx.access.canCreateBatch ? (
         <EmptyState
           illustration={<FichaIllustration />}

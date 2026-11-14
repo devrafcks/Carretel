@@ -24,16 +24,19 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
   return (
     <div>
       <PageHeader
+        tone="indigo"
+        illustration="/illustrations/registre.svg"
+        kicker={t("hoy.productionLabel")}
         title={t("batch.listTitle")}
         backHref="/hoy"
         backLabel={t("common.back")}
         action={
-          <Link href="/lotes/nuevo" className={buttonVariants({ size: "sm" })}>
+          <Link href="/lotes/nuevo" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-sun px-5 font-extrabold text-ink transition-transform hover:-translate-y-0.5">
             {t("hoy.emptyCta")}
           </Link>
         }
       />
-      <div role="group" className="mb-4 inline-flex rounded-lg border border-border bg-card p-0.5">
+      <div role="group" className="mb-4 inline-flex gap-1 rounded-full border border-ink/10 bg-card p-1 shadow-soft">
         {(
           [
             ["open", t("batch.filterOpen")],
@@ -44,7 +47,7 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
             key={k}
             href={k === "all" ? "/lotes?f=all" : "/lotes"}
             aria-current={(k === "all") === showAll ? "page" : undefined}
-            className={cn("inline-flex min-h-11 items-center rounded-md px-4 font-semibold", (k === "all") === showAll ? "bg-primary text-primary-foreground" : "hover:bg-muted")}
+            className={cn("inline-flex min-h-11 items-center rounded-full px-5 font-bold", (k === "all") === showAll ? "bg-primary text-primary-foreground shadow-soft" : "hover:bg-muted")}
           >
             {label}
           </Link>
@@ -61,7 +64,7 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
           }
         />
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <ul className="anim-rise divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
           {rows.map(({ batch: b, clientName }) => (
             <li key={b.id}>
               <Link href={`/lotes/${b.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 hover:bg-muted">

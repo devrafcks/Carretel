@@ -62,14 +62,18 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("cobros.title")} />
-      <Card className="ficha-corner p-4">
-        <p className="font-semibold text-muted-foreground">{t("hoy.owedLabel")}</p>
-        <p className="text-[2.25rem] font-bold leading-tight">
-          <Money cents={board.totalOpenCents} locale={locale} />
-        </p>
-        {board.totalOpenCents > 0 ? <AgingBars buckets={board.buckets} total={board.totalOpenCents} /> : null}
-      </Card>
+      <PageHeader
+        tone="ink"
+        illustration="/illustrations/cobre.svg"
+        kicker={t("cobros.title")}
+        title={<Money cents={board.totalOpenCents} locale={locale} className="text-4xl sm:text-5xl" />}
+        subtitle={t("hoy.owedSub", { count: board.open.length })}
+      />
+      {board.totalOpenCents > 0 ? (
+        <Card className="anim-rise delay-1 p-5">
+          <AgingBars buckets={board.buckets} total={board.totalOpenCents} />
+        </Card>
+      ) : null}
 
       {!ctx.access.canWrite ? (
         <Notice tone="info" icon={<Info />}>
@@ -93,7 +97,7 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
           <h2 id="paid" className="mb-2 font-display">
             {t("cobros.paidRecently")}
           </h2>
-          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          <ul className="anim-rise divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
             {board.paid.map((p) => (
               <li key={p.receivable.id} className="flex items-center justify-between gap-3 px-4 py-3">
                 <span className="min-w-0 truncate">

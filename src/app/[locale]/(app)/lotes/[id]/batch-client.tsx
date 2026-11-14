@@ -53,9 +53,11 @@ export function BatchActions({
       else router.refresh();
     });
 
-  if (!canWrite) return null;
+  const showDelivery = remaining > 0 && status !== "canceled" && status !== "closed";
+  const showCancel = status !== "canceled" && status !== "closed" && status !== "delivered";
+  if (!canWrite || (!showDelivery && !showCancel)) return null;
   return (
-    <Card className="p-4">
+    <Card className="anim-rise p-5">
       <h2 className="sr-only">{t("batch.actions")}</h2>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {status === "received" ? (
@@ -187,7 +189,7 @@ export function OperationsEditor({ batchId, ops, canWrite }: { batchId: string; 
   const [pending, start] = React.useTransition();
 
   return (
-    <Card className="p-4">
+    <Card className="anim-rise p-5">
       <h2 className="font-display text-lg">{t("batch.operationsTitle")}</h2>
       {ops.length ? (
         <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
@@ -284,7 +286,7 @@ export function DeliveryList({
   const [pending, start] = React.useTransition();
   const [fixFor, setFixFor] = React.useState<ProofView | null>(null);
 
-  if (!proofs.length) return <p className="rounded-lg border border-dashed border-border bg-card px-4 py-6 text-center text-muted-foreground">{t("batch.noDeliveries")}</p>;
+  if (!proofs.length) return <p className="rounded-2xl border border-dashed border-ink/20 bg-card px-4 py-8 text-center text-muted-foreground">{t("batch.noDeliveries")}</p>;
 
   return (
     <ul className="space-y-3">

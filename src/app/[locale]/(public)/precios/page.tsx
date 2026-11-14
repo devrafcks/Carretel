@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CircleCheck, QrCode, CreditCard } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { PageHeader } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -11,8 +12,8 @@ export default async function PreciosPage({ params }: { params: Promise<{ locale
   const tl = await getTranslations("landing");
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <h1 className="font-display text-3xl font-bold">{t("title")}</h1>
-      <Card className="mt-6 border-2 border-primary p-6">
+      <PageHeader tone="indigo" illustration="/illustrations/cobre.svg" title={t("title")} subtitle={t("free")} />
+      <Card className="anim-rise delay-1 rounded-[2rem] border-2 border-primary p-8 shadow-lift">
         <p className="font-display">
           <span className="tabular-money text-5xl font-bold">{t("price")}</span>
           <span className="text-xl text-muted-foreground">{t("perMonth")}</span>

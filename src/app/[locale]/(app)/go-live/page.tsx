@@ -29,7 +29,7 @@ export default async function GoLivePage({ params }: { params: Promise<{ locale:
   ];
   return (
     <div className="space-y-5">
-      <PageHeader title={t("title")} subtitle={t("lead")} backHref="/mas" />
+      <PageHeader tone="sun" illustration="/illustrations/calculadora.svg" title={t("title")} subtitle={t("lead")} backHref="/mas" />
       <Card className="p-4">
         <h2 className="font-display text-lg">{t("envTitle")}</h2>
         <ul className="mt-3 space-y-2">

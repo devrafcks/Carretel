@@ -1,14 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 import { Card, Notice } from "@/components/ui/card";
+import { PageHeader } from "./page-header";
 import { legal, legalValue, abuseChannel } from "@/config/legal";
 
 export async function LegalPage({ doc, version }: { doc: { title: string; sections: { h: string; p: string[] }[] }; version?: string }) {
   const t = await getTranslations("legal");
   return (
     <article className="mx-auto max-w-[40rem] px-4 py-10 sm:px-6">
-      <h1 className="font-display text-3xl font-bold">{doc.title}</h1>
-      {version ? <p className="mt-1 font-mono text-sm text-muted-foreground">{t("version", { version })}</p> : null}
+      <PageHeader tone="ink" illustration="/illustrations/comprove.svg" kicker="Carretel" title={doc.title} subtitle={version ? <span className="font-mono text-sm">{t("version", { version })}</span> : undefined} />
       <Notice tone="warning" className="mt-4" icon={<TriangleAlert />}>
         <p className="font-semibold">{t("draftBanner")}</p>
         <p className="mt-1">{t("pendingSources")}</p>

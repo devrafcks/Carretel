@@ -25,6 +25,12 @@ import { receiptMessage } from "@/lib/wa-templates";
 import { cn, initials, waLink } from "@/lib/utils";
 
 const MACHINES = ["recta", "overlock", "collareta", "interlock", "other"] as const;
+const AVATAR = [
+  "bg-primary text-primary-foreground",
+  "bg-vivid-strong text-primary-foreground",
+  "bg-paid-solid text-paid-solid-fg",
+  "bg-sun text-ink",
+];
 
 function useErr() {
   const t = useTranslations();
@@ -78,16 +84,16 @@ export function ProductionToday({
         </Notice>
       ) : null}
       <ul className="grid gap-3 sm:grid-cols-2">
-        {workers.map((w) => (
-          <li key={w.id}>
-            <Card className="p-4">
+        {workers.map((w, i) => (
+          <li key={w.id} className="anim-rise" style={{ animationDelay: `${i * 70}ms` }}>
+            <Card className="lift p-5">
               <button
                 type="button"
                 disabled={!canWrite || batches.length === 0}
                 onClick={() => setLogFor(w)}
                 className="flex w-full min-h-16 items-center gap-3 rounded-lg text-left disabled:cursor-not-allowed"
               >
-                <span aria-hidden="true" className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-in-production-bg font-display text-xl font-bold text-in-production-fg">
+                <span aria-hidden="true" className={cn("inline-flex size-16 shrink-0 items-center justify-center rounded-2xl font-display text-xl font-extrabold shadow-soft", AVATAR[i % AVATAR.length])}>
                   {initials(w.name)}
                 </span>
                 <span className="min-w-0 flex-1">
@@ -95,7 +101,9 @@ export function ProductionToday({
                   <span className="block tabular-money">{t("production.todayPieces", { pieces: t("common.pieces", { count: w.todayPieces }) })}</span>
                   <span className="block text-muted-foreground tabular-money">{t("production.pendingAmount", { amount: formatBRL(w.pendingCents - w.advancesCents, locale) })}</span>
                 </span>
-                <Plus aria-hidden="true" className="size-7 shrink-0 text-primary" />
+                <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-soft">
+                  <Plus aria-hidden="true" className="size-6" />
+                </span>
               </button>
               {canWrite ? (
                 <Button variant="secondary" block className="mt-3" onClick={() => setAdvFor(w)}>
@@ -371,12 +379,12 @@ export function SettlementPanel({
       ) : null}
 
       {previews.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border bg-card px-4 py-6 text-center text-muted-foreground">{t("production.settleNothing")}</p>
+        <p className="rounded-2xl border border-dashed border-ink/20 bg-card px-4 py-8 text-center text-muted-foreground">{t("production.settleNothing")}</p>
       ) : (
         <ul className="space-y-3">
           {previews.map((p) => (
             <li key={p.workerId}>
-              <Card className="p-4">
+              <Card className="anim-rise p-5">
                 <p className="text-lg font-bold">{p.name}</p>
                 <dl className="mt-2 grid grid-cols-3 gap-2">
                   <div>
@@ -429,7 +437,7 @@ export function SettlementPanel({
               const msg = receiptMessage(locale as "es" | "pt-BR", { worker: s.workerName, grossCents: s.gross, advancesCents: s.advances, netCents: s.net, url });
               return (
                 <li key={s.id}>
-                  <Card className="p-4">
+                  <Card className="anim-rise p-5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-semibold">
                         {s.isAdjustment ? `${t("production.adjustment")} · ` : ""}
@@ -542,7 +550,7 @@ export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: 
   return (
     <div className="space-y-5">
       {canWrite ? (
-        <Card className="p-4">
+        <Card className="anim-rise p-5">
           <h2 className="flex items-center gap-2 font-display text-lg">
             <UserPlus aria-hidden="true" className="size-5 text-primary" /> {t("production.addPerson")}
           </h2>
@@ -598,7 +606,7 @@ export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: 
       {workers.length === 0 ? (
         <EmptyState illustration={<FichaIllustration />} title={t("production.empty")} />
       ) : (
-        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+        <ul className="anim-rise divide-y divide-border overflow-hidden rounded-2xl border border-ink/10 bg-card shadow-soft">
           {workers.map((w) => (
             <li key={w.id} className="flex items-center gap-3 px-4 py-3">
               <span aria-hidden="true" className="inline-flex size-11 shrink-0 items-center justify-center rounded-full bg-in-production-bg font-bold text-in-production-fg">

@@ -6,6 +6,7 @@ import { requestMeta, audit } from "@/lib/audit";
 import { formatDate } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { BrandMark } from "@/components/brand/mark";
+import { PageHeader } from "@/components/app/page-header";
 import { Card, Notice } from "@/components/ui/card";
 import { getDbItems } from "./items";
 
@@ -30,7 +31,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ locale
             <BrandMark />
             <span className="font-display text-lg font-semibold text-foreground">{t("receipt.title")}</span>
           </span>
-          <a href={`/${other}/r/${token}`} lang={other} className="inline-flex min-h-12 items-center rounded-lg border border-border px-3 font-semibold">
+          <a href={`/${other}/r/${token}`} lang={other} className="inline-flex min-h-12 items-center rounded-full border border-ink/15 bg-card px-4 font-bold shadow-soft">
             {other === "es" ? "Español" : "Português"}
           </a>
         </div>
@@ -54,7 +55,14 @@ export default async function ReceiptPage({ params }: { params: Promise<{ locale
     const f = (c: number) => formatBRL(c, locale);
     return (
       <>
-        <Card className="ficha-corner p-5">
+        <PageHeader
+          tone="terracota"
+          illustration="/illustrations/acerto.svg"
+          kicker={r.workshop.name}
+          title={r.worker.name}
+          subtitle={<span className="tabular-money">{t("receipt.net")}: {f(s.netCents)}</span>}
+        />
+        <Card className="anim-rise delay-1 ficha-corner rounded-3xl p-6">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-muted-foreground">{r.workshop.name}</p>

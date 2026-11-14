@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Card, Notice } from "@/components/ui/card";
+import { PageHeader } from "@/components/app/page-header";
 import { Accessibility, Info } from "lucide-react";
 import { legal, legalValue } from "@/config/legal";
 
@@ -31,11 +32,7 @@ export default async function AccesibilidadPage({ params }: { params: Promise<{ 
   const t = await getTranslations("a11y");
   return (
     <div className="mx-auto max-w-3xl space-y-5 px-4 py-10 sm:px-6">
-      <h1 className="flex items-center gap-3 font-display text-3xl font-bold">
-        <Accessibility aria-hidden="true" className="size-8 text-primary" />
-        {t("title")}
-      </h1>
-      <p className="text-lg">{t("lead")}</p>
+      <PageHeader tone="leaf" illustration="/illustrations/hero.svg" kicker={<span className="inline-flex items-center gap-1.5"><Accessibility aria-hidden="true" className="size-4" /> WCAG 2.2 AA</span>} title={t("title")} subtitle={t("lead")} />
       <Notice tone="info" icon={<Info />}>
         <h2 className="font-display text-lg font-bold">{t("panelTitle")}</h2>
         <p className="mt-1">{t("panelBody")}</p>

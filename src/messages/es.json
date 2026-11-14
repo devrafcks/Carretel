@@ -444,7 +444,7 @@
   "production": {
     "title": "Producción",
     "tabToday": "Hoy",
-    "tabSettle": "Pago semanal",
+    "tabSettle": "Pagos",
     "tabTeam": "Equipo",
     "empty": "Agregue a su equipo para anotar la producción.",
     "addPerson": "+ Persona",
