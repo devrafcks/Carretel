@@ -8,10 +8,13 @@ import { OfflineProvider } from "@/components/app/offline-provider";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/components/ui/button";
 import { authMode } from "@/lib/auth/server";
+import { needsReconcile, reconcileSubscription } from "@/server/billing";
 
 /** Moldura do painel: sidebar à esquerda (computador), barra de cima e navegação inferior (celular). Conteúdo em largura total. */
 export async function AppShell({ ctx, children }: { ctx: WorkshopContext; children: React.ReactNode }) {
   const t = await getTranslations("common");
+  // teste que acabou / checkout em aberto: confere com a AbacatePay (no máx. 1x a cada 30 s por taller)
+  if (needsReconcile(ctx.workshop, ctx.subscription)) await reconcileSubscription(ctx).catch(() => null);
   const limited = !ctx.access.canCreateBatch;
   const showUpgrade = ctx.workshop.planStatus !== "active" && ctx.workshop.planStatus !== "trialing" && ctx.role === "owner";
   return (

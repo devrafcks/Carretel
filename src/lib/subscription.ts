@@ -21,7 +21,8 @@ export function nextPlanStatus(current: PlanStatus, event: SubscriptionEventType
   switch (event) {
     case "local.checkout_opened":
     case "local.renew":
-      return current === "active" || current === "trialing" ? current : "pending_checkout";
+      // abrir um checkout nunca tira acesso: quem tem plano, teste ou dias pagos de um plano cancelado mantém o estado
+      return current === "active" || current === "trialing" || current === "canceled" || current === "past_due" ? current : "pending_checkout";
     case "subscription.completed":
       return "active";
     case "subscription.trial_started":

@@ -19,6 +19,18 @@ describe("máquina de estados da assinatura", () => {
     expect(s).toBe("pending_checkout");
   });
 
+  it("abrir um checkout nunca tira acesso de quem tem plano, teste ou dias pagos", () => {
+    for (const s of ["active", "trialing", "canceled", "past_due"] as const) {
+      expect(nextPlanStatus(s, "local.checkout_opened")).toBe(s);
+    }
+    expect(nextPlanStatus("free", "local.checkout_opened")).toBe("pending_checkout");
+    expect(nextPlanStatus("read_only", "local.checkout_opened")).toBe("pending_checkout");
+  });
+
+  it("assinar de novo depois de cancelar volta a ativo", () => {
+    expect(nextPlanStatus(nextPlanStatus("canceled", "local.checkout_opened"), "subscription.completed")).toBe("active");
+  });
+
   it("trial só no cartão: trial_started → renewed = active", () => {
     expect(nextPlanStatus(nextPlanStatus("pending_checkout", "subscription.trial_started"), "subscription.renewed")).toBe(
       "active",

@@ -1107,5 +1107,62 @@
     "upgradeShort": "Ativar",
     "upgradeTitle": "Plano grátis",
     "upgradeBody": "Libere cortes ilimitados por R$ 35/mês."
+  },
+  "plan": {
+    "title": "Seu plano",
+    "name": "Carretel — plano mensal",
+    "price": "{amount}/mês",
+    "badge": {
+      "free": "Grátis",
+      "pending_checkout": "Aguardando pagamento",
+      "trialing": "Teste grátis",
+      "active": "Ativo",
+      "past_due": "Pagamento pendente",
+      "canceled": "Cancelado",
+      "read_only": "Somente leitura"
+    },
+    "headline": {
+      "free": "Plano grátis: {used} de {limit} cortes usados",
+      "pending_checkout": "Estamos aguardando a confirmação do pagamento",
+      "trialing": "Teste grátis até {date}",
+      "active": "Próxima cobrança em {date}",
+      "past_due": "Não conseguimos cobrar a última mensalidade",
+      "canceled": "Cancelado. Você tem acesso até {date}",
+      "read_only": "Sua conta está em modo leitura"
+    },
+    "sub": {
+      "free": "Ative o plano para registrar cortes sem limite.",
+      "pending_checkout": "Se você já pagou, a confirmação chega em alguns segundos. Se não terminou, pode tentar de novo.",
+      "trialing": "Nada é cobrado até o fim do teste. Se cancelar antes, não paga nada.",
+      "active": "A cobrança é automática, todo mês. Cancele quando quiser.",
+      "past_due": "Estamos tentando cobrar de novo. Se preferir trocar o cartão, cancele e assine de novo.",
+      "canceled": "Depois dessa data a conta fica em modo leitura: você vê e exporta tudo, mas não registra cortes novos.",
+      "read_only": "Você vê e exporta tudo e registra pagamentos recebidos. Para voltar a registrar, ative o plano."
+    },
+    "daysLeft": "{count, plural, =0 {termina hoje} one {falta # dia} other {faltam # dias}}",
+    "fMethod": "Forma de pagamento",
+    "fPrice": "Valor",
+    "fSince": "Assinante desde",
+    "fNext": "Próxima cobrança",
+    "fTrialEnd": "Fim do teste",
+    "fAccessUntil": "Acesso até",
+    "card": "Cartão",
+    "pix": "Pix Automático",
+    "refundUntil": "Reembolso integral disponível até {date}.",
+    "activate": "Ativar plano",
+    "resubscribe": "Assinar de novo",
+    "retry": "Tentar de novo",
+    "cancel": "Cancelar assinatura",
+    "cancelTrial": "Cancelar teste",
+    "cancelTitle": "Cancelar a assinatura?",
+    "cancelTrialTitle": "Cancelar o teste grátis?",
+    "cancelBodyTrial": "Nada é cobrado. Você continua com acesso até {date} e depois a conta fica em modo leitura. Seus dados não são apagados.",
+    "cancelBodyActive": "Não haverá mais cobranças. Você continua com acesso até {date} e depois a conta fica em modo leitura. Seus dados não são apagados.",
+    "keep": "Manter meu plano",
+    "confirmCancel": "Sim, cancelar",
+    "refundTitle": "Cancelar e pedir reembolso",
+    "refundBody": "Cancelamos agora e devolvemos o valor cobrado em até 7 dias. A conta fica em modo leitura.",
+    "confirmRefund": "Cancelar e pedir reembolso",
+    "canceledOk": "Assinatura cancelada."
   }
 }

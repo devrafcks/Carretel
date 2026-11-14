@@ -45,8 +45,8 @@ export function Paywall({ mode }: { mode: "abacatepay" | "simulated" | "disabled
   );
 }
 
-export function CancelSubscription({ refundEligible }: { refundEligible: boolean }) {
-  const t = useTranslations("account");
+export function CancelSubscription({ refundEligible, trialing = false, accessUntil = "" }: { refundEligible: boolean; trialing?: boolean; accessUntil?: string }) {
+  const t = useTranslations("plan");
   const router = useRouter();
   const errMsg = useErr();
   const [open, setOpen] = React.useState<null | "cancel" | "refund">(null);
@@ -62,31 +62,33 @@ export function CancelSubscription({ refundEligible }: { refundEligible: boolean
       }
     });
   return (
-    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+    <>
       <Button variant="outline" onClick={() => setOpen("cancel")}>
-        {t("cancel")}
+        {trialing ? t("cancelTrial") : t("cancel")}
       </Button>
       {refundEligible ? (
-        <Button variant="outline" onClick={() => setOpen("refund")}>
-          {t("cancelRefund")}
+        <Button variant="ghost" onClick={() => setOpen("refund")}>
+          {t("refundTitle")}
         </Button>
       ) : null}
       <Dialog open={Boolean(open)} onOpenChange={(o) => !o && setOpen(null)}>
         {open ? (
-          <DialogContent title={open === "refund" ? t("cancelRefund") : t("cancel")} closeLabel="×">
-            <p>{open === "refund" ? t("refundConfirm") : t("cancelConfirm")}</p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row-reverse">
+          <DialogContent title={open === "refund" ? t("refundTitle") : trialing ? t("cancelTrialTitle") : t("cancelTitle")} closeLabel="×">
+            <p className="text-muted-foreground">
+              {open === "refund" ? t("refundBody") : trialing ? t("cancelBodyTrial", { date: accessUntil }) : t("cancelBodyActive", { date: accessUntil })}
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
               <Button variant="destructive" disabled={pending} onClick={() => run(open === "refund")}>
-                {open === "refund" ? t("cancelRefund") : t("cancel")}
+                {open === "refund" ? t("confirmRefund") : t("confirmCancel")}
               </Button>
-              <Button variant="ghost" onClick={() => setOpen(null)}>
-                {t("goBack")}
+              <Button variant="outline" onClick={() => setOpen(null)}>
+                {t("keep")}
               </Button>
             </div>
           </DialogContent>
         ) : null}
       </Dialog>
-    </div>
+    </>
   );
 }
 

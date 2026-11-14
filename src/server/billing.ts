@@ -112,8 +112,11 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
   // um externalId novo por tentativa (a API devolve o checkout antigo se o externalId se repetir)
   const externalId = `ws_${ctx.workshop.id}_${method}_${Date.now().toString(36)}`;
 
+  const plan = ctx.workshop.planStatus;
+  if (plan === "active" || plan === "trialing" || plan === "past_due") throw new Error("already_subscribed");
   let sub = await ctx.tdb.first(subscriptions);
-  if (sub && (sub.status === "active" || sub.status === "trialing") && sub.abacateSubscriptionId) throw new Error("already_subscribed");
+  // teste grátis no cartão só na primeira assinatura do taller
+  const hadSubscription = Boolean(sub?.abacateSubscriptionId || sub?.firstChargedAt || sub?.trialEndsAt);
   if (!sub) {
     sub = await ctx.tdb.insert(subscriptions, { status: "pending_checkout", externalId, method });
   } else {
@@ -138,7 +141,7 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
   }
 
   if (method === "PIX" && !pixAutomaticoAvailable()) throw new Error("pix_unavailable");
-  const productId = await ensureProduct(method === "CARD");
+  const productId = await ensureProduct(method === "CARD" && !hadSubscription);
   const checkout = await abacate<{ id: string; url: string }>("/subscriptions/create", {
     body: {
       items: [{ id: productId, quantity: 1 }],
@@ -167,22 +170,41 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
 
 /* ───── Conciliação (não depende de webhook) ───── */
 type RemoteSubscription = { id: string; checkoutId?: string; status: "PENDING" | "ACTIVE" | "CANCELLED"; method?: "PIX" | "CARD"; trialEndsAt?: string | null; createdAt?: string };
+type WorkshopRow = WorkshopContext["workshop"];
+
+const lastReconcile = new Map<string, number>();
+
+/** Precisa conferir com a AbacatePay agora? (checkout em aberto, teste/período vencido) — barato, sem rede. */
+export function needsReconcile(workshop: Pick<WorkshopRow, "planStatus">, sub: { status: string; abacateCheckoutId: string | null; currentPeriodEnd: Date | null } | null, now = new Date()): boolean {
+  if (!sub) return false;
+  if (sub.status === "pending_checkout" && sub.abacateCheckoutId) return true;
+  const st = workshop.planStatus;
+  return (st === "trialing" || st === "active") && Boolean(sub.currentPeriodEnd && sub.currentPeriodEnd.getTime() < now.getTime());
+}
 
 /**
- * Confere na AbacatePay o estado real da assinatura deste taller e aplica no banco.
- * Usado ao voltar do checkout e ao abrir a tela Conta. Idempotente.
+ * Confere na AbacatePay o estado real da assinatura deste taller e aplica no banco. Idempotente.
+ * - checkout novo em aberto → procura a assinatura criada por ele (inclusive depois de um cancelamento);
+ * - teste que acabou e foi cobrado → ativo; ciclo renovado → estende o período;
+ * - cancelada lá (portal, falha de cobrança) → cancelada aqui, mantendo o acesso até o fim do período.
+ * `force` ignora o intervalo mínimo de 30 s (usado ao voltar do checkout e na tela Conta).
  */
-export async function reconcileSubscription(ctx: WorkshopContext): Promise<PlanStatus | null> {
+export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "workshop">, opts: { force?: boolean } = {}): Promise<PlanStatus | null> {
   if (billingMode() !== "abacatepay") return null;
+  const key = ctx.workshop.id;
+  if (!opts.force && (lastReconcile.get(key) ?? 0) > Date.now() - 30_000) return null;
+  lastReconcile.set(key, Date.now());
+
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) return null;
   let remote: RemoteSubscription | undefined;
   try {
-    if (sub.abacateSubscriptionId) {
-      remote = await abacate<RemoteSubscription>("/subscriptions/get", { query: { id: sub.abacateSubscriptionId } });
-    } else if (sub.abacateCheckoutId) {
+    if (sub.status === "pending_checkout" && sub.abacateCheckoutId) {
       const list = await abacate<RemoteSubscription[]>("/subscriptions/list", { query: { checkoutId: sub.abacateCheckoutId, limit: "5" } });
-      remote = list.find((s) => s.status === "ACTIVE") ?? list[0];
+      remote = list.find((r) => r.status === "ACTIVE");
+      if (!remote) return null; // ainda não pagou: nada muda (e quem tem dias pagos continua com eles)
+    } else if (sub.abacateSubscriptionId) {
+      remote = await abacate<RemoteSubscription>("/subscriptions/get", { query: { id: sub.abacateSubscriptionId } });
     }
   } catch (err) {
     console.error(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
@@ -193,22 +215,27 @@ export async function reconcileSubscription(ctx: WorkshopContext): Promise<PlanS
   const current = ctx.workshop.planStatus;
   const now = new Date();
   if (remote.status === "ACTIVE") {
+    // cobrança falhando: a AbacatePay mantém ACTIVE durante as tentativas; quem decide sair do past_due é o webhook "renewed"
+    if (current === "past_due" && sub.abacateSubscriptionId === remote.id) return current;
     const trialEnds = remote.trialEndsAt ? new Date(remote.trialEndsAt) : null;
     const inTrial = Boolean(trialEnds && trialEnds > now);
-    const already = (current === "active" || current === "trialing") && sub.abacateSubscriptionId === remote.id;
-    if (already) return current;
-    const event: SubscriptionEventType = inTrial ? "subscription.trial_started" : "subscription.completed";
-    const next = nextPlanStatus(current, event);
+    const desired: PlanStatus = inTrial ? "trialing" : "active";
+    const sameSub = sub.abacateSubscriptionId === remote.id;
+    const periodOk = Boolean(sub.currentPeriodEnd && sub.currentPeriodEnd > now);
+    if (current === desired && sameSub && periodOk && sub.status === desired) return current;
+
+    const leavingTrial = current === "trialing" && !inTrial;
     await updateSubscriptionById(sub.id, {
-      status: next,
+      status: desired,
       abacateSubscriptionId: remote.id,
       method: remote.method ?? sub.method,
-      trialEndsAt: inTrial ? trialEnds : null,
-      currentPeriodEnd: inTrial ? trialEnds : periodEndFrom(now),
+      trialEndsAt: inTrial ? trialEnds : sub.trialEndsAt,
+      currentPeriodEnd: inTrial ? trialEnds : sameSub && periodOk && !leavingTrial ? sub.currentPeriodEnd : periodEndFrom(now),
       firstChargedAt: sub.firstChargedAt ?? (inTrial ? null : now),
+      canceledAt: null,
     });
-    await setPlanStatus(ctx.workshop.id, next);
-    return next;
+    await setPlanStatus(ctx.workshop.id, desired);
+    return desired;
   }
   if (remote.status === "CANCELLED" && current !== "canceled" && current !== "read_only") {
     const next = nextPlanStatus(current, "subscription.cancelled");
@@ -217,6 +244,15 @@ export async function reconcileSubscription(ctx: WorkshopContext): Promise<PlanS
     return next;
   }
   return current;
+}
+
+/** Para o cron: concilia um taller pelo id (sem sessão). */
+export async function reconcileWorkshopById(workshopId: string): Promise<PlanStatus | null> {
+  const { tenantDb } = await import("@/db/tenant");
+  const { getWorkshopRow } = await import("@/db/public-billing");
+  const workshop = await getWorkshopRow(workshopId);
+  if (!workshop) return null;
+  return reconcileSubscription({ tdb: await tenantDb(workshopId), workshop }, { force: true });
 }
 
 function periodEndFrom(from: Date): Date {

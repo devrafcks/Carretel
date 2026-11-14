@@ -3,17 +3,15 @@ import { requireWorkshop } from "@/lib/session";
 import { workshopSettings } from "@/db/schema";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, Notice } from "@/components/ui/card";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { formatDate } from "@/lib/dates";
 import { brand } from "@/config/brand";
 import { legal, dpoContact } from "@/config/legal";
-import { withinRefundWindow } from "@/lib/subscription";
-import { billingIsTestMode, billingMode, pixAutomaticoAvailable, reconcileSubscription } from "@/server/billing";
+import { billingMode, reconcileSubscription } from "@/server/billing";
 import { redirect } from "next/navigation";
 import { CircleCheck, Clock } from "@/components/icons";
-import { Paywall, CancelSubscription, WorkshopForm, PixForm, SettingsForm, DangerZone } from "./account-client";
+import { WorkshopForm, PixForm, SettingsForm, DangerZone } from "./account-client";
 import { Download } from "@/components/icons";
 import { AvatarEditor } from "@/components/app/avatar-editor";
+import { SubscriptionCard } from "./subscription-card";
 import { buttonVariants } from "@/components/ui/button";
 
 export default async function CuentaPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ checkout?: string }> }) {
@@ -24,42 +22,13 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
   const t = await getTranslations();
   // confere com a AbacatePay (volta do checkout, cancelamento pelo portal etc.) — funciona mesmo sem webhook
   if (ctx.subscription && billingMode() === "abacatepay") {
-    const next = await reconcileSubscription(ctx);
+    const next = await reconcileSubscription(ctx, { force: true });
     if (next && next !== ctx.workshop.planStatus) redirect(`/${locale}/cuenta?checkout=${checkout === "ok" ? "done" : "sync"}`);
   }
   const ws = ctx.workshop;
   const sub = ctx.subscription;
   const settings = await ctx.tdb.first(workshopSettings);
   const status = ws.planStatus;
-  const periodEnd = sub?.currentPeriodEnd ? formatDate(sub.currentPeriodEnd, locale) : "—";
-  const tone = status === "active" || status === "trialing" ? "paid" : status === "read_only" || status === "past_due" ? "overdue-calote" : status === "canceled" ? "neutral" : "awaiting-confirmation";
-
-  let statusText: string;
-  switch (status) {
-    case "active":
-      statusText = t("account.active", { date: periodEnd });
-      break;
-    case "trialing":
-      statusText = t("account.trialing", { date: sub?.trialEndsAt ? formatDate(sub.trialEndsAt, locale) : "—" });
-      break;
-    case "past_due":
-      statusText = t("account.pastDue");
-      break;
-    case "canceled":
-      statusText = t("account.canceled", { date: periodEnd });
-      break;
-    case "read_only":
-      statusText = t("account.readOnly");
-      break;
-    case "pending_checkout":
-      statusText = t("account.pending");
-      break;
-    default:
-      statusText = t("account.freeUsage", { used: Math.min(ws.freeBatchesUsed, brand.freeBatchLimit), limit: brand.freeBatchLimit });
-  }
-  const showPaywall = status === "free" || status === "pending_checkout" || status === "read_only" || status === "canceled" || status === "past_due";
-  const canCancel = status === "active" || status === "trialing" || status === "past_due";
-
   return (
     <div className="space-y-5">
       <PageHeader tone="ink" illustration="/illustrations/hero.svg" kicker={t(`status.plan.${status}`)} title={ws.name} subtitle={t("account.title")} backHref="/mas" backLabel={t("common.back")} />
@@ -68,12 +37,16 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
         <AvatarEditor name={ws.name} mediaId={ws.avatarMediaId} />
       </Card>
 
-      <Card className="p-4" id="plan">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-display text-lg">{t("account.subscription")}</h2>
-          <StatusBadge tone={tone} label={t(`status.plan.${status}`)} />
-        </div>
-        <p className="mt-2 text-lg font-semibold tabular-money">{statusText}</p>
+      <SubscriptionCard
+        locale={locale}
+        status={status}
+        sub={sub}
+        priceCents={brand.planPriceCents}
+        freeUsed={ws.freeBatchesUsed}
+        freeLimit={brand.freeBatchLimit}
+        refundUntil={sub?.firstChargedAt ? new Date(sub.firstChargedAt.getTime() + 7 * 86_400_000) : null}
+        billingEnabled={billingMode() !== "disabled"}
+      >
         {(checkout === "done" || checkout === "ok") && (status === "active" || status === "trialing") ? (
           <Notice tone="success" className="mt-3" icon={<CircleCheck />} role="status">
             <p className="font-medium">{t("account.checkoutDone")}</p>
@@ -94,9 +67,7 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
             <p>{t("account.checkoutFailed")}</p>
           </Notice>
         ) : null}
-        {showPaywall ? <Paywall mode={billingMode()} testMode={billingIsTestMode()} pixAvailable={pixAutomaticoAvailable()} /> : null}
-        {canCancel ? <CancelSubscription refundEligible={withinRefundWindow(sub?.firstChargedAt)} /> : null}
-      </Card>
+      </SubscriptionCard>
 
       <Card className="p-4">
         <h2 className="font-display text-lg">{t("account.workshopData")}</h2>
