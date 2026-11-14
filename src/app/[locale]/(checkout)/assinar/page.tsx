@@ -25,7 +25,7 @@ export default async function AssinarPage({ params }: { params: Promise<{ locale
 
   if (plan === "active" || plan === "trialing") {
     return (
-      <Card className="rounded-3xl p-6 text-center sm:p-8">
+      <Card className="w-full max-w-lg rounded-[2rem] p-6 text-center shadow-lift sm:p-8">
         <span className="mx-auto inline-flex size-14 items-center justify-center rounded-full bg-mint-100 text-vivid-strong">
           <CircleCheck aria-hidden="true" className="size-7" />
         </span>
@@ -55,6 +55,7 @@ export default async function AssinarPage({ params }: { params: Promise<{ locale
       testMode={billingIsTestMode()}
       pixAvailable={pixAutomaticoAvailable()}
       trialDays={brand.cardTrialDays}
+      trialEligible={!(ctx?.subscription && (ctx.subscription.abacateSubscriptionId || ctx.subscription.firstChargedAt || ctx.subscription.trialEndsAt))}
       priceCents={brand.planPriceCents}
     />
   );

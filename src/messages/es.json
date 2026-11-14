@@ -1123,7 +1123,21 @@
     "upgrade": "Activar plan",
     "upgradeShort": "Activar",
     "upgradeTitle": "Plan gratis",
-    "upgradeBody": "Libere cortes ilimitados por R$ 35/mes."
+    "upgradeBody": "Libere cortes ilimitados por R$ 35/mes.",
+    "secureBadge": "Pago seguro",
+    "footer": "Pagos procesados por AbacatePay",
+    "cardHintNoTrial": "Cobro mensual en la tarjeta.",
+    "trialBadge": "{days} días gratis",
+    "continueTrial": "Empezar {days} días gratis",
+    "continuePay": "Pagar {amount} y activar",
+    "summaryTitle": "Resumen",
+    "billedMonthly": "Suscripción mensual",
+    "trialLine": "Prueba de {days} días",
+    "free": "Gratis",
+    "afterTrial": "Después de la prueba",
+    "monthly": "Mensualidad",
+    "dueToday": "Total hoy",
+    "cancelAnytime": "Sin fidelidad. Cancela cuando quiera en Cuenta."
   },
   "plan": {
     "title": "Su plan",
