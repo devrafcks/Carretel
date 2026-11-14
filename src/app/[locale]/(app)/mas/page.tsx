@@ -4,9 +4,9 @@ import { requireWorkshop } from "@/lib/session";
 import { PageHeader } from "@/components/app/page-header";
 import { Link } from "@/i18n/navigation";
 import { InstallHint } from "@/components/app/install-hint";
-import { SignOutButton } from "./sign-out";
+import { SignOutButton } from "@/components/app/sign-out";
 import { authMode } from "@/lib/auth/server";
-import { initials } from "@/lib/utils";
+import { WorkshopAvatar } from "@/components/app/avatar";
 
 type Entry = { href: string; icon: AppIcon; title: string; desc: string };
 
@@ -69,9 +69,7 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
           href="/cuenta"
           className="group flex flex-wrap items-center gap-4 rounded-[2rem] bg-mint-soft p-5 transition-shadow hover:shadow-soft sm:p-6"
         >
-          <span aria-hidden="true" className="inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-medium text-primary-foreground">
-            {initials(ctx.workshop.name)}
-          </span>
+          <WorkshopAvatar name={ctx.workshop.name} mediaId={ctx.workshop.avatarMediaId} className="size-14 text-lg" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-xl font-medium">{ctx.workshop.name}</span>
             <span className="mt-0.5 block truncate text-sm text-muted-foreground">{t("signedAs", { email: ctx.user.email })}</span>
@@ -93,7 +91,8 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
 
       <div className="grid gap-4 md:grid-cols-2">
         <InstallHint />
-        <div className="flex items-end">
+        {/* no computador o "Sair" fica na sidebar */}
+        <div className="flex items-end lg:hidden">
           <SignOutButton mode={authMode()} />
         </div>
       </div>

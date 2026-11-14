@@ -25,8 +25,31 @@ import {
   receivables,
   clients,
   batches,
+  notifications,
+  type NotificationKind,
+  type NotificationParams,
   type PlanStatus,
 } from "./schema";
+
+/* ───── Notificações vindas do link público (o cliente não tem conta; a oficina vem da prova) ───── */
+export async function notifyWorkshop(
+  workshopId: string,
+  n: { kind: NotificationKind; dedupeKey: string; params: NotificationParams; href: string | null },
+) {
+  const db = await getDb();
+  await db
+    .insert(notifications)
+    .values({ workshopId, kind: n.kind, dedupeKey: n.dedupeKey, params: n.params, href: n.href })
+    .onConflictDoNothing({ target: [notifications.workshopId, notifications.dedupeKey] });
+}
+
+/** Dados que os avisos do link público precisam, a partir do resultado de findProofByToken. */
+export function proofNotice(r: NonNullable<Awaited<ReturnType<typeof findProofByToken>>>): { params: NotificationParams; href: string } {
+  return {
+    params: { client: r.client?.name ?? r.proof.snapshot.client.name, ref: r.batch.reference, amountCents: r.proof.amountCents },
+    href: `/lotes/${r.batch.id}`,
+  };
+}
 
 /* ───── Membership / oficina ───── */
 export async function findWorkshopForUser(userId: string) {

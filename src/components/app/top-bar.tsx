@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { BrandMark } from "@/components/brand/mark";
 import { LocaleSwitch } from "./locale-switch";
 import { ConnectionIndicator } from "./connection-indicator";
+import { NotificationBell } from "./notifications";
 
 export function TopBar({ workshopName }: { workshopName: string }) {
   return (
@@ -14,6 +15,7 @@ export function TopBar({ workshopName }: { workshopName: string }) {
           <span className="truncate text-lg font-medium text-foreground">{workshopName}</span>
         </Link>
         <ConnectionIndicator />
+        <NotificationBell />
         <Suspense>
           <LocaleSwitch />
         </Suspense>

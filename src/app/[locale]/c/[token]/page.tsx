@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { sortSizes } from "@/lib/utils";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CircleCheck, TriangleAlert, Link2Off } from "@/components/icons";
-import { findProofByToken, markProofViewed, hitRateLimit } from "@/db/public";
+import { findProofByToken, markProofViewed, hitRateLimit, notifyWorkshop, proofNotice } from "@/db/public";
 import { audit, requestMeta } from "@/lib/audit";
+import { loadWorkshopContext } from "@/lib/session";
 import { buildPixBrCode } from "@/lib/pix-brcode";
 import { formatDate, formatDateTime } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
@@ -49,7 +50,13 @@ export default async function ProofPage({ params }: { params: Promise<{ locale: 
   }
 
   const { proof, workshop, receivable } = r;
-  if (!proof.viewedAt) await markProofViewed(proof.id, meta.ip);
+  // o próprio taller abrindo o link para conferir não conta como "o cliente abriu"
+  const isOwner = (await loadWorkshopContext())?.workshop.id === workshop.id;
+  if (!proof.viewedAt && !isOwner) {
+    await markProofViewed(proof.id, meta.ip);
+    const nv = proofNotice(r);
+    await notifyWorkshop(workshop.id, { kind: "proof_viewed", dedupeKey: `viewed:${proof.id}`, params: nv.params, href: nv.href });
+  }
   await audit("public_proof.view", { workshopId: workshop.id, actor: "public", resource: proof.id });
 
   const s = proof.snapshot;

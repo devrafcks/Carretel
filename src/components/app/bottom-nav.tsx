@@ -6,6 +6,8 @@ import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, C
 import type { AppIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
+import { SignOutNavItem } from "./sign-out";
+import { WorkshopAvatar } from "./avatar";
 
 const items = [
   { href: "/hoy", key: "hoy", icon: Home },
@@ -112,7 +114,7 @@ function NavLink({ it, active }: { it: Item; active: boolean }) {
 }
 
 /** Sidebar do computador: grupos com rótulo, ação principal no topo, conta e ajuda embaixo. */
-export function SideRail({ workshopName }: { workshopName?: string }) {
+export function SideRail({ workshopName, avatarMediaId, authMode }: { workshopName?: string; avatarMediaId?: string | null; authMode: "neon" | "dev" }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
   const tab = useSearchParams().get("tab");
@@ -150,18 +152,15 @@ export function SideRail({ workshopName }: { workshopName?: string }) {
             <NavLink it={it} active={it.match(pathname, tab)} />
           </li>
         ))}
+        <li>
+          <SignOutNavItem mode={authMode} />
+        </li>
       </ul>
       {workshopName ? (
-        <div className="mt-3 flex items-center gap-3 rounded-2xl bg-mint-50 px-3 py-2.5">
-          <span aria-hidden="true" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-medium text-primary-foreground">
-            {workshopName
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((w) => w[0]?.toUpperCase())
-              .join("")}
-          </span>
+        <Link href="/cuenta" className="mt-3 flex items-center gap-3 rounded-2xl bg-mint-50 px-3 py-2.5 transition-colors hover:bg-mint-100">
+          <WorkshopAvatar name={workshopName} mediaId={avatarMediaId} className="size-9 text-xs" />
           <span className="min-w-0 truncate text-sm font-medium">{workshopName}</span>
-        </div>
+        </Link>
       ) : null}
     </nav>
   );

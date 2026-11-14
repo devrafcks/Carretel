@@ -1,9 +1,10 @@
 "use client";
 import { useTranslations } from "next-intl";
-import { CloudOff, RefreshCw, Wifi } from "@/components/icons";
+import { RefreshCw, Wifi, WifiOff } from "@/components/icons";
 import { useOffline } from "./offline-provider";
 import { cn } from "@/lib/utils";
 
+/** Ícone de rede: verde com sinal, vermelho sem sinal, girando ao enviar. O número mostra registros esperando envio. */
 export function ConnectionIndicator() {
   const t = useTranslations("common");
   const { online, pendingCount, syncing, sync } = useOffline();
@@ -14,25 +15,32 @@ export function ConnectionIndicator() {
       : pendingCount > 0
         ? t("pending", { count: pendingCount })
         : t("online");
-  const Icon = !online ? CloudOff : syncing || pendingCount > 0 ? RefreshCw : Wifi;
+  const Icon = !online ? WifiOff : syncing ? RefreshCw : Wifi;
   return (
     <button
       type="button"
       onClick={() => void sync()}
       disabled={!online || pendingCount === 0}
-      aria-live="polite"
+      aria-label={label}
+      title={label}
       className={cn(
-        "inline-flex min-h-10 items-center gap-2 rounded-full border px-3 text-sm",
+        "relative inline-flex size-11 items-center justify-center rounded-full border transition-colors disabled:cursor-default",
         !online
           ? "border-overdue-calote-border/40 bg-overdue-calote-bg text-overdue-calote-fg"
           : pendingCount > 0
             ? "border-awaiting-confirmation-border/40 bg-awaiting-confirmation-bg text-awaiting-confirmation-fg"
-            : "border-ink/10 bg-card text-muted-foreground",
-        "disabled:cursor-default",
+            : "border-ink/10 bg-card text-vivid-strong",
       )}
     >
-      {online && pendingCount === 0 ? <span aria-hidden="true" className="size-2 rounded-full bg-vivid" /> : <Icon aria-hidden="true" className={cn("size-4", syncing && "motion-safe:animate-spin")} />}
-      <span className={cn(online && pendingCount === 0 && "sr-only sm:not-sr-only")}>{label}</span>
+      <Icon aria-hidden="true" className={cn("size-5", syncing && "motion-safe:animate-spin")} stroke={1.8} />
+      {pendingCount > 0 ? (
+        <span aria-hidden="true" className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.6875rem] font-medium leading-5 text-primary-foreground">
+          {pendingCount}
+        </span>
+      ) : null}
+      <span className="sr-only" aria-live="polite">
+        {label}
+      </span>
     </button>
   );
 }

@@ -11,6 +11,7 @@ import { withinRefundWindow } from "@/lib/subscription";
 import { billingMode } from "@/server/billing";
 import { Paywall, CancelSubscription, WorkshopForm, PixForm, SettingsForm, DangerZone } from "./account-client";
 import { Download } from "@/components/icons";
+import { AvatarEditor } from "@/components/app/avatar-editor";
 import { buttonVariants } from "@/components/ui/button";
 
 export default async function CuentaPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ checkout?: string }> }) {
@@ -55,6 +56,10 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
   return (
     <div className="space-y-5">
       <PageHeader tone="ink" illustration="/illustrations/hero.svg" kicker={t(`status.plan.${status}`)} title={ws.name} subtitle={t("account.title")} backHref="/mas" backLabel={t("common.back")} />
+
+      <Card className="p-6">
+        <AvatarEditor name={ws.name} mediaId={ws.avatarMediaId} />
+      </Card>
 
       <Card className="p-4" id="plan">
         <div className="flex flex-wrap items-center justify-between gap-2">

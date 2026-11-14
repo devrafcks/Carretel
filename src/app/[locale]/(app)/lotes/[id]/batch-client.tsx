@@ -326,7 +326,12 @@ export function DeliveryList({
                 {viewed ? <Eye aria-hidden="true" className="size-4" /> : <EyeOff aria-hidden="true" className="size-4" />}
                 {viewed ? t("delivery.viewedAt", viewed) : t("delivery.notViewed")}
               </p>
-              {conf ? <p className="mt-1 font-semibold text-paid-fg">{t("delivery.confirmedBy", { name: p.confirmedName ?? "", ...conf })}</p> : null}
+              {conf ? (
+                <p className="mt-1 inline-flex items-start gap-1.5 font-semibold text-paid-fg">
+                  <CircleCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                  {t("delivery.confirmedBy", { name: p.confirmedName ?? "", ...conf })}
+                </p>
+              ) : null}
               {p.disputedAt ? (
                 <Notice tone="warning" className="mt-2" icon={<TriangleAlert />}>
                   <p>{t("delivery.disputed", { quantity: p.disputedQuantity ?? 0, comment: p.disputedComment ?? "" })}</p>

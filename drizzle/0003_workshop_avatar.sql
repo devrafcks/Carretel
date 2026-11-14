@@ -1,0 +1,1 @@
+ALTER TABLE "workshops" ADD COLUMN "avatar_media_id" uuid;

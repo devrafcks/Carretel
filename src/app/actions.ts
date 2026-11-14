@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { clients, workers, workshopSettings, settlements, type CalculatorProfile } from "@/db/schema";
+import { clients, workers, workshopSettings, settlements, mediaAssets, type CalculatorProfile } from "@/db/schema";
 import { createWorkshopForUser, softDeleteWorkshop, updateWorkshopRow, setPlanStatus } from "@/db/public";
 import { requireUser, requireWorkshop } from "@/lib/session";
 import { deliverySchema, workshopCreateSchema, clientCreateSchema, workerCreateSchema } from "@/lib/schemas";
@@ -342,6 +342,24 @@ export async function updateWorkshopAction(_: ActionResult | null, form: FormDat
       set.docLast3 = last3(docNumber);
     }
     await updateWorkshopRow(ctx.workshop.id, set);
+    revalidateApp();
+    return { ok: true };
+  } catch (e) {
+    return fail(e);
+  }
+}
+
+/** Foto de perfil do taller: a imagem já subiu por /api/upload; aqui só confere que é deste taller e grava. null = remover. */
+export async function setWorkshopAvatarAction(mediaId: string | null): Promise<ActionResult> {
+  try {
+    const ctx = await requireWorkshop();
+    if (mediaId !== null) {
+      const id = z.string().uuid().parse(mediaId);
+      await ctx.tdb.get(mediaAssets, eq(mediaAssets.id, id), "media");
+    }
+    const previous = ctx.workshop.avatarMediaId;
+    await updateWorkshopRow(ctx.workshop.id, { avatarMediaId: mediaId });
+    if (previous && previous !== mediaId) await ctx.tdb.update(mediaAssets, { deletedAt: new Date() }, eq(mediaAssets.id, previous));
     revalidateApp();
     return { ok: true };
   } catch (e) {

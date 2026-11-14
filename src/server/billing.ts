@@ -2,7 +2,7 @@
  * Assinatura R$ 35/mês — AbacatePay API v2 (Modo Teste).
  * Sem ABACATEPAY_API_KEY: modo SIMULADO (só fora de produção) para exercitar o fluxo inteiro
  * freemium → paywall → completed → renovação → falha → read_only → cancelamento.
- * ⚠️ Conferir na doc (https://docs.abacatepay.com) os nomes exatos de endpoints/campos antes do go-live.
+ * ATENÇÃO: conferir na doc (https://docs.abacatepay.com) os nomes exatos de endpoints/campos antes do go-live.
  */
 import "server-only";
 import { eq } from "drizzle-orm";

@@ -7,6 +7,7 @@ import { BottomNav, SideRail } from "@/components/app/bottom-nav";
 import { OfflineProvider } from "@/components/app/offline-provider";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/components/ui/button";
+import { authMode } from "@/lib/auth/server";
 
 /** Moldura do painel: sidebar à esquerda (computador), barra de cima e navegação inferior (celular). Conteúdo em largura total. */
 export async function AppShell({ ctx, children }: { ctx: WorkshopContext; children: React.ReactNode }) {
@@ -16,7 +17,7 @@ export async function AppShell({ ctx, children }: { ctx: WorkshopContext; childr
     <OfflineProvider workshopId={ctx.workshop.id}>
       <div className="flex min-h-dvh">
         <Suspense fallback={<div className="hidden w-64 shrink-0 lg:block" />}>
-          <SideRail workshopName={ctx.workshop.name} />
+          <SideRail workshopName={ctx.workshop.name} avatarMediaId={ctx.workshop.avatarMediaId} authMode={authMode()} />
         </Suspense>
         <div className="min-w-0 flex-1">
           <TopBar workshopName={ctx.workshop.name} />

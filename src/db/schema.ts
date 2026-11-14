@@ -46,6 +46,8 @@ export const workshops = pgTable("workshops", {
   pixMerchantName: text("pix_merchant_name"),
   pixCity: text("pix_city"),
   phoneE164: text("phone_e164"),
+  /** Foto de perfil do taller (media_assets.id; servida por /api/media/[id] só para quem é do taller) */
+  avatarMediaId: uuid("avatar_media_id"),
   defaultLocale: text("default_locale", { enum: ["es", "pt-BR"] }).notNull().default("es"),
   planStatus: text("plan_status", {
     enum: ["free", "pending_checkout", "trialing", "active", "past_due", "canceled", "read_only"],
@@ -585,3 +587,48 @@ export const devAuthCodes = pgTable("dev_auth_codes", {
   expiresAt: ts("expires_at").notNull(),
   attempts: integer("attempts").notNull().default(0),
 });
+
+/* ─────────────── Notificações do taller ───────────────
+ * Texto montado na tela a partir de `kind` + `params` (assim troca de idioma junto com o app).
+ * `dedupeKey` evita repetir o mesmo aviso (ex.: "overdue15:<receivableId>"). */
+export const NOTIFICATION_KINDS = [
+  "proof_viewed",
+  "proof_confirmed",
+  "proof_disputed",
+  "payer_claimed_paid",
+  "receivable_overdue",
+  "batch_due_soon",
+  "batch_late",
+  "settlement_day",
+] as const;
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+export type NotificationParams = {
+  client?: string | null;
+  ref?: string | null;
+  amountCents?: number;
+  days?: number;
+  quantity?: number;
+  comment?: string;
+  date?: string;
+  when?: "today" | "tomorrow";
+};
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workshopId: uuid("workshop_id")
+      .notNull()
+      .references(() => workshops.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: NOTIFICATION_KINDS }).notNull(),
+    dedupeKey: text("dedupe_key").notNull(),
+    params: jsonb("params").$type<NotificationParams>().notNull().default({}),
+    href: text("href"),
+    readAt: ts("read_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("notifications_ws_dedupe_uq").on(t.workshopId, t.dedupeKey),
+    index("notifications_ws_created_idx").on(t.workshopId, t.createdAt),
+  ],
+);
