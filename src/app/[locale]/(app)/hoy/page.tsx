@@ -52,7 +52,10 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
               </Link>
               {isFree ? (
                 <span className="text-sm text-muted-foreground">
-                  {t("hoy.freeLeft", { used: Math.min(ctx.workshop.freeBatchesUsed, brand.freeBatchLimit), limit: brand.freeBatchLimit })}
+                  {t("hoy.freeLeft", { used: Math.min(ctx.workshop.freeBatchesUsed, brand.freeBatchLimit), limit: brand.freeBatchLimit })}{" "}
+                  <Link href="/assinar" className="font-medium text-foreground underline underline-offset-4">
+                    {t("subscribe.upgrade")}
+                  </Link>
                 </span>
               ) : null}
             </div>

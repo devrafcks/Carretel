@@ -1,28 +1,18 @@
 /**
- * Next.js 16: proxy.ts (substitui middleware.ts).
- * 1) next-intl: prefixo /es | /pt-BR, cookie NEXT_LOCALE, /c/abc → /{locale}/c/abc.
- * 2) Checagem OTIMISTA de sessão nas rotas do app (a autorização real é no servidor).
- *    Com Neon Auth, usa auth.middleware() (que também renova a sessão) e mescla os cookies.
+ * Next.js 16: proxy.ts (substitui middleware.ts). Camada barata e OTIMISTA, antes de qualquer página ou API:
+ * 1) bloqueia cabeçalho interno do Next vindo de fora (desvio de proxy);
+ * 2) APIs: escrita só do próprio site (Origin/Referer) e APIs privadas só com cookie de sessão;
+ * 3) páginas: next-intl (prefixo /es | /pt-BR) e, nas rotas do app, sessão obrigatória
+ *    (com Neon Auth: auth.middleware(), que também renova a sessão) + sem cache e fora dos buscadores.
+ * A autorização real (plano, dono, taller) é sempre no servidor: requireWorkshop / requireWrite / requireOwner.
  */
 import { NextResponse, type NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { createNeonAuth } from "@neon/auth/next/server";
 import { routing } from "./i18n/routing";
+import { MUTATING, classifyPath, hasForbiddenInternalHeader, hasSessionCookie, isSameOrigin, loginRedirectPath } from "./lib/route-guard";
 
 const intl = createIntlMiddleware(routing);
-
-const APP_SEGMENTS = new Set([
-  "hoy",
-  "lotes",
-  "produccion",
-  "cobros",
-  "cuenta",
-  "mas",
-  "clientes",
-  "equipo",
-  "bienvenida",
-  "go-live",
-]);
 
 const neonEnabled = Boolean(process.env.NEON_AUTH_BASE_URL && process.env.NEON_AUTH_COOKIE_SECRET);
 const neonAuth = neonEnabled
@@ -32,24 +22,50 @@ const neonAuth = neonEnabled
     })
   : null;
 
-function protectedLocale(pathname: string): string | null {
-  const [, locale, segment] = pathname.split("/");
-  if (!locale || !routing.locales.includes(locale as (typeof routing.locales)[number])) return null;
-  return segment && APP_SEGMENTS.has(segment) ? locale : null;
+const PRIVATE_HEADERS: [string, string][] = [
+  ["Cache-Control", "private, no-store, max-age=0"],
+  ["X-Robots-Tag", "noindex, nofollow"],
+];
+
+function deny(status: 401 | 403, error: string) {
+  return NextResponse.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+}
+
+function requestHost(request: NextRequest): string | null {
+  return request.headers.get("x-forwarded-host") ?? request.headers.get("host");
 }
 
 export default async function proxy(request: NextRequest) {
+  if (hasForbiddenInternalHeader(request.headers)) return deny(403, "forbidden");
+
+  const { pathname } = request.nextUrl;
+  const route = classifyPath(pathname);
+  const sameOrigin = isSameOrigin(request.headers.get("origin"), request.headers.get("referer"), requestHost(request));
+
+  /* ───── APIs ───── */
+  if (route.kind === "private-api" || route.kind === "unknown-api" || route.kind === "self-auth-api") {
+    if (route.kind === "unknown-api") return deny(403, "forbidden");
+    if (route.kind === "self-auth-api") return NextResponse.next(); // webhook/cron/auth validam a própria assinatura
+    if (MUTATING.has(request.method) && !sameOrigin) return deny(403, "cross_origin");
+    if (!hasSessionCookie(request.cookies.getAll().map((c) => c.name))) return deny(401, "unauthorized");
+    const res = NextResponse.next();
+    for (const [k, v] of PRIVATE_HEADERS) res.headers.set(k, v);
+    return res;
+  }
+
+  /* ───── Server Actions (POST em páginas) só do próprio site ───── */
+  if (MUTATING.has(request.method) && request.headers.has("next-action") && !sameOrigin) return deny(403, "cross_origin");
+
+  /* ───── Páginas ───── */
   const response = intl(request);
-  if (response.headers.get("location")) return response; // redirect de locale
+  if (response.headers.get("location")) return response; // redirect de idioma
+  if (route.kind !== "app") return response;
 
-  const locale = protectedLocale(request.nextUrl.pathname);
-  if (!locale) return response;
-
-  const loginUrl = new URL(`/${locale}/entrar`, request.url);
-  loginUrl.searchParams.set("next", request.nextUrl.pathname);
+  const loginUrl = new URL(loginRedirectPath(route.locale, route.segment, pathname), request.url);
+  for (const [k, v] of PRIVATE_HEADERS) response.headers.set(k, v);
 
   if (neonAuth) {
-    const authMw = neonAuth.middleware({ loginUrl: `/${locale}/entrar` });
+    const authMw = neonAuth.middleware({ loginUrl: `/${route.locale}/entrar` });
     const authRes = await authMw(request);
     if (authRes.headers.get("location")) {
       const redirect = NextResponse.redirect(loginUrl);
@@ -75,5 +91,6 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: "/((?!api|_next|_vercel|.*\\..*).*)",
+  // tudo menos arquivos estáticos e internos do Next (as APIs agora passam pelo proxy)
+  matcher: "/((?!_next|_vercel|.*\\..*).*)",
 };

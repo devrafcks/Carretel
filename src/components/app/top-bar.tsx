@@ -4,8 +4,9 @@ import { BrandMark } from "@/components/brand/mark";
 import { LocaleSwitch } from "./locale-switch";
 import { ConnectionIndicator } from "./connection-indicator";
 import { NotificationBell } from "./notifications";
+import { UpgradePill } from "./upgrade-pill";
 
-export function TopBar({ workshopName }: { workshopName: string }) {
+export function TopBar({ workshopName, showUpgrade = false }: { workshopName: string; showUpgrade?: boolean }) {
   return (
     <header className="sticky top-0 z-[100] border-b border-ink/[0.06] bg-background">
       <div className="flex w-full items-center gap-3 px-4 py-2.5 sm:px-6 lg:px-10">
@@ -14,6 +15,7 @@ export function TopBar({ workshopName }: { workshopName: string }) {
           <BrandMark className="size-7 shrink-0 text-primary" />
           <span className="truncate text-lg font-medium text-foreground">{workshopName}</span>
         </Link>
+        {showUpgrade ? <UpgradePill /> : null}
         <ConnectionIndicator />
         <NotificationBell />
         <Suspense>

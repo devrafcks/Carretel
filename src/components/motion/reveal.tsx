@@ -37,7 +37,12 @@ export function Reveal({
       { rootMargin: "0px 0px -8% 0px", threshold: 0.12 },
     );
     io.observe(el);
-    return () => io.disconnect();
+    // garantia: mesmo sem rolar (leitores, ferramentas de análise, prints), tudo aparece em poucos segundos
+    const fallback = setTimeout(() => setVisible(true), 2500);
+    return () => {
+      io.disconnect();
+      clearTimeout(fallback);
+    };
   }, []);
   const cls = variant === "scale" ? "reveal-scale" : variant === "line" ? "reveal-line" : "reveal";
   return React.createElement(

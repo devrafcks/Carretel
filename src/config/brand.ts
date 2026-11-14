@@ -40,7 +40,7 @@ export const brand: BrandConfig = {
   accountDeletionDays: 30,
   readOnlyAllowsMarkPaid: true,
   showMadeWithFooter: true,
-  publicCalculator: true,
+  publicCalculator: false, // calculadora exige conta (pedido do responsável em 14/11/2026)
   photoStorage: process.env.BLOB_READ_WRITE_TOKEN ? "vercel-blob" : "local",
   planPriceCents: 3500,
 };

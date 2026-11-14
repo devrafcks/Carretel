@@ -46,8 +46,14 @@ export class DomainError extends Error {
 
 type Ctx = Pick<WorkshopContext, "tdb" | "workshop" | "access" | "user">;
 
-function requireWrite(ctx: Ctx) {
+/** Plano permite criar/editar registros do dia a dia (grátis dentro do limite, teste ou pago em dia). */
+export function requireWrite(ctx: Ctx) {
   if (!ctx.access.canWrite) throw new DomainError("read_only");
+}
+
+/** Só quem é dono do taller mexe em assinatura, dados do taller e exclusão da conta. */
+export function requireOwner(ctx: Pick<WorkshopContext, "role">) {
+  if (ctx.role !== "owner") throw new DomainError("owner_only");
 }
 
 /* ───── Contratantes ───── */

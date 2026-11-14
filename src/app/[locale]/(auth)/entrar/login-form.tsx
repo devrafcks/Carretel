@@ -13,7 +13,20 @@ type Tab = "login" | "signup";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 8;
 
-export function LoginForm({ mode, devAllowed, next, initialTab = "login" }: { mode: Mode; devAllowed: boolean; next: string; initialTab?: Tab }) {
+export function LoginForm({
+  mode,
+  devAllowed,
+  next,
+  initialTab = "login",
+  embedded = false,
+}: {
+  mode: Mode;
+  devAllowed: boolean;
+  next: string;
+  initialTab?: Tab;
+  /** dentro do fluxo de assinatura: sem título, sem abas e sem mexer na URL */
+  embedded?: boolean;
+}) {
   if (mode === "dev") {
     if (!devAllowed) {
       return (
@@ -24,11 +37,11 @@ export function LoginForm({ mode, devAllowed, next, initialTab = "login" }: { mo
     }
     return <DevOtpForm next={next} />;
   }
-  return <PasswordForm next={next} initialTab={initialTab} />;
+  return <PasswordForm next={next} initialTab={initialTab} embedded={embedded} />;
 }
 
 /* ───────── Neon Auth: e-mail + senha (sem e-mail de confirmação por enquanto) ───────── */
-function PasswordForm({ next, initialTab }: { next: string; initialTab: Tab }) {
+function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab: Tab; embedded: boolean }) {
   const t = useTranslations("auth");
   const [tab, setTab] = React.useState<Tab>(initialTab);
   const [email, setEmail] = React.useState("");
@@ -44,6 +57,7 @@ function PasswordForm({ next, initialTab }: { next: string; initialTab: Tab }) {
     setEmailError(null);
     setPasswordError(null);
     setFormError(null);
+    if (embedded) return;
     const url = new URL(window.location.href);
     if (nextTab === "signup") url.searchParams.set("conta", "nova");
     else url.searchParams.delete("conta");
@@ -98,6 +112,8 @@ function PasswordForm({ next, initialTab }: { next: string; initialTab: Tab }) {
   const isSignup = tab === "signup";
   return (
     <div>
+      {!embedded ? (
+      <>
       <div role="group" aria-label={`${t("tabLogin")} / ${t("tabSignup")}`} className="grid grid-cols-2 gap-1 rounded-full bg-mint-50 p-1">
         {(["login", "signup"] as const).map((k) => (
           <button
@@ -117,8 +133,10 @@ function PasswordForm({ next, initialTab }: { next: string; initialTab: Tab }) {
 
       <h1 className="text-hero mt-7 text-4xl">{isSignup ? t("signupTitle") : t("title")}</h1>
       <p className="mt-2 text-muted-foreground">{isSignup ? t("signupLead") : t("leadPassword")}</p>
+      </>
+      ) : null}
 
-      <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
+      <form onSubmit={submit} className={embedded ? "space-y-4" : "mt-6 space-y-4"} noValidate>
         <Field id="email" label={t("email")} hint={t("emailHint")} error={emailError}>
           {(a) => (
             <Input
@@ -176,12 +194,14 @@ function PasswordForm({ next, initialTab }: { next: string; initialTab: Tab }) {
         </Button>
       </form>
 
+      {!embedded ? (
       <p className="mt-6 text-center text-muted-foreground">
         {isSignup ? t("haveAccount") : t("noAccount")}{" "}
         <button type="button" onClick={() => switchTab(isSignup ? "login" : "signup")} className="min-h-11 font-medium text-foreground underline underline-offset-4">
           {isSignup ? t("tabLogin") : t("tabSignup")}
         </button>
       </p>
+      ) : null}
     </div>
   );
 }

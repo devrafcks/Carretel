@@ -33,6 +33,8 @@ import {
   setBatchStatusCore,
   upsertOperationCore,
   writeOffCore,
+  requireWrite,
+  requireOwner,
 } from "@/server/core";
 import { cancelSubscription, requestRefund, startCheckout, applySubscriptionEvent, billingMode } from "@/server/billing";
 import { TenantNotFoundError } from "@/db/tenant";
@@ -104,7 +106,8 @@ export async function createWorkshopAction(_: ActionResult | null, form: FormDat
     userAgent: meta.ua,
   });
   await audit("auth.signup", { workshopId, userId: user.id });
-  redirect(`/${locale}/hoy?welcome=1`);
+  // vindo do fluxo de assinatura, volta para ele (único destino aceito além do painel)
+  redirect(form.get("next") === "assinar" ? `/${locale}/assinar` : `/${locale}/hoy?welcome=1`);
 }
 
 /* ───── Lotes ───── */
@@ -146,6 +149,7 @@ export async function registerDeliveryAction(input: unknown, previousProofId?: s
 export async function revokeProofAction(proofId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireWrite(ctx);
     await revokeProofCore(ctx, proofId);
     revalidateApp();
     return { ok: true };
@@ -169,6 +173,7 @@ export async function createClientAction(input: z.input<typeof clientCreateSchem
 export async function updateClientAction(clientId: string, input: { name: string; phone?: string; preferredLocale: "es" | "pt-BR" }): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireWrite(ctx);
     const v = clientCreateSchema.parse(input);
     await ctx.tdb.update(clients, { name: v.name, phoneE164: v.phone ? toE164(v.phone) : null, preferredLocale: v.preferredLocale, updatedAt: new Date() }, eq(clients.id, clientId));
     revalidateApp();
@@ -207,6 +212,7 @@ export async function createWorkerAction(input: z.input<typeof workerCreateSchem
 export async function updateWorkerAction(workerId: string, input: { name: string; phone?: string; isEmployee: boolean; active: boolean }): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireWrite(ctx);
     await ctx.tdb.update(
       workers,
       { name: z.string().trim().min(1).max(120).parse(input.name), phoneE164: input.phone ? toE164(input.phone) : null, isEmployee: input.isEmployee, active: input.active, updatedAt: new Date() },
@@ -302,6 +308,7 @@ export async function writeOffAction(receivableId: string): Promise<ActionResult
 export async function assumeReceivableAction(receivableId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireWrite(ctx);
     await assumeReceivableCore(ctx, receivableId);
     revalidateApp();
     return { ok: true };
@@ -325,6 +332,7 @@ export async function markChargedAction(receivableId: string): Promise<ActionRes
 export async function updateWorkshopAction(_: ActionResult | null, form: FormData): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     const name = z.string().trim().min(2).max(80).parse(form.get("name"));
     const docType = (form.get("docType") as string) || "";
     const docNumber = ((form.get("docNumber") as string) || "").trim();
@@ -354,6 +362,7 @@ export async function updateWorkshopAction(_: ActionResult | null, form: FormDat
 export async function setWorkshopAvatarAction(mediaId: string | null): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     if (mediaId !== null) {
       const id = z.string().uuid().parse(mediaId);
       await ctx.tdb.get(mediaAssets, eq(mediaAssets.id, id), "media");
@@ -371,6 +380,7 @@ export async function setWorkshopAvatarAction(mediaId: string | null): Promise<A
 export async function updatePixAction(_: ActionResult | null, form: FormData): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     const type = z.enum(["evp", "phone", "email", "cpf", "cnpj"]).parse(form.get("pixKeyType"));
     const key = z.string().trim().min(3).max(77).parse(form.get("pixKey"));
     await updateWorkshopRow(ctx.workshop.id, {
@@ -411,6 +421,7 @@ export async function saveCalculatorProfileAction(profile: CalculatorProfile): P
 export async function saveSettingsAction(_: ActionResult | null, form: FormData): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     const maxHours = form.get("maxHoursPerDay") ? String(z.coerce.number().min(1).max(24).parse(form.get("maxHoursPerDay"))) : null;
     const period = z.enum(["weekly", "biweekly"]).parse(form.get("settlementPeriod") || "weekly");
     const existing = await ctx.tdb.first(workshopSettings);
@@ -426,6 +437,7 @@ export async function saveSettingsAction(_: ActionResult | null, form: FormData)
 export async function startCheckoutAction(method: "PIX" | "CARD"): Promise<ActionResult<{ url: string }>> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     const locale = await getLocale();
     const url = await startCheckout(ctx, method, locale);
     await audit("subscription.checkout", { workshopId: ctx.workshop.id, userId: ctx.user.id, resource: method });
@@ -463,6 +475,7 @@ export async function simulateBillingEventAction(event: string): Promise<ActionR
 export async function cancelSubscriptionAction(withRefund: boolean): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     if (withRefund) await requestRefund(ctx);
     else await cancelSubscription(ctx);
     await audit(withRefund ? "subscription.refund_request" : "subscription.cancel", { workshopId: ctx.workshop.id, userId: ctx.user.id });
@@ -476,6 +489,7 @@ export async function cancelSubscriptionAction(withRefund: boolean): Promise<Act
 export async function deleteAccountAction(confirmName: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
+    requireOwner(ctx);
     if (confirmName.trim() !== ctx.workshop.name.trim()) return { ok: false, error: "name_mismatch" };
     await softDeleteWorkshop(ctx.workshop.id);
     await audit("account.delete", { workshopId: ctx.workshop.id, userId: ctx.user.id });

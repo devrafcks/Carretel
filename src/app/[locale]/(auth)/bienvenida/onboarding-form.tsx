@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 
-export function OnboardingForm() {
+export function OnboardingForm({ returnTo }: { returnTo?: "assinar" } = {}) {
   const t = useTranslations();
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(createWorkshopAction, null);
   const [machines, setMachines] = React.useState(3);
@@ -18,6 +18,7 @@ export function OnboardingForm() {
 
   return (
     <form action={action} className="mt-5 space-y-5">
+      {returnTo ? <input type="hidden" name="next" value={returnTo} /> : null}
       <Field id="name" label={t("onboarding.name")} error={err?.field === "name" ? t("common.required") : null}>
         {(a) => <Input {...a} name="name" required minLength={2} maxLength={80} placeholder={t("onboarding.namePlaceholder")} autoComplete="organization" />}
       </Field>

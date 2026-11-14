@@ -3,8 +3,8 @@ import * as React from "react";
 import { useActionState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { CreditCard, QrCode, TriangleAlert } from "@/components/icons";
-import { useRouter } from "@/i18n/navigation";
+import { Sparkles, TriangleAlert } from "@/components/icons";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -13,7 +13,6 @@ import {
   cancelSubscriptionAction,
   deleteAccountAction,
   saveSettingsAction,
-  startCheckoutAction,
   updatePixAction,
   updateWorkshopAction,
   type ActionResult,
@@ -24,56 +23,24 @@ function useErr() {
   return (code?: string) => (code && t.has(`errors.${code}`) ? t(`errors.${code}` as "errors.server_error") : t("common.errorGeneric"));
 }
 
-export function Paywall({ mode, testMode = false, pixAvailable = true }: { mode: "abacatepay" | "simulated" | "disabled"; testMode?: boolean; pixAvailable?: boolean }) {
+/** Na tela Conta, o plano é ativado pelo mesmo fluxo de assinatura em passos (/assinar). */
+export function Paywall({ mode }: { mode: "abacatepay" | "simulated" | "disabled"; testMode?: boolean; pixAvailable?: boolean }) {
   const t = useTranslations("account");
-  const errMsg = useErr();
-  const [busy, setBusy] = React.useState<null | "PIX" | "CARD">(null);
-  const [pixOff, setPixOff] = React.useState(!pixAvailable);
-  const go = async (m: "PIX" | "CARD") => {
-    setBusy(m);
-    const r = await startCheckoutAction(m);
-    if (r.ok && r.data) window.location.assign(r.data.url);
-    else {
-      if (!r.ok && r.error === "pix_unavailable") setPixOff(true);
-      toast.error(errMsg(r.ok ? undefined : r.error));
-      setBusy(null);
-    }
-  };
+  const ts = useTranslations("subscribe");
   return (
-    <div className="mt-4 rounded-3xl bg-mint-soft p-5 sm:p-6">
-      <h3 className="text-xl font-medium">{t("paywallTitle")}</h3>
-      <p className="mt-1 text-muted-foreground">{t("paywallLead")}</p>
-      {/* duas opções lado a lado (empilhadas no mobile), separadas por 12px */}
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <button
-          type="button"
-          disabled={Boolean(busy) || mode === "disabled" || pixOff}
-          onClick={() => void go("PIX")}
-          className="flex min-h-24 flex-col items-start justify-center gap-1 rounded-2xl bg-primary px-5 py-4 text-left text-primary-foreground shadow-soft transition-colors hover:bg-primary/85 disabled:bg-muted disabled:text-muted-foreground"
-        >
-          <span className="inline-flex items-center gap-2 text-lg font-medium">
-            <QrCode aria-hidden="true" className="size-5" /> {t("payPix")} · R$ 35
-          </span>
-          <span className="text-sm opacity-80">{pixOff ? t("pixSoon") : t("payPixNote")}</span>
-        </button>
-        <button
-          type="button"
-          disabled={Boolean(busy) || mode === "disabled"}
-          onClick={() => void go("CARD")}
-          className="flex min-h-24 flex-col items-start justify-center gap-1 rounded-2xl border border-ink/10 bg-card px-5 py-4 text-left shadow-soft transition-colors hover:border-ink/30 disabled:bg-muted disabled:text-muted-foreground"
-        >
-          <span className="inline-flex items-center gap-2 text-lg font-medium">
-            <CreditCard aria-hidden="true" className="size-5" /> {t("payCard")} · R$ 35
-          </span>
-          <span className="text-sm text-muted-foreground">{t("payCardNote")}</span>
-        </button>
+    <div className="mt-4 flex flex-col gap-4 rounded-3xl bg-mint-soft p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+      <div>
+        <h3 className="text-xl font-medium">{t("paywallTitle")}</h3>
+        <p className="mt-1 text-muted-foreground">{ts("paymentLead")}</p>
       </div>
-      {testMode ? <p className="mt-4 rounded-2xl bg-card/80 px-4 py-3 text-sm">{t("testModeNote")}</p> : null}
-      {busy ? (
-        <p className="mt-3 font-medium" role="status">
-          {t("opening")}
-        </p>
-      ) : null}
+      {mode === "disabled" ? (
+        <p className="text-sm">{ts("disabled")}</p>
+      ) : (
+        <Link href="/assinar" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-6 font-medium text-primary-foreground transition-colors hover:bg-primary/85">
+          <Sparkles aria-hidden="true" className="size-5" />
+          {ts("upgrade")}
+        </Link>
+      )}
     </div>
   );
 }

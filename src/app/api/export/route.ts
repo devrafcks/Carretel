@@ -12,8 +12,10 @@ import {
   settlementItems,
   settlements,
   workers,
+  notifications,
 } from "@/db/schema";
 import { workshopFromRequest } from "@/lib/session";
+import { hitRateLimit } from "@/db/public";
 import { audit } from "@/lib/audit";
 
 function toCsv(rows: Record<string, unknown>[]): string {
@@ -30,6 +32,9 @@ function toCsv(rows: Record<string, unknown>[]): string {
 export async function GET() {
   const ctx = await workshopFromRequest();
   if (!ctx) return new Response(null, { status: 401 });
+  // exportação completa é do dono do taller, e pesada: no máximo 5 por hora
+  if (ctx.role !== "owner") return new Response(null, { status: 403 });
+  if (await hitRateLimit(`export:${ctx.workshop.id}`, 5, 3600)) return new Response(null, { status: 429 });
   const t = ctx.tdb;
   const strip = <T extends Record<string, unknown>>(rows: T[], drop: string[]) =>
     rows.map((r) => Object.fromEntries(Object.entries(r).filter(([k]) => !drop.includes(k))));
@@ -38,6 +43,7 @@ export async function GET() {
     clients: await t.select(clients),
     workers: strip(await t.select(workers), ["docNumberEnc"]),
     batches: await t.select(batches),
+    notifications: await t.select(notifications),
     batch_operations: await t.select(batchOperations),
     production_logs: await t.select(productionLogs),
     advances: await t.select(advances),

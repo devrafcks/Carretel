@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help } from "@/components/icons";
+import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles } from "@/components/icons";
 import type { AppIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
@@ -103,7 +103,7 @@ function NavLink({ it, active }: { it: Item; active: boolean }) {
       href={it.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-11 items-center gap-3 rounded-xl px-3 text-[0.9375rem] transition-colors",
+        "flex min-h-10 items-center gap-3 rounded-xl px-3 text-[0.9375rem] transition-colors",
         active ? "bg-primary font-medium text-primary-foreground" : "text-muted-foreground hover:bg-mint-50 hover:text-foreground",
       )}
     >
@@ -114,7 +114,18 @@ function NavLink({ it, active }: { it: Item; active: boolean }) {
 }
 
 /** Sidebar do computador: grupos com rótulo, ação principal no topo, conta e ajuda embaixo. */
-export function SideRail({ workshopName, avatarMediaId, authMode }: { workshopName?: string; avatarMediaId?: string | null; authMode: "neon" | "dev" }) {
+export function SideRail({
+  workshopName,
+  avatarMediaId,
+  authMode,
+  showUpgrade = false,
+}: {
+  workshopName?: string;
+  avatarMediaId?: string | null;
+  authMode: "neon" | "dev";
+  showUpgrade?: boolean;
+}) {
+  const ts = useTranslations("subscribe");
   const t = useTranslations("nav");
   const pathname = usePathname();
   const tab = useSearchParams().get("tab");
@@ -131,7 +142,7 @@ export function SideRail({ workshopName, avatarMediaId, authMode }: { workshopNa
         {t("newBatchAria")}
       </Link>
 
-      <div className="mt-6 flex-1 space-y-6 overflow-y-auto">
+      <div className="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto">
         {groups.map((g) => (
           <div key={g.label}>
             <p className="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground/80">{t(g.label)}</p>
@@ -146,7 +157,18 @@ export function SideRail({ workshopName, avatarMediaId, authMode }: { workshopNa
         ))}
       </div>
 
-      <ul className="space-y-1 border-t border-ink/[0.06] pt-4">
+      {showUpgrade ? (
+        <Link href="/assinar" className="group mb-3 mt-3 flex items-center gap-3 rounded-2xl bg-mint-soft px-3 py-2.5 transition-shadow hover:shadow-soft">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Sparkles aria-hidden="true" className="size-4" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">{ts("upgrade")}</span>
+            <span className="block truncate text-xs text-muted-foreground">{ts("upgradeTitle")} · R$ 35/mês</span>
+          </span>
+        </Link>
+      ) : null}
+      <ul className="space-y-0.5 border-t border-ink/[0.06] pt-3">
         {footer.map((it) => (
           <li key={it.key}>
             <NavLink it={it} active={it.match(pathname, tab)} />

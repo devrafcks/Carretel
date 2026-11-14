@@ -358,7 +358,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           </Reveal>
         </div>
         <div className="container-wide mt-20">
-          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-[2rem] border border-ink/[0.06] bg-ink/[0.06] md:grid-cols-4">
+          <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[2rem] border border-ink/[0.06] bg-ink/[0.06] md:grid-cols-4">
             {(
               [
                 [20, "", t("fact1Label")],
@@ -367,14 +367,18 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
                 [35, "R$ ", t("fact4Label")],
               ] as const
             ).map(([n, prefix, label]) => (
-              <div key={label} className="flex flex-col-reverse bg-card p-7 text-center">
-                <dt className="mt-2 text-sm text-muted-foreground">{label}</dt>
-                <dd className="text-5xl font-extralight sm:text-6xl">
+              <li key={label} className="bg-card p-7 text-center">
+                {/* leitor de tela ouve "20 segundos para registrar um corte" de uma vez; a animação é só visual */}
+                <span className="sr-only">{`${prefix}${n} ${label}`}</span>
+                <span aria-hidden="true" className="block text-5xl font-extralight sm:text-6xl">
                   <CountUp to={n} prefix={prefix} />
-                </dd>
-              </div>
+                </span>
+                <span aria-hidden="true" className="mt-2 block text-sm text-muted-foreground">
+                  {label}
+                </span>
+              </li>
             ))}
-          </dl>
+          </ul>
         </div>
       </section>
 
@@ -391,7 +395,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
             </h2>
           </Reveal>
           <div className="mx-auto mt-12 grid max-w-5xl gap-5 md:grid-cols-2">
-            <Reveal>
+            <div>
               <div className="flex h-full flex-col rounded-[2rem] border border-ink/[0.08] bg-background p-8">
                 <p className="text-muted-foreground">{t("planFreeName")}</p>
                 <p className="mt-3 text-5xl font-light">{t("planFreePrice")}</p>
@@ -404,12 +408,14 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
                     </li>
                   ))}
                 </ul>
-                <Link href="/entrar?conta=nova" className={cn(pill, "mt-auto border border-ink/20 bg-card hover:border-ink/50 [margin-top:2.25rem]")}>
-                  {t("planFreeCta")}
-                </Link>
+                <div className="mt-auto pt-9">
+                  <Link href="/entrar?conta=nova" className={cn(pill, "w-full border border-ink/20 bg-card hover:border-ink/50")}>
+                    {t("planFreeCta")}
+                  </Link>
+                </div>
               </div>
-            </Reveal>
-            <Reveal delay={140}>
+            </div>
+            <div>
               <div className="relative flex h-full flex-col rounded-[2rem] bg-ink p-8 text-primary-foreground shadow-lift">
                 <span className="absolute right-6 top-6 rounded-full bg-sun px-3 py-1 text-xs font-medium text-ink">{t("planProBadge")}</span>
                 <p className="text-primary-foreground/70">{t("planProName")}</p>
@@ -426,12 +432,12 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
                     </li>
                   ))}
                 </ul>
-                <Link href="/entrar?conta=nova" className={cn(pill, "mt-9 bg-sun text-ink hover:bg-mint-200")}>
+                <Link href="/assinar" className={cn(pill, "mt-9 w-full bg-sun text-ink hover:bg-mint-200")}>
                   {t("planProCta")}
                   <ArrowRight aria-hidden="true" className="size-5 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
-            </Reveal>
+            </div>
           </div>
         </div>
       </section>
