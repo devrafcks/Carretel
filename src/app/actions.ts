@@ -52,7 +52,7 @@ function fail(err: unknown): { ok: false; error: string; field?: string } {
   const msg = String((err as Error)?.message ?? err);
   if (msg.includes("delivery_proof_locked")) return { ok: false, error: "proof_locked" };
   if (msg.includes("settlement_locked")) return { ok: false, error: "settlement_locked" };
-  if (msg === "pix_unavailable" || msg === "already_subscribed" || msg === "billing_disabled") return { ok: false, error: msg };
+  if (msg === "pix_unavailable" || msg === "already_subscribed" || msg === "billing_disabled" || msg === "no_subscription") return { ok: false, error: msg };
   console.error(JSON.stringify({ level: "error", msg: "action_failed", err: msg }));
   return { ok: false, error: "server_error" };
 }
@@ -472,15 +472,17 @@ export async function simulateBillingEventAction(event: string): Promise<ActionR
   }
 }
 
-export async function cancelSubscriptionAction(withRefund: boolean): Promise<ActionResult> {
+export async function cancelSubscriptionAction(withRefund: boolean): Promise<ActionResult<{ accessUntil: string | null; refund: boolean }>> {
   try {
     const ctx = await requireWorkshop();
     requireOwner(ctx);
-    if (withRefund) await requestRefund(ctx);
-    else await cancelSubscription(ctx);
+    if (ctx.workshop.planStatus !== "active" && ctx.workshop.planStatus !== "trialing" && ctx.workshop.planStatus !== "past_due") {
+      return { ok: false, error: "already_canceled" };
+    }
+    const r = withRefund ? await requestRefund(ctx) : await cancelSubscription(ctx);
     await audit(withRefund ? "subscription.refund_request" : "subscription.cancel", { workshopId: ctx.workshop.id, userId: ctx.user.id });
     revalidateApp();
-    return { ok: true };
+    return { ok: true, data: { accessUntil: r.accessUntil ? r.accessUntil.toISOString() : null, refund: withRefund } };
   } catch (e) {
     return fail(e);
   }

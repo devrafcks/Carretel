@@ -976,7 +976,8 @@
     "not_simulated": "Solo en modo simulado.",
     "pix_unavailable": "El Pix Automático todavía no está habilitado en la cuenta de cobro. Por ahora, use tarjeta.",
     "already_subscribed": "Su plan ya está activo.",
-    "owner_only": "Solo el dueño del taller puede hacer esto."
+    "owner_only": "Solo el dueño del taller puede hacer esto.",
+    "already_canceled": "Esta suscripción ya está cancelada."
   },
   "theme": {
     "toggle": "Cambiar tema",
@@ -1215,6 +1216,18 @@
     "refundTitle": "Cancelar y pedir reembolso",
     "refundBody": "Cancelamos ahora y devolvemos el valor cobrado en hasta 7 días. La cuenta pasa a modo lectura.",
     "confirmRefund": "Cancelar y pedir reembolso",
-    "canceledOk": "Suscripción cancelada."
+    "canceledOk": "Suscripción cancelada.",
+    "working": "Cancelando en AbacatePay… no cierre esta ventana.",
+    "workingShort": "Cancelando…",
+    "tryAgain": "Intente de nuevo.",
+    "doneCancelTitle": "Suscripción cancelada",
+    "doneRefundTitle": "Cancelada y reembolso solicitado",
+    "doneNoCharges": "No habrá más cobros.",
+    "doneAccessUntil": "Sigue con todo liberado hasta el {date}.",
+    "doneAccessEnded": "La cuenta quedó en modo lectura.",
+    "doneRefundBody": "El valor cobrado vuelve en hasta 7 días. La cuenta quedó en modo lectura.",
+    "doneDataKept": "Sus datos siguen guardados y puede suscribirse de nuevo cuando quiera.",
+    "doneOk": "Entendido",
+    "doneDialogTitle": "Listo"
   }
 }

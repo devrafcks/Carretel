@@ -263,7 +263,8 @@ function periodEndFrom(from: Date): Date {
 }
 
 /* ───── Cancelamento e reembolso ───── */
-export async function cancelSubscription(ctx: Pick<WorkshopContext, "tdb" | "workshop">): Promise<void> {
+/** Cancela na AbacatePay e aqui. Devolve até quando o acesso continua (fim do período já pago ou do teste). */
+export async function cancelSubscription(ctx: Pick<WorkshopContext, "tdb" | "workshop">, opts: { endAccessNow?: boolean } = {}): Promise<{ accessUntil: Date | null }> {
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) throw new Error("no_subscription");
   if (billingMode() === "abacatepay" && sub.abacateSubscriptionId) {
@@ -274,19 +275,29 @@ export async function cancelSubscription(ctx: Pick<WorkshopContext, "tdb" | "wor
       if (!(err instanceof AbacateError && /not active|not found/i.test(err.apiError))) throw err;
     }
   }
-  await ctx.tdb.update(subscriptions, { status: "canceled", canceledAt: new Date(), updatedAt: new Date() }, eq(subscriptions.id, sub.id));
-  await setPlanStatus(ctx.workshop.id, nextPlanStatus(ctx.workshop.planStatus, "subscription.cancelled"));
+  const now = new Date();
+  // com reembolso o acesso acaba agora; sem reembolso vai até o fim do período já pago (ou do teste)
+  const accessUntil = opts.endAccessNow ? now : (sub.currentPeriodEnd ?? sub.trialEndsAt ?? null);
+  await ctx.tdb.update(
+    subscriptions,
+    { status: "canceled", canceledAt: now, updatedAt: now, ...(opts.endAccessNow ? { currentPeriodEnd: now } : {}) },
+    eq(subscriptions.id, sub.id),
+  );
+  await setPlanStatus(ctx.workshop.id, opts.endAccessNow ? "read_only" : nextPlanStatus(ctx.workshop.planStatus, "subscription.cancelled"));
+  // acabou de alinhar com a AbacatePay: a próxima tela não precisa conferir de novo
+  lastReconcile.set(ctx.workshop.id, Date.now());
+  return { accessUntil: accessUntil && accessUntil > now ? accessUntil : null };
 }
 
 /**
  * A API da AbacatePay não estorna cobranças de assinatura (só o cliente, pelo Portal, ou o painel).
  * Aqui registramos o pedido (prazo de 7 dias) e cancelamos; o estorno é feito pelo painel da AbacatePay.
  */
-export async function requestRefund(ctx: WorkshopContext): Promise<void> {
+export async function requestRefund(ctx: WorkshopContext): Promise<{ accessUntil: Date | null }> {
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) throw new Error("no_subscription");
   await ctx.tdb.update(subscriptions, { refundRequestedAt: new Date(), updatedAt: new Date() }, eq(subscriptions.id, sub.id));
-  await cancelSubscription(ctx);
+  return cancelSubscription(ctx, { endAccessNow: true });
 }
 
 /* ───── Webhook / eventos ───── */

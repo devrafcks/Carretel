@@ -1,9 +1,9 @@
 "use client";
 import * as React from "react";
 import { useActionState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Sparkles, TriangleAlert } from "@/components/icons";
+import { CircleCheck, RefreshCw, Sparkles, TriangleAlert } from "@/components/icons";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";
@@ -45,47 +45,100 @@ export function Paywall({ mode }: { mode: "abacatepay" | "simulated" | "disabled
   );
 }
 
-export function CancelSubscription({ refundEligible, trialing = false, accessUntil = "" }: { refundEligible: boolean; trialing?: boolean; accessUntil?: string }) {
+type CancelStep = { kind: "confirm" } | { kind: "working" } | { kind: "done"; accessUntil: string | null; refund: boolean } | { kind: "error"; message: string };
+
+/** Cancelar ou pedir reembolso: confirma → "Cancelando…" → confirmação clara dentro do próprio diálogo. */
+export function CancelSubscription({ refundEligible, trialing = false, accessUntil = "", canCancel = true }: { refundEligible: boolean; trialing?: boolean; accessUntil?: string; canCancel?: boolean }) {
   const t = useTranslations("plan");
+  const locale = useLocale();
   const router = useRouter();
   const errMsg = useErr();
   const [open, setOpen] = React.useState<null | "cancel" | "refund">(null);
-  const [pending, start] = React.useTransition();
-  const run = (refund: boolean) =>
-    start(async () => {
-      const r = await cancelSubscriptionAction(refund);
-      if (!r.ok) toast.error(errMsg(r.error));
-      else {
-        toast.success(t("canceledOk"));
-        setOpen(null);
-        router.refresh();
-      }
-    });
+  const [step, setStep] = React.useState<CancelStep>({ kind: "confirm" });
+
+  const [snapshot, setSnapshot] = React.useState({ trialing, accessUntil });
+  const openDialog = (k: "cancel" | "refund") => {
+    setSnapshot({ trialing, accessUntil });
+    setStep({ kind: "confirm" });
+    setOpen(k);
+  };
+  const run = async (refund: boolean) => {
+    setStep({ kind: "working" });
+    const r = await cancelSubscriptionAction(refund);
+    if (r.ok) {
+      // a confirmação fica na tela; o cartão do plano só atualiza ao fechar (se atualizar antes, o botão some e leva o diálogo junto)
+      setStep({ kind: "done", accessUntil: r.data?.accessUntil ?? null, refund });
+    } else {
+      setStep({ kind: "error", message: errMsg(r.error) });
+    }
+  };
+  const fmt = (iso: string | null) => (iso ? new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso)) : "");
+  const working = step.kind === "working";
+  const close = () => {
+    const wasDone = step.kind === "done";
+    setOpen(null);
+    if (wasDone) router.refresh();
+  };
+
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen("cancel")}>
-        {trialing ? t("cancelTrial") : t("cancel")}
-      </Button>
-      {refundEligible ? (
-        <Button variant="ghost" onClick={() => setOpen("refund")}>
+      {canCancel ? (
+        <Button variant="outline" onClick={() => openDialog("cancel")}>
+          {trialing ? t("cancelTrial") : t("cancel")}
+        </Button>
+      ) : null}
+      {canCancel && refundEligible ? (
+        <Button variant="ghost" onClick={() => openDialog("refund")}>
           {t("refundTitle")}
         </Button>
       ) : null}
-      <Dialog open={Boolean(open)} onOpenChange={(o) => !o && setOpen(null)}>
+      <Dialog open={Boolean(open)} onOpenChange={(o) => !o && !working && close()}>
         {open ? (
-          <DialogContent title={open === "refund" ? t("refundTitle") : trialing ? t("cancelTrialTitle") : t("cancelTitle")} closeLabel="×">
-            <p className="text-muted-foreground">
-              {open === "refund" ? t("refundBody") : trialing ? t("cancelBodyTrial", { date: accessUntil }) : t("cancelBodyActive", { date: accessUntil })}
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
-              <Button variant="destructive" disabled={pending} onClick={() => run(open === "refund")}>
-                {open === "refund" ? t("confirmRefund") : t("confirmCancel")}
-              </Button>
-              <Button variant="outline" onClick={() => setOpen(null)}>
-                {t("keep")}
-              </Button>
-            </div>
-          </DialogContent>
+          step.kind === "done" ? (
+            <DialogContent title={t("doneDialogTitle")} closeLabel="×">
+              <div className="flex flex-col items-center text-center">
+                <span className="inline-flex size-14 items-center justify-center rounded-full bg-mint-100 text-vivid-strong">
+                  <CircleCheck aria-hidden="true" className="size-7" />
+                </span>
+                <p role="status" className="mt-4 text-lg font-medium">
+                  {step.refund ? t("doneRefundTitle") : t("doneCancelTitle")}
+                </p>
+                <ul className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                  <li>{t("doneNoCharges")}</li>
+                  <li>{step.refund ? t("doneRefundBody") : step.accessUntil ? t("doneAccessUntil", { date: fmt(step.accessUntil) }) : t("doneAccessEnded")}</li>
+                  <li>{t("doneDataKept")}</li>
+                </ul>
+                <Button className="mt-6" onClick={close}>
+                  {t("doneOk")}
+                </Button>
+              </div>
+            </DialogContent>
+          ) : (
+            <DialogContent title={open === "refund" ? t("refundTitle") : snapshot.trialing ? t("cancelTrialTitle") : t("cancelTitle")} closeLabel="×">
+              <p className="text-muted-foreground">
+                {open === "refund" ? t("refundBody") : snapshot.trialing ? t("cancelBodyTrial", { date: snapshot.accessUntil }) : t("cancelBodyActive", { date: snapshot.accessUntil })}
+              </p>
+              {step.kind === "error" ? (
+                <p role="alert" className="mt-4 rounded-2xl bg-overdue-calote-bg px-4 py-3 text-sm text-overdue-calote-fg">
+                  {step.message} {t("tryAgain")}
+                </p>
+              ) : null}
+              {working ? (
+                <p role="status" className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                  <RefreshCw aria-hidden="true" className="size-4 motion-safe:animate-spin" />
+                  {t("working")}
+                </p>
+              ) : null}
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
+                <Button variant="destructive" disabled={working} onClick={() => void run(open === "refund")}>
+                  {working ? t("workingShort") : open === "refund" ? t("confirmRefund") : t("confirmCancel")}
+                </Button>
+                <Button variant="outline" disabled={working} onClick={() => setOpen(null)}>
+                  {t("keep")}
+                </Button>
+              </div>
+            </DialogContent>
+          )
         ) : null}
       </Dialog>
     </>

@@ -152,13 +152,13 @@ export async function SubscriptionCard({
             {cta}
           </Link>
         ) : null}
-        {status === "trialing" || status === "active" || status === "past_due" ? (
-          <CancelSubscription
-            trialing={status === "trialing"}
-            accessUntil={d(status === "trialing" ? (trialEnd ?? periodEnd) : periodEnd)}
-            refundEligible={Boolean(refundUntil && refundUntil.getTime() > now)}
-          />
-        ) : null}
+        {/* sempre montado: assim a confirmação do cancelamento continua na tela quando o cartão atualiza */}
+        <CancelSubscription
+          canCancel={status === "trialing" || status === "active" || status === "past_due"}
+          trialing={status === "trialing"}
+          accessUntil={d(status === "trialing" ? (trialEnd ?? periodEnd) : periodEnd)}
+          refundEligible={(status === "active" || status === "past_due") && Boolean(refundUntil && refundUntil.getTime() > now)}
+        />
         {refundUntil && refundUntil.getTime() > now && status === "active" ? (
           <p className="text-xs text-muted-foreground">{t("refundUntil", { date: d(refundUntil) })}</p>
         ) : null}

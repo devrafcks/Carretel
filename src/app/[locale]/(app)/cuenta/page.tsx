@@ -23,7 +23,7 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
   if (checkout === "ok") redirect(`/${locale}/assinar/concluido`);
   // confere com a AbacatePay (cancelamento pelo portal etc.) — funciona mesmo sem webhook
   if (ctx.subscription && billingMode() === "abacatepay") {
-    const next = await reconcileSubscription(ctx, { force: true });
+    const next = await reconcileSubscription(ctx);
     if (next && next !== ctx.workshop.planStatus) redirect(`/${locale}/cuenta?checkout=${checkout === "ok" ? "done" : "sync"}`);
   }
   const ws = ctx.workshop;
