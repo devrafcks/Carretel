@@ -7,7 +7,6 @@ import { Toaster } from "sonner";
 import { SeebPosition } from "@/components/app/seeb-position";
 import { routing } from "@/i18n/routing";
 import { fontSans, fontDisplay, fontMono, fontSerif } from "@/styles/fonts";
-import { themeInitScript } from "@/components/app/theme";
 import { ServiceWorkerRegister } from "@/components/app/sw-register";
 import { appUrl } from "@/config/brand";
 import { BRAND_HEX } from "@/config/brand-colors";
@@ -47,9 +46,6 @@ export default async function LocaleLayout({ children, params }: { children: Rea
   const t = await getTranslations({ locale, namespace: "common" });
   return (
     <html lang={locale} suppressHydrationWarning className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} ${fontSerif.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
       {/* variáveis de fonte também no <body>: o :root de tokens.css redefine --font-sans e venceria a classe do <html> */}
       <body className={`${fontSans.variable} ${fontDisplay.variable} ${fontMono.variable} ${fontSerif.variable}`}>
         {/* Âncora estável: o SeeB tira #app do <body>; nós que o React insere no <body> (metadata do Next)

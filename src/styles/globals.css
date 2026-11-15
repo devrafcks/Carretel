@@ -177,37 +177,39 @@
 .delay-4 { animation-delay: 0.5s; }
 .delay-5 { animation-delay: 0.7s; }
 
-/* Revelar ao rolar: só esconde quando há JS (classe js no <html>); sem JS o conteúdo aparece. */
-.js .reveal {
-  opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.js .reveal[data-visible="true"] {
-  opacity: 1;
-  transform: none;
-}
-.js .reveal-scale {
-  opacity: 0;
-  transform: translateY(40px) scale(0.96);
-  transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.js .reveal-scale[data-visible="true"] {
-  opacity: 1;
-  transform: none;
-}
-.js .reveal-line {
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.js .reveal-line[data-visible="true"] {
-  transform: scaleY(1);
+/* Revelar ao rolar: só esconde quando o navegador roda JS (media query, sem script inline); sem JS o conteúdo aparece. */
+@media (scripting: enabled) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-scale {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+    transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .reveal-scale[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-line {
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 1.4s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+  .reveal-line[data-visible="true"] {
+    transform: scaleY(1);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .js .reveal,
-  .js .reveal-scale,
-  .js .reveal-line {
+  .reveal,
+  .reveal-scale,
+  .reveal-line {
     opacity: 1;
     transform: none;
   }

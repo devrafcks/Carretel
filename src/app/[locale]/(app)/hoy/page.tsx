@@ -203,7 +203,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       {firstRun ? null : (
       <>
       {/* ── Cartões com gráficos finos ── */}
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3 [&>*]:min-w-0">
         <Card className="anim-rise delay-1 p-6 md:col-span-2">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -238,7 +238,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       </section>
 
       {/* ── Mais gráficos: dois livres e dois do plano completo ── */}
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 [&>*]:min-w-0">
         <Card className="anim-rise p-6">
           <p className="text-muted-foreground">{t("hoyCharts.debtorsTitle")}</p>
           {debtors.length ? (
@@ -304,7 +304,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       </section>
 
       {/* ── Etapas, idade das cobranças, entregas por semana e formas de pagamento ── */}
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 [&>*]:min-w-0">
         <ChartCard quiet title={t("hoyCharts.pipelineTitle")} lead={t("hoyCharts.pipelineLead")}>
           <Segments
             label={t("hoyCharts.pipelineTitle")}
@@ -359,7 +359,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       )}
 
       {firstRun ? null : (
-        <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] [&>*]:min-w-0">
           <section aria-labelledby="recent">
             <div className="mb-3 flex items-center justify-between">
               <h2 id="recent" className="text-xl font-medium">
