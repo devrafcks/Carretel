@@ -101,8 +101,38 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
           {firstRun ? (
             <Orbs className="mx-auto hidden self-center sm:block" />
           ) : (
-          /* círculos com os números ao redor */
-          <div className="relative mx-auto aspect-[4/3] w-full max-w-md">
+          <>
+          {/* celular: blocos simples, nada se sobrepõe */}
+          <dl className="grid grid-cols-2 gap-3 sm:hidden">
+            <Link href="/cobros" className="col-span-2 rounded-2xl bg-mint-50 px-4 py-3">
+              <dt className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />
+                {t("hoy.owedLabel")}
+              </dt>
+              <dd className="mt-0.5 text-3xl font-light">
+                <Money cents={s.owedCents} locale={locale} />
+              </dd>
+              {s.awaitingCents > 0 ? <dd className="mt-0.5 text-xs text-awaiting-confirmation-fg">{t("hoy.awaitingPlus", { amount: fmt(s.awaitingCents) })}</dd> : null}
+            </Link>
+            <Link href="/lotes" className="rounded-2xl border border-ink/[0.06] px-4 py-3">
+              <dt className="text-xs text-muted-foreground">{t("hoy.productionLabel")}</dt>
+              <dd className="mt-0.5 text-xl font-light tabular-money">{s.piecesInProduction}</dd>
+            </Link>
+            <Link href="/produccion?tab=acerto" className="rounded-2xl border border-ink/[0.06] px-4 py-3">
+              <dt className="text-xs text-muted-foreground">{t("hoy.payrollLabel")}</dt>
+              <dd className="mt-0.5 text-xl font-light">
+                <Money cents={Math.max(0, s.payrollPendingCents)} locale={locale} />
+              </dd>
+            </Link>
+            {s.oldestOpenDays > 0 ? (
+              <Link href="/cobros" className="col-span-2 flex items-center justify-between rounded-2xl border border-ink/[0.06] px-4 py-3">
+                <dt className="text-sm text-muted-foreground">{t("hoy.oldest")}</dt>
+                <dd className={cn("text-lg font-medium tabular-money", s.oldestOpenDays > 15 && "text-overdue-calote-fg")}>{t("common.days", { count: s.oldestOpenDays })}</dd>
+              </Link>
+            ) : null}
+          </dl>
+          {/* tablet/computador: círculos com os números ao redor */}
+          <div className="relative mx-auto hidden aspect-[4/3] w-full max-w-md sm:block">
             <span aria-hidden="true" className="bg-hatch absolute left-[10%] top-[20%] size-[38%] rounded-full" />
             <span aria-hidden="true" className="anim-pop absolute right-[6%] top-[6%] size-[54%] rounded-full bg-mint-200/80" />
             <span aria-hidden="true" className="anim-pop delay-2 absolute bottom-[8%] left-[34%] size-[28%] rounded-full border border-white bg-white/80 shadow-soft" />
@@ -141,6 +171,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
               </div>
             ) : null}
           </div>
+          </>
           )}
         </div>
       </section>

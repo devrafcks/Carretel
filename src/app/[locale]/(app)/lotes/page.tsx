@@ -82,8 +82,9 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
                     <span className="tabular-money">{t("common.pieces", { count: b.quantity })}</span> · <Money cents={b.totalCents} locale={locale} className="text-foreground" />
                     {b.dueDate ? <> · {t("hoy.dueOn", { date: formatDate(b.dueDate, locale) })}</> : null}
                   </p>
+                  <StatusBadge className="mt-2 sm:hidden" tone={batchTone[b.status]!.tone} icon={batchTone[b.status]!.icon} label={t(`status.batch.${b.status}`)} />
                 </div>
-                <StatusBadge tone={batchTone[b.status]!.tone} icon={batchTone[b.status]!.icon} label={t(`status.batch.${b.status}`)} />
+                <StatusBadge className="hidden sm:inline-flex" tone={batchTone[b.status]!.tone} icon={batchTone[b.status]!.icon} label={t(`status.batch.${b.status}`)} />
                 <ChevronRight aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
               </Link>
             </li>

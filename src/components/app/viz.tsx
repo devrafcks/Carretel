@@ -283,7 +283,7 @@ export function Heatmap({ days, label, weekdayLabels, format, className, legend 
 /** Cartão de gráfico padrão do painel. */
 export function ChartCard({ title, lead, badge, children, className, action, quiet = false }: { title: string; lead?: string; badge?: React.ReactNode; children: React.ReactNode; className?: string; action?: React.ReactNode; quiet?: boolean }) {
   return (
-    <section className={cn("rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft", className)}>
+    <section className={cn("overflow-x-clip rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {/* quiet: título cinza e leve, como os cartões do Hoje */}

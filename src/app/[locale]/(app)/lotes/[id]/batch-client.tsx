@@ -78,7 +78,7 @@ export function BatchActions({
         {showDelivery || open ? (
           <Dialog open={open} onOpenChange={setOpen}>
             {showDelivery ? (
-              <Button size="lg" onClick={() => setOpen(true)} className="sm:order-first">
+              <Button size="lg" onClick={() => setOpen(true)} className="order-first">
                 <Truck aria-hidden="true" /> {t("batch.registerDelivery")}
               </Button>
             ) : null}
