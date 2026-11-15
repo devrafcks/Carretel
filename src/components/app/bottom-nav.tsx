@@ -2,11 +2,12 @@
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield } from "@/components/icons";
+import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield, ChartBar } from "@/components/icons";
 import type { AppIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
 import { SignOutNavItem } from "./sign-out";
+import { ProBadge } from "./premium";
 import { WorkshopAvatar } from "./avatar";
 
 const items = [
@@ -63,8 +64,8 @@ export function BottomNav() {
   );
 }
 
-type NavKey = "hoy" | "lotes" | "produccion" | "cobros" | "clients" | "team" | "calc" | "account" | "help";
-type Item = { href: string; key: NavKey; icon: AppIcon; match: (path: string, tab: string | null) => boolean };
+type NavKey = "hoy" | "lotes" | "produccion" | "cobros" | "clients" | "team" | "calc" | "reports" | "account" | "help";
+type Item = { href: string; key: NavKey; icon: AppIcon; match: (path: string, tab: string | null) => boolean; pro?: boolean };
 
 const starts = (p: string) => (path: string) => path === p || path.startsWith(p + "/");
 
@@ -87,7 +88,10 @@ const groups: { label: "groupDay" | "groupPeople" | "groupTools"; items: Item[] 
   },
   {
     label: "groupTools",
-    items: [{ href: "/calculadora", key: "calc", icon: Calculator, match: starts("/calculadora") }],
+    items: [
+      { href: "/calculadora", key: "calc", icon: Calculator, match: starts("/calculadora") },
+      { href: "/relatorios", key: "reports", icon: ChartBar, match: starts("/relatorios"), pro: true },
+    ],
   },
 ];
 
@@ -96,7 +100,7 @@ const footer: Item[] = [
   { href: "/mas", key: "help", icon: Help, match: starts("/mas") },
 ];
 
-function NavLink({ it, active }: { it: Item; active: boolean }) {
+function NavLink({ it, active, showPro = false }: { it: Item; active: boolean; showPro?: boolean }) {
   const t = useTranslations("nav");
   return (
     <Link
@@ -108,7 +112,8 @@ function NavLink({ it, active }: { it: Item; active: boolean }) {
       )}
     >
       <it.icon aria-hidden="true" className="size-5 shrink-0" />
-      {t(it.key)}
+      <span className="min-w-0 flex-1 truncate">{t(it.key)}</span>
+      {showPro && it.pro ? <ProBadge /> : null}
     </Link>
   );
 }
@@ -151,7 +156,7 @@ export function SideRail({
             <ul className="mt-2 space-y-1">
               {g.items.map((it) => (
                 <li key={it.key}>
-                  <NavLink it={it} active={it.match(pathname, tab)} />
+                  <NavLink it={it} active={it.match(pathname, tab)} showPro={showUpgrade} />
                 </li>
               ))}
             </ul>

@@ -15,6 +15,14 @@ import { formatDate } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { brand } from "@/config/brand";
 import { cn } from "@/lib/utils";
+import { isPremium } from "@/lib/subscription";
+import { monthNumbers, monthlyRevenue, topDebtors, workerProductivity } from "@/server/reports";
+import { PairBars, HBars } from "@/components/app/report-charts";
+import { PremiumGate, ProBadge } from "@/components/app/premium";
+
+/* exemplos (desfocados) para quem ainda não assina — nunca os dados reais */
+const SAMPLE_REVENUE = [480000, 560000, 510000, 640000, 700000, 760000].map((v, i) => ({ month: `2026-${String(i + 4).padStart(2, "0")}`, issuedCents: v, paidCents: Math.round(v * 0.85) }));
+const SAMPLE_MONTH = { batches: 11, receivedCents: 1180000, avgPricePerPieceCents: 310, avgTicketCents: 107000, deliveredPieces: 3200, deliveredCents: 990000 };
 
 export default async function HoyPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ welcome?: string }> }) {
   const { locale } = await params;
@@ -22,11 +30,18 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
   setRequestLocale(locale);
   const ctx = await requireWorkshop();
   const t = await getTranslations();
-  const [s, recent, series, month] = await Promise.all([
+  const fmt = (c: number) => formatBRL(c, locale);
+  const monthLabel = (k: string) => new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${k}-15T12:00:00Z`)).replace(".", "");
+  const premium = isPremium(ctx.workshop.planStatus, ctx.access);
+  const [s, recent, series, month, debtors, teamWeek, revenue, mNums] = await Promise.all([
     dashboardSummary(ctx.tdb),
     listBatches(ctx.tdb, { limit: 6 }),
     productionSeries(ctx.tdb, 14),
     monthCollection(ctx.tdb),
+    topDebtors(ctx.tdb, 4),
+    workerProductivity(ctx.tdb, 7),
+    premium ? monthlyRevenue(ctx.tdb, 6) : Promise.resolve(SAMPLE_REVENUE),
+    premium ? monthNumbers(ctx.tdb) : Promise.resolve(SAMPLE_MONTH),
   ]);
   const isFree = ctx.workshop.planStatus === "free" || ctx.workshop.planStatus === "pending_checkout";
   const todayPieces = series[series.length - 1]?.pieces ?? 0;
@@ -148,6 +163,72 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             {t("hoy.collectedOf", { paid: formatBRL(month.paidCents, locale), total: formatBRL(month.issuedCents, locale) })}
           </p>
         </Card>
+      </section>
+
+      {/* ── Mais gráficos: dois livres e dois do plano completo ── */}
+      <section className="grid gap-4 md:grid-cols-2">
+        <Card className="anim-rise p-6">
+          <p className="text-muted-foreground">{t("hoyCharts.debtorsTitle")}</p>
+          {debtors.length ? (
+            <HBars
+              className="mt-5"
+              items={debtors.map((d, i) => ({ key: d.name + i, label: d.name, value: d.owedCents, display: fmt(d.owedCents), tone: "warn", hint: d.oldest ? t("hoyCharts.since", { date: formatDate(d.oldest, locale) }) : undefined }))}
+            />
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">{t("hoyCharts.debtorsEmpty")}</p>
+          )}
+        </Card>
+        <Card className="anim-rise p-6">
+          <p className="text-muted-foreground">{t("hoyCharts.teamWeekTitle")}</p>
+          {teamWeek.length ? (
+            <HBars className="mt-5" items={teamWeek.slice(0, 5).map((w) => ({ key: w.id, label: w.name, value: w.pieces, display: t("common.pieces", { count: w.pieces }), tone: "ink" }))} />
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">{t("hoyCharts.teamWeekEmpty")}</p>
+          )}
+        </Card>
+        <PremiumGate unlocked={premium} compact>
+          <Card className="h-full p-6">
+            <div className="flex items-center justify-between gap-3">
+              <p className="inline-flex items-center gap-2 text-muted-foreground">
+                {t("hoyCharts.revenueTitle")} <ProBadge />
+              </p>
+            </div>
+            <PairBars
+              className="mt-3"
+              label={t("hoyCharts.revenueTitle")}
+              labels={{ a: t("reports.issued"), b: t("reports.received") }}
+              format={fmt}
+              data={revenue.map((r) => ({ key: r.month, label: monthLabel(r.month), a: r.issuedCents, b: r.paidCents }))}
+            />
+          </Card>
+        </PremiumGate>
+        <PremiumGate unlocked={premium} compact>
+          <Card className="flex h-full flex-col p-6">
+            <p className="inline-flex items-center gap-2 text-muted-foreground">
+              {t("hoyCharts.monthTitle")} <ProBadge />
+            </p>
+            <dl className="mt-5 grid grid-cols-2 gap-x-4 gap-y-5">
+              {(
+                [
+                  [t("reports.mBatches"), String(mNums.batches)],
+                  [t("reports.mReceived"), fmt(mNums.receivedCents)],
+                  [t("reports.mAvgPiece"), fmt(mNums.avgPricePerPieceCents)],
+                  [t("reports.mDelivered"), String(mNums.deliveredPieces)],
+                ] as [string, string][]
+              ).map(([k, v]) => (
+                <div key={k}>
+                  <dt className="text-xs text-muted-foreground">{k}</dt>
+                  <dd className="mt-0.5 text-2xl font-light tabular-money">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            {premium ? (
+              <Link href="/relatorios" className="mt-auto inline-flex min-h-11 items-center pt-4 text-sm font-medium underline-offset-4 hover:underline">
+                {t("hoyCharts.seeReports")}
+              </Link>
+            ) : null}
+          </Card>
+        </PremiumGate>
       </section>
 
       {s.totalBatches === 0 ? (

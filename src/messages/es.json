@@ -75,7 +75,8 @@
     "help": "Ayuda e info",
     "groupDay": "Día a día",
     "groupPeople": "Personas",
-    "groupTools": "Herramientas"
+    "groupTools": "Herramientas",
+    "reports": "Informes"
   },
   "status": {
     "paid": "Pagado",
@@ -221,7 +222,8 @@
       "Cobros por WhatsApp con Pix",
       "Producción, adelantos y pago semanal",
       "Calculadora de precio justo",
-      "Exportar sus datos cuando quiera"
+      "Exportar sus datos cuando quiera",
+      "Informes y gráficos del mes (PRO)"
     ],
     "faqTitle": "Preguntas frecuentes",
     "faq": [
@@ -836,7 +838,9 @@
     "signedAs": "Conectado como {email}",
     "manage": "Administrar",
     "activatePlan": "Activar plan",
-    "memberSince": "En Carretel desde el {date}"
+    "memberSince": "En Carretel desde el {date}",
+    "reports": "Informes",
+    "reportsDesc": "Facturado x cobrado, clientes y producción del equipo."
   },
   "clients": {
     "title": "Clientes",
@@ -1229,5 +1233,48 @@
     "doneDataKept": "Sus datos siguen guardados y puede suscribirse de nuevo cuando quiera.",
     "doneOk": "Entendido",
     "doneDialogTitle": "Listo"
+  },
+  "premium": {
+    "badge": "PRO",
+    "lockedTitle": "Función del plan completo",
+    "lockedBody": "Active el plan para ver estos números con los datos de su taller.",
+    "unlock": "Activar plan",
+    "sample": "Ejemplo"
+  },
+  "reports": {
+    "title": "Informes",
+    "lead": "Cuánto entra, quién paga, quién produce. Los números de su taller, mes a mes.",
+    "revenueTitle": "Facturado x cobrado",
+    "revenueLead": "Últimos 6 meses",
+    "issued": "Facturado",
+    "received": "Cobrado",
+    "clientsTitle": "Clientes",
+    "clientsLead": "Quién le manda más trabajo",
+    "paysIn": "paga en {days} días en promedio",
+    "noPayHistory": "todavía sin pagos",
+    "owes": "debe {amount}",
+    "teamTitle": "Producción del equipo",
+    "teamLead": "Últimos 30 días",
+    "perDay": "{n} piezas/día",
+    "monthTitle": "Este mes",
+    "mBatches": "Cortes recibidos",
+    "mReceived": "Valor de los cortes",
+    "mAvgPiece": "Precio medio por pieza",
+    "mAvgTicket": "Valor medio por corte",
+    "mDelivered": "Piezas entregadas",
+    "mDeliveredValue": "Valor entregado",
+    "export": "Exportar CSV",
+    "empty": "Todavía no hay datos suficientes. Los gráficos aparecen a medida que registra cortes.",
+    "navLabel": "Informes"
+  },
+  "hoyCharts": {
+    "debtorsTitle": "Quién le debe más",
+    "debtorsEmpty": "Nadie le debe ahora.",
+    "since": "desde el {date}",
+    "teamWeekTitle": "Producción de la semana",
+    "teamWeekEmpty": "Sin producción registrada esta semana.",
+    "revenueTitle": "Facturado x cobrado",
+    "monthTitle": "Resumen del mes",
+    "seeReports": "Ver informes"
   }
 }

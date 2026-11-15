@@ -102,3 +102,13 @@ export function withinRefundWindow(firstChargedAt: Date | null | undefined, now 
   if (!firstChargedAt) return false;
   return now.getTime() - firstChargedAt.getTime() <= 7 * 86_400_000;
 }
+
+/**
+ * Recursos do plano completo (relatórios, gráficos avançados, exportação):
+ * liberados para quem assina (ativo ou em teste) e para quem cancelou ou está com cobrança pendente
+ * enquanto ainda tem dias pagos.
+ */
+export function isPremium(planStatus: PlanStatus, access: Pick<Access, "reason">): boolean {
+  if (planStatus === "active" || planStatus === "trialing") return true;
+  return (planStatus === "canceled" || planStatus === "past_due") && access.reason === "past_due_grace";
+}
