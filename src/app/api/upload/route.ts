@@ -4,6 +4,7 @@
  * Verificação extra: recusa JPEG com segmento APP1 (EXIF) e PNG com chunk eXIf.
  */
 import { randomBytes } from "node:crypto";
+import { z } from "zod";
 import { mediaAssets } from "@/db/schema";
 import { workshopFromRequest } from "@/lib/session";
 import { hitRateLimit } from "@/db/public";
@@ -36,8 +37,10 @@ export async function POST(req: Request) {
   const buf = Buffer.from(await file.arrayBuffer());
   if (hasExif(buf, file.type)) return Response.json({ error: "exif_present" }, { status: 422 });
 
-  const width = Number(form?.get("width") ?? 0) || null;
-  const height = Number(form?.get("height") ?? 0) || null;
+  // dimensões informadas pelo navegador: inteiros plausíveis ou nada
+  const dim = z.coerce.number().int().min(1).max(20_000).nullable().catch(null);
+  const width = dim.parse(form?.get("width") ?? null);
+  const height = dim.parse(form?.get("height") ?? null);
   const row = await ctx.tdb.insert(mediaAssets, {
     storage: "db",
     storageKey: randomBytes(16).toString("hex"),

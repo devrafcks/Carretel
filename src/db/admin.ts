@@ -71,7 +71,9 @@ export type AdminUserRow = {
 };
 
 export async function adminListUsers(search = ""): Promise<AdminUserRow[]> {
-  const like = `%${search.trim().toLowerCase()}%`;
+  // escapa os curingas do LIKE: a busca é por texto literal (o valor já vai como parâmetro, sem injeção)
+  const term = search.trim().toLowerCase().slice(0, 120);
+  const like = `%${term.replace(/[\\%_]/g, (c) => "\\" + c)}%`;
   return q<AdminUserRow>(sql`
     select u.id::text id, u.email, u.name, u."createdAt" created_at, u.role, u.banned,
       w.id::text workshop_id, w.name workshop_name, w.plan_status,
@@ -80,7 +82,7 @@ export async function adminListUsers(search = ""): Promise<AdminUserRow[]> {
     from neon_auth."user" u
     left join workshop_members m on m.user_id::text = u.id::text
     left join workshops w on w.id = m.workshop_id and w.deleted_at is null
-    where ${search.trim() === ""} or lower(u.email) like ${like} or lower(coalesce(u.name,'')) like ${like} or lower(coalesce(w.name,'')) like ${like}
+    where ${term === ""} or lower(u.email) like ${like} or lower(coalesce(u.name,'')) like ${like} or lower(coalesce(w.name,'')) like ${like}
     order by u."createdAt" desc
     limit 300`);
 }

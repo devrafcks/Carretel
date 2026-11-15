@@ -1,7 +1,7 @@
 /**
  * Next.js 16: proxy.ts (substitui middleware.ts). Camada barata e OTIMISTA, antes de qualquer página ou API:
  * 1) bloqueia cabeçalho interno do Next vindo de fora (desvio de proxy);
- * 2) APIs: escrita só do próprio site (Origin/Referer) e APIs privadas só com cookie de sessão;
+ * 2) APIs: escrita só do próprio site (Origin/Referer; inclui login/cadastro) e APIs privadas só com cookie de sessão;
  * 3) páginas: next-intl (prefixo /es | /pt-BR) e, nas rotas do app, sessão obrigatória
  *    (com Neon Auth: auth.middleware(), que também renova a sessão) + sem cache e fora dos buscadores.
  * A autorização real (plano, dono, taller) é sempre no servidor: requireWorkshop / requireWrite / requireOwner.
@@ -10,7 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { createNeonAuth } from "@neon/auth/next/server";
 import { routing } from "./i18n/routing";
-import { MUTATING, classifyPath, hasForbiddenInternalHeader, hasSessionCookie, isSameOrigin, loginRedirectPath } from "./lib/route-guard";
+import { MUTATING, classifyPath, hasForbiddenInternalHeader, hasSessionCookie, isSameOrigin, loginRedirectPath, requiresSameOrigin } from "./lib/route-guard";
 
 const intl = createIntlMiddleware(routing);
 
@@ -45,8 +45,8 @@ export default async function proxy(request: NextRequest) {
   /* ───── APIs ───── */
   if (route.kind === "private-api" || route.kind === "unknown-api" || route.kind === "self-auth-api") {
     if (route.kind === "unknown-api") return deny(403, "forbidden");
-    if (route.kind === "self-auth-api") return NextResponse.next(); // webhook/cron/auth validam a própria assinatura
-    if (MUTATING.has(request.method) && !sameOrigin) return deny(403, "cross_origin");
+    if (requiresSameOrigin(pathname, request.method) && !sameOrigin) return deny(403, "cross_origin");
+    if (route.kind === "self-auth-api") return NextResponse.next(); // webhook/cron validam a própria assinatura; auth limita tentativas na rota
     if (!hasSessionCookie(request.cookies.getAll().map((c) => c.name))) return deny(401, "unauthorized");
     const res = NextResponse.next();
     for (const [k, v] of PRIVATE_HEADERS) res.headers.set(k, v);

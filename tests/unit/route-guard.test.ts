@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyPath, hasForbiddenInternalHeader, hasSessionCookie, isSameOrigin, loginRedirectPath } from "@/lib/route-guard";
+import { classifyPath, hasForbiddenInternalHeader, hasSessionCookie, isSameOrigin, loginRedirectPath, requiresSameOrigin } from "@/lib/route-guard";
 import { computeAccess } from "@/lib/subscription";
 
 describe("classifyPath", () => {
@@ -87,5 +87,21 @@ describe("o que cada situação de plano libera", () => {
   it("cancelado: libera até o fim do período pago e depois bloqueia", () => {
     expect(computeAccess({ ...base, planStatus: "canceled", currentPeriodEnd: new Date("2026-11-20") }).canWrite).toBe(true);
     expect(computeAccess({ ...base, planStatus: "canceled", currentPeriodEnd: new Date("2026-11-10") }).canWrite).toBe(false);
+  });
+});
+
+describe("requiresSameOrigin", () => {
+  it("login, cadastro e APIs privadas: escrita só do próprio site", () => {
+    expect(requiresSameOrigin("/api/auth/sign-in/email", "POST")).toBe(true);
+    expect(requiresSameOrigin("/api/auth/sign-up/email", "POST")).toBe(true);
+    expect(requiresSameOrigin("/api/dev-auth", "POST")).toBe(true);
+    expect(requiresSameOrigin("/api/sync", "POST")).toBe(true);
+  });
+
+  it("leitura, webhooks e cron não exigem (têm assinatura própria)", () => {
+    expect(requiresSameOrigin("/api/auth/get-session", "GET")).toBe(false);
+    expect(requiresSameOrigin("/api/webhooks/abacatepay", "POST")).toBe(false);
+    expect(requiresSameOrigin("/api/cron/retention", "GET")).toBe(false);
+    expect(requiresSameOrigin("/api/authx", "POST")).toBe(false); // não é /api/auth (e cai em unknown-api no proxy)
   });
 });

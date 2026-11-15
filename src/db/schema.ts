@@ -573,12 +573,18 @@ export const legalParams = pgTable(
   (t) => [uniqueIndex("legal_params_key_valid_uq").on(t.key, t.validFrom)],
 );
 
-/* Rate limit simples por chave (link público, OTP, sync) */
-export const rateLimits = pgTable("rate_limits", {
-  key: text("key").primaryKey(),
-  windowStart: ts("window_start").notNull(),
-  count: integer("count").notNull().default(0),
-});
+/* Rate limit por chave (login, cadastro, senha, link público, OTP, sync): janela deslizante aproximada */
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    key: text("key").primaryKey(),
+    windowStart: ts("window_start").notNull(),
+    count: integer("count").notNull().default(0),
+    /** contagem da janela anterior (pesa proporcionalmente na decisão) */
+    prevCount: integer("prev_count").notNull().default(0),
+  },
+  (t) => [index("rate_limits_window_idx").on(t.windowStart)],
+);
 
 /* Sessões do modo de desenvolvimento (só quando NEON_AUTH_BASE_URL não está configurado) */
 export const devAuthCodes = pgTable("dev_auth_codes", {

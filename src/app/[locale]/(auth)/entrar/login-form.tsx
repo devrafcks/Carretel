@@ -7,6 +7,8 @@ import { Notice } from "@/components/ui/card";
 import { Info, Eye, EyeOff } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/navigation";
+import { PasswordStrengthHint, usePasswordStrength, useWeakPasswordMessage } from "@/components/ui/password-strength";
+import { retryMinutes } from "@/lib/rate-limit-client";
 
 type Mode = "neon" | "dev";
 type Tab = "login" | "signup";
@@ -44,6 +46,8 @@ export function LoginForm({
 /* ───────── Neon Auth: e-mail + senha (sem e-mail de confirmação por enquanto) ───────── */
 function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab: Tab; embedded: boolean }) {
   const t = useTranslations("auth");
+  const ts = useTranslations("security");
+  const weakMessage = useWeakPasswordMessage();
   const [tab, setTab] = React.useState<Tab>(initialTab);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -52,6 +56,8 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
   const [passwordError, setPasswordError] = React.useState<string | null>(null);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const isSignup = tab === "signup";
+  const strength = usePasswordStrength(isSignup ? password : "", { email: email.trim().toLowerCase() });
 
   function switchTab(nextTab: Tab) {
     setTab(nextTab);
@@ -83,6 +89,15 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
     if (bad) return;
 
     setBusy(true);
+    if (isSignup) {
+      const verdict = await strength.evaluate();
+      if (!verdict.ok) {
+        // a dica já aparece no medidor logo acima; aqui só o pedido de ação
+        setPasswordError(verdict.hint === "tooShort" ? t("passwordShort") : ts("password.weak"));
+        setBusy(false);
+        return;
+      }
+    }
     try {
       // Chama o proxy /api/auth (Neon Auth) direto: os cookies de sessão voltam no Set-Cookie.
       const res = await fetch(tab === "signup" ? "/api/auth/sign-up/email" : "/api/auth/sign-in/email", {
@@ -92,9 +107,12 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
         body: JSON.stringify(tab === "signup" ? { email: mail, password, name: mail.split("@")[0] ?? mail } : { email: mail, password }),
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { code?: string };
+        const body = (await res.json().catch(() => ({}))) as { code?: string; hint?: string; retryAfter?: number };
         const code = body.code ?? "";
-        if (res.status === 429) setFormError(t("rateLimited"));
+        if (res.status === 429) {
+          const minutes = retryMinutes(res, body);
+          setFormError(minutes ? ts("rateLimited", { minutes }) : t("rateLimited"));
+        } else if (code === "PASSWORD_TOO_WEAK") setPasswordError(weakMessage(body.hint));
         else if (code.startsWith("USER_ALREADY_EXISTS")) setFormError(t("userExists"));
         else if (code.includes("PASSWORD_TOO_SHORT")) setPasswordError(t("passwordShort"));
         else if (code === "INVALID_EMAIL") setEmailError(t("invalidEmail"));
@@ -110,7 +128,6 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
     }
   }
 
-  const isSignup = tab === "signup";
   return (
     <div>
       {!embedded ? (
@@ -157,7 +174,7 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
         <Field
           id="password"
           label={t("password")}
-          hint={isSignup ? t("passwordHint") : undefined}
+          hint={isSignup ? <PasswordStrengthHint password={password} result={strength.result} checking={strength.checking} emptyHint={t("passwordHint")} /> : undefined}
           error={passwordError}
           trailing={
             <button
@@ -178,7 +195,12 @@ function PasswordForm({ next, initialTab, embedded }: { next: string; initialTab
               autoComplete={isSignup ? "new-password" : "current-password"}
               minLength={MIN_PASSWORD}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setPasswordError(null);
+              }}
+              onFocus={isSignup ? strength.preload : undefined}
+              maxLength={128}
               required
             />
           )}
