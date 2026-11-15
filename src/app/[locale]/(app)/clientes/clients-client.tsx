@@ -2,8 +2,11 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Pencil, UserX, Plus } from "@/components/icons";
-import { formatBRL } from "@/lib/money";
+import { Pencil, UserX, Plus, Scissors } from "@/components/icons";
+import { formatBRL, parseMoneyInput } from "@/lib/money";
+import { setClientUsualServiceAction } from "@/app/module-actions";
+import { Link } from "@/i18n/navigation";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -15,7 +18,7 @@ import { FichaIllustration } from "@/components/brand/illustrations";
 import { anonymizeClientAction, createClientAction, updateClientAction } from "@/app/actions";
 import { initials } from "@/lib/utils";
 
-type C = { id: string; name: string; phone: string; locale: "es" | "pt-BR"; notes: string; owedCents?: number; batches?: number; openBatches?: number; volumeCents?: number };
+type C = { id: string; name: string; phone: string; locale: "es" | "pt-BR"; notes: string; usualReference: string; usualUnitPriceCents: number | null; owedCents?: number; batches?: number; openBatches?: number; volumeCents?: number };
 
 export function ClientsManager({ clients, canWrite }: { clients: C[]; canWrite: boolean }) {
   const t = useTranslations();
@@ -71,6 +74,24 @@ export function ClientsManager({ clients, canWrite }: { clients: C[]; canWrite: 
                 </>
               ) : null}
               </div>
+              {c.usualReference || c.usualUnitPriceCents ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-mint-50 px-3 py-2">
+                  <p className="min-w-0 text-sm">
+                    <span className="text-muted-foreground">{t("clients.usual")}: </span>
+                    <span className="font-medium">
+                      {[c.usualReference ? `${t("common.reference")} ${c.usualReference}` : null, c.usualUnitPriceCents ? t("clients.usualPrice", { amount: formatBRL(c.usualUnitPriceCents, locale) }) : null]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                  </p>
+                  {canWrite ? (
+                    <Link href={`/lotes/nuevo?cliente=${c.id}`} className={buttonVariants({ variant: "secondary", size: "sm" })}>
+                      <Scissors aria-hidden="true" />
+                      {t("clients.repeatBatch")}
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
               <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-ink/[0.06] pt-4">
                 <div>
                   <dt className="text-xs text-muted-foreground">{t("clients.owes")}</dt>
@@ -106,6 +127,8 @@ function ClientForm({ initial, onDone }: { initial: C | null; onDone: () => void
   const [name, setName] = React.useState(initial?.name ?? "");
   const [phone, setPhone] = React.useState(initial?.phone ?? "");
   const [loc, setLoc] = React.useState<"es" | "pt-BR">(initial?.locale ?? "pt-BR");
+  const [usualRef, setUsualRef] = React.useState(initial?.usualReference ?? "");
+  const [usualPrice, setUsualPrice] = React.useState(initial?.usualUnitPriceCents ? (initial.usualUnitPriceCents / 100).toFixed(2).replace(".", ",") : "");
   const [error, setError] = React.useState<string | null>(null);
   const [pending, start] = React.useTransition();
   return (
@@ -115,10 +138,12 @@ function ClientForm({ initial, onDone }: { initial: C | null; onDone: () => void
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return setError(t("common.required"));
+        const usualCents = usualPrice.trim() ? parseMoneyInput(usualPrice) : null;
         start(async () => {
-          const r = initial
+          let r = initial
             ? await updateClientAction(initial.id, { name, phone: phone || undefined, preferredLocale: loc })
-            : await createClientAction({ name, phone: phone || undefined, preferredLocale: loc });
+            : await createClientAction({ name, phone: phone || undefined, preferredLocale: loc, usualReference: usualRef || undefined, usualUnitPriceCents: usualCents ?? undefined });
+          if (r.ok && initial) r = await setClientUsualServiceAction(initial.id, { reference: usualRef || null, unitPriceCents: usualCents || null });
           if (!r.ok) return setError(t("common.errorGeneric"));
           toast.success(t("clients.saved"));
           onDone();
@@ -144,6 +169,18 @@ function ClientForm({ initial, onDone }: { initial: C | null; onDone: () => void
           </Select>
         )}
       </Field>
+      <fieldset className="space-y-3 rounded-2xl border border-ink/10 p-4">
+        <legend className="px-1 text-sm font-medium">{t("clients.usual")}</legend>
+        <p className="text-sm text-muted-foreground">{t("clients.usualHint")}</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field id="curef" label={t("clients.usualReference")} optional={t("common.optional")}>
+            {(a) => <Input {...a} value={usualRef} onChange={(e) => setUsualRef(e.target.value)} maxLength={80} autoComplete="off" />}
+          </Field>
+          <Field id="cuprice" label={t("clients.usualUnitPrice")} optional={t("common.optional")}>
+            {(a) => <Input {...a} inputMode="decimal" value={usualPrice} onChange={(e) => setUsualPrice(e.target.value)} placeholder="1,20" className="tabular-money" />}
+          </Field>
+        </div>
+      </fieldset>
       <Button type="submit" size="lg" block disabled={pending}>
         {t("clients.save")}
       </Button>

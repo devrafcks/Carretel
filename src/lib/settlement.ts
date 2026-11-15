@@ -88,3 +88,34 @@ export function settlementPeriod(today: Date, endWeekday = 6, lengthDays = 7): {
   start.setUTCDate(end.getUTCDate() - (lengthDays - 1));
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
 }
+
+/* ───── Folha por peça: valor de cada costureira ───── */
+export interface WorkerRate {
+  machine: string | null;
+  reference: string | null;
+  pieceRateCents: Cents;
+}
+
+const norm = (s: string | null | undefined) => (s ?? "").trim().toLowerCase();
+
+/**
+ * Valor por peça desta costureira para a operação/modelo, se ela tiver um cadastrado.
+ * O mais específico ganha: modelo + máquina > modelo > máquina > geral (sem modelo nem máquina).
+ * Sem valor próprio → null (vale o valor da operação do corte).
+ */
+export function pickWorkerRate(rates: WorkerRate[], op: { machine: string; reference: string | null }): Cents | null {
+  let best: { score: number; cents: Cents } | null = null;
+  for (const r of rates) {
+    const refOk = !r.reference || (op.reference !== null && norm(r.reference) === norm(op.reference));
+    const machineOk = !r.machine || r.machine === op.machine;
+    if (!refOk || !machineOk) continue;
+    const score = (r.reference ? 2 : 0) + (r.machine ? 1 : 0);
+    if (!best || score > best.score) best = { score, cents: r.pieceRateCents };
+  }
+  return best?.cents ?? null;
+}
+
+/** Fechamento do acerto conforme a configuração: semanal (7 dias) ou quinzenal (14 dias), terminando no dia do acerto. */
+export function settlementPeriodFor(today: Date, period: "weekly" | "biweekly", endWeekday = 6): { start: string; end: string } {
+  return settlementPeriod(today, endWeekday, period === "biweekly" ? 14 : 7);
+}

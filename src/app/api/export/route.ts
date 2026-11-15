@@ -12,6 +12,9 @@ import {
   settlementItems,
   settlements,
   workers,
+  workerRates,
+  outsourceShipments,
+  outsourceReturns,
   notifications,
 } from "@/db/schema";
 import { workshopFromRequest } from "@/lib/session";
@@ -52,6 +55,9 @@ export async function GET() {
     delivery_proofs: await t.select(deliveryProofs),
     receivables: await t.select(receivables),
     payments: await t.select(payments),
+    worker_rates: await t.select(workerRates),
+    outsource_shipments: await t.select(outsourceShipments),
+    outsource_returns: await t.select(outsourceReturns),
   };
   const zip = new JSZip();
   zip.file("dados.json", JSON.stringify({ exportedAt: new Date().toISOString(), ...data }, null, 2));

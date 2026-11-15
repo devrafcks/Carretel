@@ -16,7 +16,10 @@ import {
   receivables,
   settlementItems,
   settlements,
+  outsourceReturns,
+  outsourceShipments,
   workers,
+  workerRates,
   workshopSettings,
   type Machine,
   type ProofSnapshot,
@@ -34,9 +37,10 @@ import { clientCreateSchema, workerCreateSchema } from "@/lib/schemas";
 import type { z } from "zod";
 import { canonicalJson, encryptField, last3, publicToken, sha256Hex } from "@/lib/crypto";
 import { toE164 } from "@/lib/validators";
-import { computeSettlement } from "@/lib/settlement";
+import { computeSettlement, pickWorkerRate } from "@/lib/settlement";
 import { currentLegalParam, incrementFreeBatches } from "@/db/public";
 import { todayISO } from "@/lib/dates";
+import { maxReturnable, shipmentStatus, summarizeShipment } from "@/lib/outsource";
 
 export class DomainError extends Error {
   constructor(public code: string) {
@@ -65,6 +69,8 @@ export async function createClientCore(ctx: Ctx, input: z.input<typeof clientCre
     phoneE164: v.phone ? toE164(v.phone) : null,
     preferredLocale: v.preferredLocale,
     notes: v.notes ?? null,
+    usualReference: v.usualReference ?? null,
+    usualUnitPriceCents: v.usualUnitPriceCents ?? null,
   };
   if (cmid) return (await ctx.tdb.insertIdempotent(clients, { ...values, clientMutationId: cmid })).row;
   return ctx.tdb.insert(clients, values);
@@ -122,9 +128,15 @@ export async function createBatchCore(ctx: Ctx, v: BatchCreateInput, cmid?: stri
   }
   const result = await ctx.tdb.transaction(async (tx) => {
     let clientId = v.clientId ?? null;
-    if (clientId) await tx.get(clients, eq(clients.id, clientId), "client");
+    if (clientId) {
+      const c = await tx.get(clients, eq(clients.id, clientId), "client");
+      // cliente recorrente: o primeiro corte vira o serviço de costume (modelo e preço), se ainda não houver
+      if (c.usualUnitPriceCents === null && c.usualReference === null) {
+        await tx.update(clients, { usualReference: v.reference ?? null, usualUnitPriceCents: v.unitPriceCents, updatedAt: new Date() }, eq(clients.id, c.id));
+      }
+    }
     if (!clientId && v.newClientName) {
-      const c = await tx.insert(clients, { name: v.newClientName, preferredLocale: "pt-BR" });
+      const c = await tx.insert(clients, { name: v.newClientName, preferredLocale: "pt-BR", usualReference: v.reference ?? null, usualUnitPriceCents: v.unitPriceCents });
       clientId = c.id;
     }
     const totalCents = v.quantity * v.unitPriceCents;
@@ -206,6 +218,9 @@ export async function logProductionCore(ctx: Ctx, v: ProductionLogInput, cmid?: 
     if (!v.machine || !v.pieceRateCents) throw new DomainError("operation_rate_required");
     op = await upsertOperationCore(ctx, batch.id, v.machine, v.pieceRateCents);
   }
+  // folha por peça: se a costureira tem valor próprio para este modelo/máquina, ele vale sobre o da operação
+  const rates = await ctx.tdb.select(workerRates, eq(workerRates.workerId, v.workerId));
+  const rate = pickWorkerRate(rates, { machine: op.machine, reference: batch.reference }) ?? op.pieceRateCents;
   const values = {
     batchId: batch.id,
     workerId: v.workerId,
@@ -213,7 +228,7 @@ export async function logProductionCore(ctx: Ctx, v: ProductionLogInput, cmid?: 
     workDate: v.workDate,
     pieces: v.pieces,
     hours: v.hours !== undefined ? String(v.hours) : null,
-    amountCents: v.pieces * op.pieceRateCents,
+    amountCents: v.pieces * rate,
   };
   const log = cmid
     ? (await ctx.tdb.insertIdempotent(productionLogs, { ...values, clientMutationId: cmid })).row
@@ -222,6 +237,27 @@ export async function logProductionCore(ctx: Ctx, v: ProductionLogInput, cmid?: 
     await ctx.tdb.update(batches, { status: "in_production", version: batch.version + 1, updatedAt: new Date() }, eq(batches.id, batch.id));
   }
   return { log, duplicate: false };
+}
+
+/** Valor por peça de uma costureira (modelo e/ou máquina; vazio = qualquer). Substitui o que já existir para a mesma combinação. */
+export async function setWorkerRateCore(ctx: Ctx, v: { workerId: string; machine: Machine | null; reference: string | null; pieceRateCents: number }) {
+  requireWrite(ctx);
+  await ctx.tdb.get(workers, eq(workers.id, v.workerId), "worker");
+  const reference = v.reference?.trim() || null;
+  const same = (await ctx.tdb.select(workerRates, eq(workerRates.workerId, v.workerId))).find(
+    (r) => (r.machine ?? null) === v.machine && (r.reference ?? "").toLowerCase() === (reference ?? "").toLowerCase(),
+  );
+  if (same) {
+    const [row] = await ctx.tdb.update(workerRates, { pieceRateCents: v.pieceRateCents, updatedAt: new Date() }, eq(workerRates.id, same.id));
+    return row!;
+  }
+  return ctx.tdb.insert(workerRates, { workerId: v.workerId, machine: v.machine, reference, pieceRateCents: v.pieceRateCents });
+}
+
+export async function deleteWorkerRateCore(ctx: Ctx, id: string) {
+  requireWrite(ctx);
+  await ctx.tdb.get(workerRates, eq(workerRates.id, id), "worker_rate");
+  await ctx.tdb.delete(workerRates, eq(workerRates.id, id));
 }
 
 export async function giveAdvanceCore(ctx: Ctx, v: AdvanceInput, cmid?: string) {
@@ -494,6 +530,107 @@ export async function writeOffCore(ctx: Ctx, receivableId: string) {
 
 export async function markChargedCore(ctx: Ctx, receivableId: string) {
   await ctx.tdb.update(receivables, { lastChargedAt: new Date() }, eq(receivables.id, receivableId));
+}
+
+/* ───── Cliente recorrente ───── */
+export async function setClientUsualServiceCore(ctx: Ctx, clientId: string, v: { reference: string | null; unitPriceCents: number | null }) {
+  requireWrite(ctx);
+  await ctx.tdb.get(clients, eq(clients.id, clientId), "client");
+  await ctx.tdb.update(clients, { usualReference: v.reference?.trim() || null, usualUnitPriceCents: v.unitPriceCents, updatedAt: new Date() }, eq(clients.id, clientId));
+}
+
+/* ───── Cobrança agrupada (fechamento do período) ───── */
+/**
+ * Registra um pagamento recebido para várias entregas de um cliente de uma vez (Pix do período).
+ * O valor quita da entrega mais antiga para a mais nova; o que sobrar não vira crédito.
+ */
+export async function payClientChargeCore(ctx: Ctx, v: { receivableIds: string[]; amountCents: number; paidOn: string; method: "pix" | "cash" | "other" }) {
+  if (!ctx.access.canMarkPaid) throw new DomainError("read_only");
+  return ctx.tdb.transaction(async (tx) => {
+    const rows = await tx.select(receivables, inArray(receivables.id, v.receivableIds), { orderBy: [asc(receivables.issuedOn), asc(receivables.createdAt)] });
+    if (rows.length !== v.receivableIds.length) throw new DomainError("not_found");
+    if (new Set(rows.map((r) => r.clientId)).size > 1) throw new DomainError("validation");
+    let left = v.amountCents;
+    let applied = 0;
+    for (const r of rows) {
+      if (left <= 0) break;
+      if (r.status === "paid" || r.status === "written_off") continue;
+      const amount = Math.min(left, r.amountCents - r.paidCents);
+      if (amount <= 0) continue;
+      await tx.insert(payments, { receivableId: r.id, amountCents: amount, paidOn: v.paidOn, method: v.method, note: null });
+      const paid = r.paidCents + amount;
+      await tx.update(receivables, { paidCents: paid, status: paid >= r.amountCents ? "paid" : "partially_paid", updatedAt: new Date() }, eq(receivables.id, r.id));
+      left -= amount;
+      applied += amount;
+    }
+    if (applied === 0) throw new DomainError("receivable_closed");
+    return { appliedCents: applied };
+  });
+}
+
+export async function markChargedManyCore(ctx: Ctx, receivableIds: string[]) {
+  if (!receivableIds.length) return;
+  await ctx.tdb.update(receivables, { lastChargedAt: new Date() }, inArray(receivables.id, receivableIds));
+}
+
+/* ───── Facção ───── */
+export async function createShipmentCore(
+  ctx: Ctx,
+  v: { batchId: string | null; partnerName: string; partnerPhone: string | null; reference: string | null; quantity: number; sentOn: string; dueOn: string | null; note: string | null },
+) {
+  requireWrite(ctx);
+  let reference = v.reference?.trim() || null;
+  if (v.batchId) {
+    const b = await ctx.tdb.get(batches, eq(batches.id, v.batchId), "batch");
+    reference = reference ?? b.reference;
+  }
+  return ctx.tdb.insert(outsourceShipments, {
+    batchId: v.batchId,
+    partnerName: v.partnerName.trim(),
+    partnerPhoneE164: v.partnerPhone ? toE164(v.partnerPhone) : null,
+    reference,
+    quantity: v.quantity,
+    sentOn: v.sentOn,
+    dueOn: v.dueOn,
+    note: v.note?.trim() || null,
+  });
+}
+
+export async function markShipmentInProductionCore(ctx: Ctx, shipmentId: string) {
+  requireWrite(ctx);
+  await ctx.tdb.update(outsourceShipments, { status: "in_production", updatedAt: new Date() }, and(eq(outsourceShipments.id, shipmentId), eq(outsourceShipments.status, "sent"))!);
+}
+
+export async function registerReturnCore(ctx: Ctx, v: { shipmentId: string; returnedOn: string; goodQty: number; defectQty: number; missingQty: number; note: string | null }) {
+  requireWrite(ctx);
+  if (v.goodQty + v.defectQty + v.missingQty <= 0) throw new DomainError("validation");
+  return ctx.tdb.transaction(async (tx) => {
+    const sh = await tx.get(outsourceShipments, eq(outsourceShipments.id, v.shipmentId), "shipment");
+    const prev = await tx.select(outsourceReturns, eq(outsourceReturns.shipmentId, sh.id));
+    if (v.goodQty + v.defectQty + v.missingQty > maxReturnable(sh.quantity, prev)) throw new DomainError("return_exceeds_sent");
+    const row = await tx.insert(outsourceReturns, { shipmentId: sh.id, returnedOn: v.returnedOn, goodQty: v.goodQty, defectQty: v.defectQty, missingQty: v.missingQty, note: v.note?.trim() || null });
+    const all = [...prev, row];
+    const status = shipmentStatus(sh.status, sh.quantity, all);
+    await tx.update(outsourceShipments, { status, updatedAt: new Date() }, eq(outsourceShipments.id, sh.id));
+    return { status, summary: summarizeShipment(sh.quantity, all) };
+  });
+}
+
+export async function deleteReturnCore(ctx: Ctx, returnId: string) {
+  requireWrite(ctx);
+  await ctx.tdb.transaction(async (tx) => {
+    const r = await tx.get(outsourceReturns, eq(outsourceReturns.id, returnId), "return");
+    const sh = await tx.get(outsourceShipments, eq(outsourceShipments.id, r.shipmentId), "shipment");
+    await tx.delete(outsourceReturns, eq(outsourceReturns.id, returnId));
+    const rest = await tx.select(outsourceReturns, eq(outsourceReturns.shipmentId, sh.id));
+    await tx.update(outsourceShipments, { status: shipmentStatus(sh.status, sh.quantity, rest), updatedAt: new Date() }, eq(outsourceShipments.id, sh.id));
+  });
+}
+
+export async function deleteShipmentCore(ctx: Ctx, shipmentId: string) {
+  requireWrite(ctx);
+  await ctx.tdb.get(outsourceShipments, eq(outsourceShipments.id, shipmentId), "shipment");
+  await ctx.tdb.delete(outsourceShipments, eq(outsourceShipments.id, shipmentId));
 }
 
 /* utilidades reexportadas para consultas */

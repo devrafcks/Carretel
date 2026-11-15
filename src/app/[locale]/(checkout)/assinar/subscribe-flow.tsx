@@ -22,6 +22,7 @@ export type CheckoutOffer = {
   annualCents: number;
   standardMonthlyCents: number;
   annualInstallments: number;
+  annualDiscountPct: number;
 };
 
 type Props = {
@@ -227,7 +228,7 @@ function PaymentStep({ locale, email, workshopName, billing, testMode, pixAvaila
     {
       key: "annual" as const,
       title: t("cycleAnnual"),
-      hint: t("cycleAnnualHint", { amount: yearly, perMonth: annualPerMonth }),
+      hint: t("cycleAnnualHint", { amount: yearly, perMonth: annualPerMonth, pct: offer.annualDiscountPct }),
       badge: savings > 0 ? t("annualSave", { amount: brl(savings) }) : null,
       disabled: false,
     },

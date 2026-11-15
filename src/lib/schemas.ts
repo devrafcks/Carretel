@@ -20,6 +20,9 @@ export const clientCreateSchema = z.object({
   phone: optText(30),
   preferredLocale: z.enum(["es", "pt-BR"]).default("pt-BR"),
   notes: optText(500),
+  /** serviço de costume (cliente recorrente) */
+  usualReference: optText(80),
+  usualUnitPriceCents: cents.min(1).optional(),
 });
 
 export const workerCreateSchema = z.object({

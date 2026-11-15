@@ -61,7 +61,7 @@ export default async function AssinarPage({ params, searchParams }: { params: Pr
       canceledNotice={checkout === "cancel"}
       trialDays={brand.cardTrialDays}
       trialEligible={!hasPaidHistory(ctx?.subscription)}
-      offer={await pricingOffer(ctx?.subscription ?? null, ctx?.workshop.id)}
+      offer={await pricingOffer(ctx?.subscription ?? null, ctx?.workshop.id, { planStatus: plan })}
       renewAnnual={renewAnnual}
       initialCycle={plano === "anual" ? "annual" : "monthly"}
       renewWindowDays={brand.pricing.annualRenewWindowDays}

@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield, ChartBar } from "@/components/icons";
+import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield, ChartBar, Truck } from "@/components/icons";
 import type { AppIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,7 @@ export function BottomNav() {
   );
 }
 
-type NavKey = "hoy" | "lotes" | "produccion" | "cobros" | "clients" | "team" | "calc" | "reports" | "account" | "help";
+type NavKey = "hoy" | "lotes" | "produccion" | "cobros" | "clients" | "team" | "outsource" | "calc" | "reports" | "account" | "help";
 type Item = { href: string; key: NavKey; icon: AppIcon; match: (path: string, tab: string | null) => boolean; pro?: boolean };
 
 const starts = (p: string) => (path: string) => path === p || path.startsWith(p + "/");
@@ -84,6 +84,7 @@ const groups: { label: "groupDay" | "groupPeople" | "groupTools"; items: Item[] 
     items: [
       { href: "/clientes", key: "clients", icon: Users, match: starts("/clientes") },
       { href: "/produccion?tab=equipo", key: "team", icon: Team, match: (p, tab) => starts("/produccion")(p) && tab === "equipo" },
+      { href: "/faccao", key: "outsource", icon: Truck, match: starts("/faccao") },
     ],
   },
   {

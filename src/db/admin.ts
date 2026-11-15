@@ -67,7 +67,7 @@ export type AdminPricing = {
 export async function adminPricing(): Promise<AdminPricing> {
   const [f] = await q<{ n: number }>(sql`
     select count(*)::int n from subscriptions
-    where price_tier = 'founder' and (first_charged_at is not null or trial_ends_at is not null or abacate_subscription_id is not null)`);
+    where founder_at is not null or (price_tier = 'founder' and (first_charged_at is not null or trial_ends_at is not null or abacate_subscription_id is not null))`);
   const paying = await q<{ tier: string; cycle: string; n: number }>(sql`
     select coalesce(s.price_tier, 'founder') tier, s.billing_cycle cycle, count(*)::int n
     from subscriptions s join workshops w on w.id = s.workshop_id

@@ -108,6 +108,9 @@ export const clients = pgTable(
     phoneE164: text("phone_e164"),
     preferredLocale: text("preferred_locale", { enum: ["es", "pt-BR"] }).notNull().default("pt-BR"),
     notes: text("notes"),
+    /** Serviço de costume (cliente recorrente): modelo/referência e preço por peça que vêm preenchidos no corte novo. */
+    usualReference: text("usual_reference"),
+    usualUnitPriceCents: integer("usual_unit_price_cents"),
     anonymizedAt: ts("anonymized_at"),
     clientMutationId: uuid("client_mutation_id"),
     createdAt: createdAt(),
@@ -258,6 +261,77 @@ export const advances = pgTable(
 );
 
 /* ─────────────── 7. Acerto ─────────────── */
+/**
+ * Valor por peça de cada costureira (folha por peça). Vale sobre o valor da operação do corte:
+ * o mais específico ganha (modelo + máquina > modelo > máquina). machine/reference nulos = "qualquer".
+ */
+export const workerRates = pgTable(
+  "worker_rates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workshopId: uuid("workshop_id")
+      .notNull()
+      .references(() => workshops.id, { onDelete: "cascade" }),
+    workerId: uuid("worker_id")
+      .notNull()
+      .references(() => workers.id, { onDelete: "cascade" }),
+    machine: text("machine", { enum: MACHINES }),
+    reference: text("reference"),
+    pieceRateCents: integer("piece_rate_cents").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("worker_rates_ws_worker_idx").on(t.workshopId, t.workerId)],
+);
+
+/* ─────────────── Facção: peças enviadas para fora e devolvidas ─────────────── */
+export const OUTSOURCE_STATUS = ["sent", "in_production", "partial", "returned"] as const;
+export type OutsourceStatus = (typeof OUTSOURCE_STATUS)[number];
+
+export const outsourceShipments = pgTable(
+  "outsource_shipments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workshopId: uuid("workshop_id")
+      .notNull()
+      .references(() => workshops.id, { onDelete: "cascade" }),
+    batchId: uuid("batch_id").references(() => batches.id, { onDelete: "set null" }),
+    /** facção ou costureira externa */
+    partnerName: text("partner_name").notNull(),
+    partnerPhoneE164: text("partner_phone_e164"),
+    reference: text("reference"),
+    quantity: integer("quantity").notNull(),
+    sentOn: date("sent_on").notNull(),
+    dueOn: date("due_on"),
+    status: text("status", { enum: OUTSOURCE_STATUS }).notNull().default("sent"),
+    note: text("note"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("outsource_shipments_ws_status_idx").on(t.workshopId, t.status)],
+);
+
+export const outsourceReturns = pgTable(
+  "outsource_returns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workshopId: uuid("workshop_id")
+      .notNull()
+      .references(() => workshops.id, { onDelete: "cascade" }),
+    shipmentId: uuid("shipment_id")
+      .notNull()
+      .references(() => outsourceShipments.id, { onDelete: "cascade" }),
+    returnedOn: date("returned_on").notNull(),
+    goodQty: integer("good_qty").notNull().default(0),
+    defectQty: integer("defect_qty").notNull().default(0),
+    /** peças dadas como faltantes (não vão voltar) */
+    missingQty: integer("missing_qty").notNull().default(0),
+    note: text("note"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("outsource_returns_ws_shipment_idx").on(t.workshopId, t.shipmentId)],
+);
+
 export const settlements = pgTable(
   "settlements",
   {
@@ -454,6 +528,8 @@ export const subscriptions = pgTable(
     priceTier: text("price_tier", { enum: ["founder", "standard"] }),
     /** monthly = assinatura recorrente na AbacatePay; annual = pagamento único de 12 meses. */
     billingCycle: text("billing_cycle", { enum: ["monthly", "annual"] }).notNull().default("monthly"),
+    /** Ocupou vaga de fundador (fica mesmo se cancelar e voltar no preço vigente). */
+    founderAt: ts("founder_at"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

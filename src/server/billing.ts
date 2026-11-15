@@ -33,6 +33,7 @@ import {
   cyclePriceCents,
   foundersLeft,
   hasPaidHistory,
+  isActivePlan,
   productExternalId,
   type BillingCycle,
   type PriceTier,
@@ -139,7 +140,7 @@ async function ensureProduct(p: { cycle: BillingCycle; cents: number; trial: boo
 export interface PricingOffer {
   /** faixa que esta oficina paga (ou pagaria) no mensal */
   tier: PriceTier;
-  /** faixa travada por pagamento anterior (cancelou e voltou) */
+  /** assinatura ativa com a faixa travada (renovação) */
   locked: boolean;
   founderSpots: number;
   /** vagas de fundador que sobram (null = não deu para contar) */
@@ -148,6 +149,7 @@ export interface PricingOffer {
   annualCents: number;
   standardMonthlyCents: number;
   annualInstallments: number;
+  annualDiscountPct: number;
 }
 
 let foundersMemo: { at: number; n: number } | null = null;
@@ -160,7 +162,7 @@ let foundersMemo: { at: number; n: number } | null = null;
 export async function pricingOffer(
   sub?: { priceTier: string | null; firstChargedAt: Date | null; trialEndsAt: Date | null; abacateSubscriptionId: string | null } | null,
   workshopId?: string,
-  opts: { cached?: boolean } = {},
+  opts: { cached?: boolean; planStatus?: string | null } = {},
 ): Promise<PricingOffer> {
   const cfg = brand.pricing;
   let taken: number | null = null;
@@ -176,16 +178,19 @@ export async function pricingOffer(
   const history = hasPaidHistory(sub);
   const lockedTier = sub?.priceTier === "founder" || sub?.priceTier === "standard" ? sub.priceTier : null;
   // sem contagem: na dúvida, mostra o preço padrão (nunca promete uma vaga que pode não existir)
-  const tier = taken === null && !(history && lockedTier) ? "standard" : choosePriceTier({ lockedTier, hasHistory: history, foundersTaken: taken ?? 0, founderSpots: cfg.founderSpots });
+  const activeNow = isActivePlan(opts.planStatus);
+  const tier = taken === null && !(activeNow && lockedTier) ? "standard" : choosePriceTier({ lockedTier, activeNow, hasHistory: history, foundersTaken: taken ?? 0, founderSpots: cfg.founderSpots });
+  const annualCents = cyclePriceCents(tier, "annual", cfg);
   return {
     tier,
-    locked: Boolean(history && lockedTier),
+    locked: Boolean(activeNow && lockedTier),
     founderSpots: cfg.founderSpots,
     foundersLeft: taken === null ? null : foundersLeft(taken, cfg.founderSpots),
     monthlyCents: cyclePriceCents(tier, "monthly", cfg),
-    annualCents: cfg.annualCents,
+    annualCents,
     standardMonthlyCents: cfg.standardMonthlyCents,
-    annualInstallments: annualInstallments(cfg),
+    annualInstallments: annualInstallments(annualCents, cfg),
+    annualDiscountPct: cfg.annualDiscountPct,
   };
 }
 
@@ -207,15 +212,18 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
   if ((plan === "active" || plan === "trialing" || plan === "past_due") && !renewingAnnual) throw new Error("already_subscribed");
   // teste grátis no cartão só na primeira assinatura do taller
   const hadSubscription = hasPaidHistory(sub);
-  // faixa de preço: quem já pagou mantém a sua; senão, fundador enquanto houver vaga
+  // faixa: renovando com a assinatura ativa mantém a sua; quem volta paga o preço vigente; senão, fundador enquanto houver vaga
   const tier = choosePriceTier({
     lockedTier: sub?.priceTier,
+    activeNow: renewingAnnual,
     hasHistory: hadSubscription,
     foundersTaken: await countFounders(ctx.workshop.id),
     founderSpots: brand.pricing.founderSpots,
   });
   const cents = cyclePriceCents(tier, cycle, brand.pricing);
-  const fields = { externalId, method, status: "pending_checkout", priceTier: tier, billingCycle: cycle } as const;
+  // fundador que perde a faixa (cancelou e voltou) continua ocupando a vaga: founderAt guarda isso
+  const keepsSpot = sub?.priceTier === "founder" && hadSubscription && !sub.founderAt ? { founderAt: new Date() } : {};
+  const fields = { externalId, method, status: "pending_checkout", priceTier: tier, billingCycle: cycle, ...keepsSpot } as const;
   if (!sub) {
     sub = await ctx.tdb.insert(subscriptions, fields);
   } else {
@@ -253,7 +261,7 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
         externalId,
         completionUrl,
         returnUrl,
-        ...(method === "CARD" ? { card: { maxInstallments: annualInstallments(brand.pricing) } } : {}),
+        ...(method === "CARD" ? { card: { maxInstallments: annualInstallments(cents, brand.pricing) } } : {}),
         metadata: { workshopId: ctx.workshop.id, cycle, tier },
       },
     });

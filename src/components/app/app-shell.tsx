@@ -21,7 +21,7 @@ export async function AppShell({ ctx, children }: { ctx: WorkshopContext; childr
   const limited = !ctx.access.canCreateBatch;
   const showUpgrade = ctx.workshop.planStatus !== "active" && ctx.workshop.planStatus !== "trialing" && ctx.role === "owner";
   // preço do mensal para esta oficina (fundador enquanto houver vaga, ou o que ela já paga)
-  const upgradePrice = showUpgrade ? formatBRL((await pricingOffer(ctx.subscription, ctx.workshop.id, { cached: true })).monthlyCents, locale) : undefined;
+  const upgradePrice = showUpgrade ? formatBRL((await pricingOffer(ctx.subscription, ctx.workshop.id, { cached: true, planStatus: ctx.workshop.planStatus })).monthlyCents, locale) : undefined;
   return (
     <OfflineProvider workshopId={ctx.workshop.id}>
       <div className="flex min-h-dvh">

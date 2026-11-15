@@ -23,6 +23,7 @@ import { formatBRL, parseMoneyInput } from "@/lib/money";
 import { todayISO } from "@/lib/dates";
 import { receiptMessage } from "@/lib/wa-templates";
 import { cn, initials, waLink } from "@/lib/utils";
+import { WorkerRates, type WorkerRateRow } from "./worker-rates";
 
 const MACHINES = ["recta", "overlock", "collareta", "interlock", "other"] as const;
 const AVATAR = [
@@ -533,7 +534,7 @@ function AdjustForm({ id, onDone }: { id: string; onDone: () => void }) {
 }
 
 /* ─────────── Aba Equipe ─────────── */
-export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: string; phone: string | null; isEmployee: boolean; docLast3: string | null }[]; canWrite: boolean }) {
+export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: string; phone: string | null; isEmployee: boolean; docLast3: string | null; rates: WorkerRateRow[] }[]; canWrite: boolean }) {
   const t = useTranslations();
   const router = useRouter();
   const errMsg = useErr();
@@ -620,6 +621,7 @@ export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: 
                   {w.phone ? <span className="tabular-money"> · {w.phone}</span> : null}
                 </p>
               </div>
+              <WorkerRates workerId={w.id} workerName={w.name} rates={w.rates} canWrite={canWrite} />
               {canWrite ? (
                 <Button
                   variant="ghost"

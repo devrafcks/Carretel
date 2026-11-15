@@ -467,7 +467,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
                 </p>
                 <p className="mt-1 text-muted-foreground">{t("annualNote", { n: offer.annualInstallments })}</p>
                 <ul className="mt-7 space-y-3">
-                  {[t("annualPerMonth", { amount: brl(Math.round(offer.annualCents / 12)) }), ...(annualSavings > 0 ? [t("annualSave", { amount: brl(annualSavings) })] : []), t("annualAll"), t("annualMethods")].map((f) => (
+                  {[t("annualDiscount", { pct: offer.annualDiscountPct }), t("annualPerMonth", { amount: brl(Math.round(offer.annualCents / 12)) }), ...(annualSavings > 0 ? [t("annualSave", { amount: brl(annualSavings) })] : []), t("annualAll"), t("annualMethods")].map((f) => (
                     <li key={f} className="flex gap-3">
                       <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-vivid-strong" stroke={2} />
                       {f}

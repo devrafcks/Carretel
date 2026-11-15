@@ -4,7 +4,8 @@ import { ExcelButton } from "@/components/app/excel-button";
 import { isPremium } from "@/lib/subscription";
 import { productionBoard } from "@/server/queries";
 import { settlementPreviewCore } from "@/server/core";
-import { settlementPeriod } from "@/lib/settlement";
+import { settlementPeriodFor } from "@/lib/settlement";
+import { workerRates, workshopSettings } from "@/db/schema";
 import { todayUTCDate, formatDate } from "@/lib/dates";
 import { PageHeader } from "@/components/app/page-header";
 import { ProductionToday, SettlementPanel, TeamPanel } from "./production-client";
@@ -21,8 +22,9 @@ export default async function ProduccionPage({ params, searchParams }: { params:
   const tab = (TABS as readonly string[]).includes(rawTab ?? "") ? (rawTab as (typeof TABS)[number]) : "hoy";
   const ctx = await requireWorkshop();
   const t = await getTranslations();
-  const board = await productionBoard(ctx.tdb);
-  const period = settlementPeriod(todayUTCDate());
+  const [board, settings, rates] = await Promise.all([productionBoard(ctx.tdb), ctx.tdb.first(workshopSettings), ctx.tdb.select(workerRates)]);
+  // semanal ou quinzenal, como configurado em Conta
+  const period = settlementPeriodFor(todayUTCDate(), settings?.settlementPeriod ?? "weekly");
 
   const [previews, minWage] = await Promise.all([
     Promise.all(
@@ -106,6 +108,9 @@ export default async function ProduccionPage({ params, searchParams }: { params:
                 phone: w.worker.phoneE164,
                 isEmployee: w.worker.isEmployee,
                 docLast3: w.worker.docLast3,
+                rates: rates
+                  .filter((r) => r.workerId === w.worker.id)
+                  .map((r) => ({ id: r.id, machine: r.machine, reference: r.reference, cents: r.pieceRateCents })),
               }))}
             />
           ),

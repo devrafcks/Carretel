@@ -13,14 +13,14 @@ import {
 } from "@/lib/pricing";
 import { brand, type PricingConfig } from "@/config/brand";
 
-const cfg: PricingConfig = { founderMonthlyCents: 3500, founderSpots: 10, standardMonthlyCents: 4900, annualCents: 39000, annualMaxInstallments: 12, annualRenewWindowDays: 30 };
+const cfg: PricingConfig = { founderMonthlyCents: 3500, founderSpots: 10, standardMonthlyCents: 6999, annualDiscountPct: 20, annualMaxInstallments: 12, annualRenewWindowDays: 30 };
 
 describe("faixa de preço (fundador x padrão)", () => {
   it("as 10 primeiras oficinas pagantes são fundadoras; a 11ª já é padrão", () => {
     const tiers: PriceTier[] = [];
     let taken = 0;
     for (let i = 0; i < 12; i++) {
-      const tier = choosePriceTier({ lockedTier: null, hasHistory: false, foundersTaken: taken, founderSpots: cfg.founderSpots });
+      const tier = choosePriceTier({ lockedTier: null, activeNow: false, hasHistory: false, foundersTaken: taken, founderSpots: cfg.founderSpots });
       tiers.push(tier);
       if (tier === "founder") taken++;
     }
@@ -29,20 +29,26 @@ describe("faixa de preço (fundador x padrão)", () => {
     expect(tiers[11]).toBe("standard");
   });
 
-  it("fundador que cancela e volta continua com R$ 35, mesmo com as vagas esgotadas", () => {
-    expect(choosePriceTier({ lockedTier: "founder", hasHistory: true, foundersTaken: 10, founderSpots: 10 })).toBe("founder");
-    expect(choosePriceTier({ lockedTier: "founder", hasHistory: true, foundersTaken: 50, founderSpots: 10 })).toBe("founder");
+  it("fundador com a assinatura ativa renova a R$ 35, mesmo com as vagas esgotadas", () => {
+    expect(choosePriceTier({ lockedTier: "founder", activeNow: true, hasHistory: true, foundersTaken: 10, founderSpots: 10 })).toBe("founder");
+    expect(choosePriceTier({ lockedTier: "founder", activeNow: true, hasHistory: true, foundersTaken: 50, founderSpots: 10 })).toBe("founder");
+  });
+
+  it("fundador que cancelou e volta paga o preço vigente, mesmo com vagas sobrando", () => {
+    expect(choosePriceTier({ lockedTier: "founder", activeNow: false, hasHistory: true, foundersTaken: 10, founderSpots: 10 })).toBe("standard");
+    expect(choosePriceTier({ lockedTier: "founder", activeNow: false, hasHistory: true, foundersTaken: 2, founderSpots: 10 })).toBe("standard");
   });
 
   it("quem entrou no padrão continua no padrão, mesmo que sobrem vagas", () => {
-    expect(choosePriceTier({ lockedTier: "standard", hasHistory: true, foundersTaken: 3, founderSpots: 10 })).toBe("standard");
+    expect(choosePriceTier({ lockedTier: "standard", activeNow: true, hasHistory: true, foundersTaken: 3, founderSpots: 10 })).toBe("standard");
+    expect(choosePriceTier({ lockedTier: "standard", activeNow: false, hasHistory: true, foundersTaken: 3, founderSpots: 10 })).toBe("standard");
   });
 
   it("checkout abandonado não trava a faixa nem ocupa vaga", () => {
     // gravou "founder" ao abrir o checkout, não pagou e as vagas acabaram nesse meio-tempo
-    expect(choosePriceTier({ lockedTier: "founder", hasHistory: false, foundersTaken: 10, founderSpots: 10 })).toBe("standard");
+    expect(choosePriceTier({ lockedTier: "founder", activeNow: false, hasHistory: false, foundersTaken: 10, founderSpots: 10 })).toBe("standard");
     // e quem abandonou com "standard" ganha a vaga de fundador se ela ainda existir
-    expect(choosePriceTier({ lockedTier: "standard", hasHistory: false, foundersTaken: 9, founderSpots: 10 })).toBe("founder");
+    expect(choosePriceTier({ lockedTier: "standard", activeNow: false, hasHistory: false, foundersTaken: 9, founderSpots: 10 })).toBe("founder");
   });
 
   it("histórico = teste iniciado, primeira cobrança ou assinatura na AbacatePay", () => {
@@ -61,31 +67,31 @@ describe("faixa de preço (fundador x padrão)", () => {
 });
 
 describe("preços por ciclo", () => {
-  it("mensal depende da faixa; anual é o mesmo para todos", () => {
+  it("mensal e anual dependem da faixa; anual = 12 mensalidades com 20% de desconto", () => {
     expect(cyclePriceCents("founder", "monthly", cfg)).toBe(3500);
-    expect(cyclePriceCents("standard", "monthly", cfg)).toBe(4900);
-    expect(cyclePriceCents("founder", "annual", cfg)).toBe(39000);
-    expect(cyclePriceCents("standard", "annual", cfg)).toBe(39000);
+    expect(cyclePriceCents("standard", "monthly", cfg)).toBe(6999);
+    expect(cyclePriceCents("founder", "annual", cfg)).toBe(33600);
+    expect(cyclePriceCents("standard", "annual", cfg)).toBe(67190);
   });
 
   it("economia do anual é calculada contra 12 mensalidades da faixa", () => {
-    expect(annualSavingsCents("founder", cfg)).toBe(42000 - 39000);
-    expect(annualSavingsCents("standard", cfg)).toBe(58800 - 39000);
-    expect(annualSavingsCents("founder", { ...cfg, annualCents: 50000 })).toBe(0);
+    expect(annualSavingsCents("founder", cfg)).toBe(42000 - 33600);
+    expect(annualSavingsCents("standard", cfg)).toBe(83988 - 67190);
+    expect(annualSavingsCents("founder", { ...cfg, annualDiscountPct: 0 })).toBe(0);
   });
 
   it("parcelas do anual respeitam o mínimo de R$ 10 por parcela e o teto de 12", () => {
-    expect(annualInstallments(cfg)).toBe(12);
-    expect(annualInstallments({ ...cfg, annualCents: 5000 })).toBe(5);
-    expect(annualInstallments({ ...cfg, annualMaxInstallments: 6 })).toBe(6);
-    expect(annualInstallments({ ...cfg, annualCents: 500 })).toBe(1);
+    expect(annualInstallments(67190, cfg)).toBe(12);
+    expect(annualInstallments(5000, cfg)).toBe(5);
+    expect(annualInstallments(67190, { ...cfg, annualMaxInstallments: 6 })).toBe(6);
+    expect(annualInstallments(500, cfg)).toBe(1);
   });
 
   it("o config do app segue a regra combinada", () => {
     expect(brand.pricing.founderMonthlyCents).toBe(3500);
     expect(brand.pricing.founderSpots).toBe(10);
-    expect(brand.pricing.standardMonthlyCents).toBe(4900);
-    expect(brand.pricing.annualCents).toBe(39000);
+    expect(brand.pricing.standardMonthlyCents).toBe(6999);
+    expect(brand.pricing.annualDiscountPct).toBe(20);
   });
 });
 
@@ -110,6 +116,7 @@ describe("plano anual", () => {
     expect(productExternalId({ cycle: "monthly", cents: 3500, trial: true })).toBe("carretel-mensal-teste-cartao");
     expect(productExternalId({ cycle: "monthly", cents: 4900, trial: false })).toBe("carretel-mensal-4900");
     expect(productExternalId({ cycle: "monthly", cents: 4900, trial: true })).toBe("carretel-mensal-4900-teste-cartao");
-    expect(productExternalId({ cycle: "annual", cents: 39000, trial: false })).toBe("carretel-anual-39000");
+    expect(productExternalId({ cycle: "monthly", cents: 6999, trial: false })).toBe("carretel-mensal-6999");
+    expect(productExternalId({ cycle: "annual", cents: 67190, trial: false })).toBe("carretel-anual-67190");
   });
 });

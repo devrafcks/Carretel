@@ -25,15 +25,17 @@ export interface BrandConfig {
 
 /**
  * Preços em centavos. As regras ficam em src/lib/pricing.ts:
- * - fundador: as primeiras `founderSpots` oficinas que pagam ficam com `founderMonthlyCents` para sempre;
- * - depois disso, assinaturas novas custam `standardMonthlyCents`;
- * - anual: pagamento único de `annualCents` por 12 meses (Pix ou cartão em até `annualMaxInstallments`x).
+ * - fundador: as primeiras `founderSpots` oficinas que pagam ficam com `founderMonthlyCents` enquanto a assinatura estiver ativa;
+ * - depois disso, assinaturas novas (e quem cancelou e voltou) pagam `standardMonthlyCents`;
+ * - anual: pagamento único de 12 mensalidades da faixa com `annualDiscountPct`% de desconto
+ *   (Pix ou cartão em até `annualMaxInstallments`x).
  */
 export interface PricingConfig {
   founderMonthlyCents: number;
   founderSpots: number;
   standardMonthlyCents: number;
-  annualCents: number;
+  /** desconto do anual sobre 12 mensalidades da faixa (20 = 20%) */
+  annualDiscountPct: number;
   annualMaxInstallments: number;
   /** Quantos dias antes do fim do plano anual a renovação fica liberada. */
   annualRenewWindowDays: number;
@@ -61,8 +63,8 @@ export const brand: BrandConfig = {
   pricing: {
     founderMonthlyCents: 3500,
     founderSpots: 10,
-    standardMonthlyCents: 4900,
-    annualCents: 39000,
+    standardMonthlyCents: 6999,
+    annualDiscountPct: 20,
     annualMaxInstallments: 12,
     annualRenewWindowDays: 30,
   },

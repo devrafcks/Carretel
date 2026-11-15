@@ -33,22 +33,52 @@ function nextFriday(): string {
   return addDaysISO(todayISO(), diff);
 }
 
-export function NewBatchForm({ clients, initialPriceCents, initialQuantity }: { clients: { id: string; name: string }[]; initialPriceCents?: number; initialQuantity?: number }) {
+type ClientOption = { id: string; name: string; usualReference: string | null; usualUnitPriceCents: number | null };
+
+export function NewBatchForm({
+  clients,
+  initialPriceCents,
+  initialQuantity,
+  initialClientId,
+}: {
+  clients: ClientOption[];
+  initialPriceCents?: number;
+  initialQuantity?: number;
+  /** ?cliente= (botão "Novo corte igual" na lista de clientes) */
+  initialClientId?: string;
+}) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const { submit } = useOffline();
 
-  const [clientId, setClientId] = React.useState<string>(clients[0]?.id ?? "__new");
+  const startClient = clients.find((c) => c.id === initialClientId) ?? clients[0];
+  // cliente recorrente: o serviço de costume já vem preenchido (o preço da calculadora, se veio, tem prioridade)
+  const startUsual = startClient && !initialPriceCents ? startClient : undefined;
+  const [clientId, setClientId] = React.useState<string>(startClient?.id ?? "__new");
   const [newClientName, setNewClientName] = React.useState("");
-  const [reference, setReference] = React.useState("");
+  const [reference, setReference] = React.useState(startUsual?.usualReference ?? "");
   const [photos, setPhotos] = React.useState<PickedPhoto[]>([]);
   const [quantity, setQuantity] = React.useState(initialQuantity ? String(initialQuantity) : "");
   const [useGrid, setUseGrid] = React.useState(false);
   const [grid, setGrid] = React.useState<Record<string, number>>(Object.fromEntries(DEFAULT_SIZES.map((s) => [s, 0])));
   const [newSize, setNewSize] = React.useState("");
   const [color, setColor] = React.useState("");
-  const [price, setPrice] = React.useState(initialPriceCents ? centsToInput(initialPriceCents) : "");
+  const [price, setPrice] = React.useState(initialPriceCents ? centsToInput(initialPriceCents) : startUsual?.usualUnitPriceCents ? centsToInput(startUsual.usualUnitPriceCents) : "");
+  // o que foi preenchido sozinho pode ser trocado ao mudar de cliente; o que a pessoa digitou, não
+  const auto = React.useRef({ reference: startUsual?.usualReference ?? "", price: startUsual?.usualUnitPriceCents ? centsToInput(startUsual.usualUnitPriceCents) : "" });
+  const recurring = clients.filter((c) => c.usualReference || c.usualUnitPriceCents).slice(0, 8);
+
+  function chooseClient(id: string, focusQty = false) {
+    setClientId(id);
+    const c = clients.find((x) => x.id === id);
+    const nextRef = c?.usualReference ?? "";
+    const nextPrice = c?.usualUnitPriceCents ? centsToInput(c.usualUnitPriceCents) : "";
+    if (reference === "" || reference === auto.current.reference) setReference(nextRef);
+    if (price === "" || price === auto.current.price) setPrice(nextPrice);
+    auto.current = { reference: nextRef, price: nextPrice };
+    if (focusQty) document.getElementById("quantity")?.focus({ preventScroll: false });
+  }
   const [dueDate, setDueDate] = React.useState("");
   const [suppliesBy, setSuppliesBy] = React.useState<"client" | "workshop">("client");
   const [suppliesNote, setSuppliesNote] = React.useState("");
@@ -124,10 +154,41 @@ export function NewBatchForm({ clients, initialPriceCents, initialQuantity }: { 
         <p>{t("batch.hint")}</p>
       </Notice>
 
+      {recurring.length ? (
+        <section aria-labelledby="recurring-title" className="space-y-2">
+          <h2 id="recurring-title" className="text-sm font-medium text-muted-foreground">
+            {t("batch.recurringTitle")}
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {recurring.map((c) => (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => chooseClient(c.id, true)}
+                  aria-pressed={clientId === c.id}
+                  className={cn(
+                    "min-h-12 rounded-2xl border px-4 py-2 text-left transition-colors",
+                    clientId === c.id ? "border-primary bg-mint-50" : "border-ink/10 bg-card hover:border-ink/30",
+                  )}
+                >
+                  <span className="block font-medium">{c.name}</span>
+                  <span className="block text-sm text-muted-foreground tabular-money">
+                    {[c.usualReference ? `${t("common.reference")} ${c.usualReference}` : null, c.usualUnitPriceCents ? `${formatBRL(c.usualUnitPriceCents, locale)} ${t("common.perPiece")}` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-muted-foreground">{t("batch.recurringHint")}</p>
+        </section>
+      ) : null}
+
       <Card className="space-y-4 p-4">
         <Field id="client" label={t("batch.client")}>
           {(a) => (
-            <Select {...a} value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <Select {...a} value={clientId} onChange={(e) => chooseClient(e.target.value)}>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}

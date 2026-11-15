@@ -4,13 +4,16 @@
  * Por isso estes rascunhos descrevem só o que o produto faz, em linguagem simples, sem citar artigos.
  */
 import { brand } from "@/config/brand";
+import { annualPriceCents } from "@/lib/pricing";
 
 // preços vêm do config (src/config/brand.ts → pricing) para os termos nunca ficarem desatualizados
 const P = brand.pricing;
 const reais = (c: number) => "R$ " + (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2).replace(".", ","));
 const FOUNDER = reais(P.founderMonthlyCents);
 const STANDARD = reais(P.standardMonthlyCents);
-const ANNUAL = reais(P.annualCents);
+const ANNUAL_FOUNDER = reais(annualPriceCents("founder", P));
+const ANNUAL = reais(annualPriceCents("standard", P));
+const OFF = P.annualDiscountPct;
 
 export type LegalSection = { h: string; p: string[]; list?: string[] };
 export type LegalDoc = { title: string; lead: string; summary?: string[]; sections: LegalSection[] };
@@ -225,7 +228,7 @@ export const terms: Record<"es" | "pt-BR", LegalDoc> = {
     title: "Termos de uso",
     lead: "As regras do jogo entre o Carretel e o seu taller. Curtas, diretas e sem pegadinha.",
     summary: [
-      `Começa grátis. Depois, ${FOUNDER} por mês para as ${P.founderSpots} primeiras oficinas (preço travado para sempre), ${STANDARD} por mês para as seguintes, ou ${ANNUAL} por ano. Sem fidelidade.`,
+      `Começa grátis. Depois, ${FOUNDER} por mês para as ${P.founderSpots} primeiras oficinas (preço travado enquanto a assinatura estiver ativa) e ${STANDARD} por mês para as seguintes. No anual, ${OFF}% de desconto. Sem fidelidade.`,
       "Cancele quando quiser, na tela Conta. Nos primeiros 7 dias após a primeira cobrança, devolvemos o valor.",
       "Se a assinatura vencer, seus dados continuam seus: modo leitura, com exportação liberada.",
       "O Carretel não emite nota fiscal e não toca no seu dinheiro.",
@@ -247,8 +250,8 @@ export const terms: Record<"es" | "pt-BR", LegalDoc> = {
         p: [
           "Começa grátis com 3 cortes ou 30 dias, o que vier primeiro. Sem fidelidade e sem taxa de cancelamento.",
           `Plano mensal: ${FOUNDER} por mês para as ${P.founderSpots} primeiras oficinas que assinam (preço de fundador) e ${STANDARD} por mês para as seguintes, por Pix Automático ou cartão. A faixa é definida no momento da assinatura.`,
-          `Preço de fundador travado: quem assinou a ${FOUNDER} continua pagando ${FOUNDER} por mês nas renovações, para sempre, inclusive se cancelar e assinar de novo. O preço do seu plano nunca sobe na renovação.`,
-          `Plano anual: ${ANNUAL} por 12 meses, em pagamento único por Pix ou cartão (em até ${P.annualMaxInstallments}x). Não renova sozinho: nos últimos ${P.annualRenewWindowDays} dias você pode renovar por mais 12 meses.`,
+          `Preço de fundador travado enquanto a assinatura estiver ativa: nas renovações você continua pagando ${FOUNDER} por mês. Se cancelar e assinar de novo depois, vale o preço do momento da nova assinatura. Com a assinatura ativa, o preço do seu plano nunca sobe na renovação.`,
+          `Plano anual: 12 mensalidades com ${OFF}% de desconto (${ANNUAL_FOUNDER} por ano no preço de fundador, ${ANNUAL} por ano no preço padrão), em pagamento único por Pix ou cartão (em até ${P.annualMaxInstallments}x). Não renova sozinho: nos últimos ${P.annualRenewWindowDays} dias você pode renovar por mais 12 meses, no mesmo preço.`,
         ],
       },
       {
@@ -292,7 +295,7 @@ export const terms: Record<"es" | "pt-BR", LegalDoc> = {
     title: "Términos de uso",
     lead: "Las reglas entre Carretel y su taller. Cortas, directas y sin trampas.",
     summary: [
-      `Empieza gratis. Después, ${FOUNDER} por mes para los ${P.founderSpots} primeros talleres (precio fijo para siempre), ${STANDARD} por mes para los siguientes, o ${ANNUAL} por año. Sin fidelidad.`,
+      `Empieza gratis. Después, ${FOUNDER} por mes para los ${P.founderSpots} primeros talleres (precio fijo mientras la suscripción esté activa) y ${STANDARD} por mes para los siguientes. En el anual, ${OFF}% de descuento. Sin fidelidad.`,
       "Cancele cuando quiera, en la pantalla Cuenta. En los primeros 7 días después del primer cobro, devolvemos el valor.",
       "Si la suscripción vence, sus datos siguen siendo suyos: modo lectura, con exportación libre.",
       "Carretel no emite nota fiscal y no toca su dinero.",
@@ -314,8 +317,8 @@ export const terms: Record<"es" | "pt-BR", LegalDoc> = {
         p: [
           "Empieza gratis con 3 cortes o 30 días, lo que llegue primero. Sin fidelidad y sin multa por cancelar.",
           `Plan mensual: ${FOUNDER} por mes para los ${P.founderSpots} primeros talleres que se suscriben (precio de fundador) y ${STANDARD} por mes para los siguientes, por Pix Automático o tarjeta. El precio se define al momento de suscribirse.`,
-          `Precio de fundador fijo: quien se suscribió a ${FOUNDER} sigue pagando ${FOUNDER} por mes en las renovaciones, para siempre, aunque cancele y vuelva a suscribirse. El precio de su plan nunca sube al renovar.`,
-          `Plan anual: ${ANNUAL} por 12 meses, en pago único por Pix o tarjeta (hasta ${P.annualMaxInstallments} cuotas). No se renueva solo: en los últimos ${P.annualRenewWindowDays} días puede renovar por 12 meses más.`,
+          `Precio de fundador fijo mientras la suscripción esté activa: en las renovaciones sigue pagando ${FOUNDER} por mes. Si cancela y vuelve a suscribirse después, vale el precio del momento de la nueva suscripción. Con la suscripción activa, el precio de su plan nunca sube al renovar.`,
+          `Plan anual: 12 mensualidades con ${OFF}% de descuento (${ANNUAL_FOUNDER} por año con precio de fundador, ${ANNUAL} por año con precio normal), en pago único por Pix o tarjeta (hasta ${P.annualMaxInstallments} cuotas). No se renueva solo: en los últimos ${P.annualRenewWindowDays} días puede renovar por 12 meses más, al mismo precio.`,
         ],
       },
       {

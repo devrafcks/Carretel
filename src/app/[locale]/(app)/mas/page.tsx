@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Calculator, Users, Team, CreditCard, Accessibility, Shield, FileText, Info, ListChecks, ChevronRight, Package, Sparkles, ChartBar, type AppIcon } from "@/components/icons";
+import { Calculator, Users, Team, CreditCard, Accessibility, Shield, FileText, Info, ListChecks, ChevronRight, Package, Sparkles, ChartBar, type AppIcon, Truck } from "@/components/icons";
 import { sql } from "drizzle-orm";
 import { batches, clients, workers } from "@/db/schema";
 import { formatDate } from "@/lib/dates";
@@ -57,6 +57,7 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
     { href: "/lotes?f=all", icon: Package, title: t("batches"), desc: t("batchesDesc") },
     { href: "/clientes", icon: Users, title: t("clients"), desc: t("clientsDesc") },
     { href: "/produccion?tab=equipo", icon: Team, title: t("team"), desc: t("teamDesc") },
+    { href: "/faccao", icon: Truck, title: t("outsource"), desc: t("outsourceDesc") },
     { href: "/calculadora", icon: Calculator, title: t("calculator"), desc: t("calculatorDesc") },
     { href: "/relatorios", icon: ChartBar, title: t("reports"), desc: t("reportsDesc"), pro: true },
   ];

@@ -8,7 +8,7 @@ import { FichaIllustration } from "@/components/brand/illustrations";
 import { Link } from "@/i18n/navigation";
 import { buttonVariants } from "@/components/ui/button";
 
-export default async function NuevoCortePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ price?: string; qty?: string }> }) {
+export default async function NuevoCortePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ price?: string; qty?: string; cliente?: string }> }) {
   const { locale } = await params;
   const sp = await searchParams;
   setRequestLocale(locale);
@@ -31,7 +31,8 @@ export default async function NuevoCortePage({ params, searchParams }: { params:
         />
       ) : (
         <NewBatchForm
-          clients={clients.map((c) => ({ id: c.id, name: c.name }))}
+          clients={clients.map((c) => ({ id: c.id, name: c.name, usualReference: c.usualReference, usualUnitPriceCents: c.usualUnitPriceCents }))}
+          initialClientId={sp.cliente}
           initialPriceCents={sp.price ? Number(sp.price) || undefined : undefined}
           initialQuantity={sp.qty ? Number(sp.qty) || undefined : undefined}
         />

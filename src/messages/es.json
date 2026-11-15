@@ -76,7 +76,8 @@
     "groupDay": "Día a día",
     "groupPeople": "Personas",
     "groupTools": "Herramientas",
-    "reports": "Informes"
+    "reports": "Informes",
+    "outsource": "Facción"
   },
   "status": {
     "paid": "Pagado",
@@ -223,6 +224,9 @@
       "Producción, adelantos y pago semanal",
       "Calculadora de precio justo",
       "Exportar sus datos cuando quiera",
+      "Pago por pieza con el valor de cada costurera",
+      "Facción: lo que salió y lo que volvió",
+      "Recordatorio de cobro listo, amable o firme",
       "Informes y gráficos del mes (PRO)"
     ],
     "faqTitle": "Preguntas frecuentes",
@@ -281,7 +285,7 @@
     "footerCompany": "Empresa",
     "founderBadge": "Precio de fundador",
     "founderSpots": "{count, plural, one {Queda # lugar} other {Quedan # lugares}} de {total}",
-    "founderLock": "Para siempre, aunque cancele y vuelva.",
+    "founderLock": "Fijo mientras la suscripción esté activa.",
     "nextPrice": "Después de los {total} primeros talleres, la mensualidad pasa a {amount}.",
     "annualName": "Plan anual",
     "annualNote": "pago único por 12 meses · Pix o tarjeta hasta en {n} cuotas",
@@ -289,7 +293,8 @@
     "annualSave": "Ahorre {amount} en el año",
     "annualCta": "Suscribirse al anual",
     "annualAll": "Todo lo que tiene el plan completo",
-    "annualMethods": "No se renueva solo: usted decide al final del año"
+    "annualMethods": "No se renueva solo: usted decide al final del año",
+    "annualDiscount": "12 mensualidades con {pct}% de descuento"
   },
   "pricing": {
     "title": "Un plan, un precio",
@@ -500,7 +505,9 @@
     "filterAll": "Todos",
     "freeLimit": "Usó sus 3 cortes gratis. Active su plan para seguir registrando.",
     "photos": "Fotos",
-    "totalShort": "Total del corte"
+    "totalShort": "Total del corte",
+    "recurringTitle": "Clientes de siempre",
+    "recurringHint": "Toque el cliente: el modelo y el precio ya vienen llenos. Solo falta la cantidad."
   },
   "machines": {
     "recta": "Recta",
@@ -879,7 +886,9 @@
     "activatePlan": "Activar plan",
     "memberSince": "En Carretel desde el {date}",
     "reports": "Informes",
-    "reportsDesc": "Facturado x cobrado, clientes y producción del equipo."
+    "reportsDesc": "Facturado x cobrado, clientes y producción del equipo.",
+    "outsource": "Facción",
+    "outsourceDesc": "Piezas enviadas afuera y lo que volvió."
   },
   "clients": {
     "title": "Clientes",
@@ -896,7 +905,13 @@
     "addShort": "Nuevo cliente",
     "owes": "Le debe",
     "openBatches": "Cortes abiertos",
-    "volume": "Total trabajado"
+    "volume": "Total trabajado",
+    "usual": "Servicio de siempre",
+    "usualPrice": "{amount} por pieza",
+    "repeatBatch": "Nuevo corte",
+    "usualHint": "Viene lleno cuando registre un corte nuevo de este cliente.",
+    "usualReference": "Modelo (ref.)",
+    "usualUnitPrice": "Precio por pieza"
   },
   "a11y": {
     "title": "Accesibilidad",
@@ -1020,7 +1035,8 @@
     "pix_unavailable": "El Pix Automático todavía no está habilitado en la cuenta de cobro. Por ahora, use tarjeta.",
     "already_subscribed": "Su plan ya está activo.",
     "owner_only": "Solo el dueño del taller puede hacer esto.",
-    "already_canceled": "Esta suscripción ya está cancelada."
+    "already_canceled": "Esta suscripción ya está cancelada.",
+    "return_exceeds_sent": "Ese retorno supera lo que falta volver."
   },
   "theme": {
     "toggle": "Cambiar tema",
@@ -1209,12 +1225,12 @@
     "cycleMonthly": "Mensual",
     "cycleMonthlyHint": "{amount}/mes, se cobra cada mes",
     "cycleAnnual": "Anual",
-    "cycleAnnualHint": "{amount} por 12 meses, equivale a {perMonth}/mes",
+    "cycleAnnualHint": "{amount} por 12 meses ({pct}% de descuento), equivale a {perMonth}/mes",
     "annualSave": "Ahorre {amount}",
-    "founderTitle": "Precio de fundador: {amount} para siempre",
-    "founderBody": "Los {total} primeros talleres que se suscriben pagan {amount}/mes para siempre, aunque cancelen y vuelvan. Después, la mensualidad pasa a {next}.",
+    "founderTitle": "Precio de fundador: {amount}/mes",
+    "founderBody": "Los {total} primeros talleres que se suscriben pagan {amount}/mes mientras la suscripción esté activa. Después, la mensualidad pasa a {next}.",
     "founderSpots": "{count, plural, one {Queda # lugar} other {Quedan # lugares}} de {total}",
-    "founderLocked": "Usted es fundador: su mensualidad queda en {amount} para siempre.",
+    "founderLocked": "Su precio de fundador sigue: {amount}/mes mientras la suscripción esté activa.",
     "standardNote": "Los lugares con precio de fundador se acabaron. La mensualidad es {amount}.",
     "planNameAnnual": "Carretel — plan anual",
     "billedAnnually": "Pago único, 12 meses de acceso",
@@ -1304,7 +1320,7 @@
     "fTier": "Condición",
     "tierFounder": "Precio de fundador",
     "tierStandard": "Precio normal",
-    "founderNote": "Precio de fundador: su mensualidad queda en {amount} para siempre, aunque cancele y vuelva.",
+    "founderNote": "Precio de fundador: {amount}/mes mientras la suscripción esté activa. Si cancela y vuelve, vale el precio del momento.",
     "headlineActiveAnnual": "Plan anual hasta el {date}",
     "subActiveAnnual": "Pago único: no se renueva solo. La renovación se abre en los últimos {days} días.",
     "fUntil": "Válido hasta",
@@ -1508,5 +1524,128 @@
       "tip": "Consejo: junte 3 o 4 palabras que solo usted conozca."
     },
     "rateLimited": "Demasiados intentos. Intente de nuevo en {minutes, plural, one {# minuto} other {# minutos}}."
+  },
+  "workerRates": {
+    "button": "Valores",
+    "open": "Valores por pieza de {name}",
+    "title": "Valores por pieza · {name}",
+    "lead": "Cuánto gana esta persona por pieza. Vale sobre el valor de la operación del corte; gana el más específico (modelo + máquina, después modelo, después máquina).",
+    "anyWork": "Cualquier trabajo",
+    "remove": "Quitar valor",
+    "empty": "Sin valor propio: vale el valor de la operación de cada corte.",
+    "rateRequired": "Indique el valor por pieza.",
+    "saved": "Valor guardado.",
+    "reference": "Modelo (ref.)",
+    "machine": "Operación",
+    "anyMachine": "Cualquier operación",
+    "rate": "Valor por pieza",
+    "save": "Guardar valor"
+  },
+  "charge": {
+    "title": "Cobrar por cliente",
+    "lead": "Junte las entregas pendientes en un solo Pix y envíe el recordatorio listo por su WhatsApp.",
+    "deliveries": "{count, plural, one {# entrega} other {# entregas}}",
+    "open": "Cobrar",
+    "dialogTitle": "Cobrar a {name}",
+    "close": "Cerrar",
+    "period": "Período",
+    "periods": {
+      "week": "Últimos 7 días",
+      "fortnight": "Últimos 14 días",
+      "month": "Este mes",
+      "all": "Todo lo pendiente"
+    },
+    "pick": "Entregas incluidas",
+    "ref": "ref. {ref}",
+    "pieces": "{count, plural, one {# pieza} other {# piezas}}",
+    "awaiting": "El cliente todavía no confirmó el recibimiento",
+    "noneInPeriod": "No hay entregas pendientes en este período.",
+    "total": "Total",
+    "pixCopy": "Copiar Pix copia y pega",
+    "pixCopied": "Pix copiado.",
+    "pixQr": "Ver código QR",
+    "noPix": "Registre su clave Pix en Cuenta para que el Pix salga junto.",
+    "tone": "Tono del mensaje",
+    "tones": {
+      "gentle": "Amable",
+      "firm": "Firme"
+    },
+    "message": "Mensaje listo",
+    "copyMessage": "Copiar mensaje",
+    "messageCopied": "Mensaje copiado.",
+    "openWhatsapp": "Abrir en WhatsApp",
+    "noPhone": "Este cliente no tiene WhatsApp registrado: WhatsApp se abre para que usted elija el contacto.",
+    "copyFallback": "Copie el texto:",
+    "amountRequired": "Indique el valor recibido.",
+    "paid": "Pago de {amount} registrado.",
+    "amount": "Valor recibido",
+    "date": "Fecha del pago",
+    "allocationNote": "El valor paga las entregas de la más antigua a la más nueva.",
+    "saving": "Guardando…",
+    "confirmPaid": "Registrar pago",
+    "registerPaid": "Recibí este pago"
+  },
+  "outsource": {
+    "title": "Facción",
+    "subtitle": "{count, plural, =0 {Nada afuera ahora} one {# envío pendiente} other {# envíos pendientes}} · {pieces, plural, one {# pieza afuera} other {# piezas afuera}}",
+    "back": "Volver",
+    "new": "Registrar envío",
+    "filter": "Filtrar envíos",
+    "filters": {
+      "active": "Pendientes",
+      "all": "Todos",
+      "returned": "Devueltos"
+    },
+    "empty": "Todavía no envió piezas a una facción.",
+    "emptyFilter": "No hay envíos en este filtro.",
+    "close": "Cerrar",
+    "returnTitle": "Retorno de {name}",
+    "whatsappText": "¡Hola, {name}! ¿Cómo van las piezas de la ref. {ref}? Faltan volver {pending}. Plazo: {due}. ¡Gracias!",
+    "ref": "ref. {ref}",
+    "sentOn": "enviado el {date}",
+    "dueOn": "plazo {date}",
+    "overdue": "Atrasado",
+    "status": {
+      "sent": "Enviado",
+      "in_production": "En producción",
+      "partial": "Devuelto parcial",
+      "returned": "Devuelto"
+    },
+    "qty": {
+      "sent": "Enviadas",
+      "good": "Buenas",
+      "defect": "Con defecto",
+      "missing": "Faltantes",
+      "notBack": "No volvieron"
+    },
+    "difference": "{count, plural, =0 {Sin diferencia: todo volvió bien} one {Diferencia: # pieza} other {Diferencia: # piezas}}",
+    "differenceDetail": "({defect} con defecto, {missing} faltantes, {pending} todavía por volver)",
+    "returnLine": "{good} buenas, {defect} con defecto, {missing} faltantes",
+    "removeReturn": "Borrar este retorno",
+    "removeReturnConfirm": "¿Borrar este retorno? El envío vuelve a contar esas piezas como afuera.",
+    "registerReturn": "Registrar retorno",
+    "markInProduction": "Marcar en producción",
+    "askStatus": "Preguntar por WhatsApp",
+    "delete": "Borrar envío",
+    "deleteConfirm": "¿Borrar este envío?",
+    "dueBeforeSent": "El plazo no puede ser antes del envío.",
+    "saved": "Envío registrado.",
+    "batch": "Corte",
+    "noBatch": "Sin corte vinculado",
+    "partner": "Facción o costurera",
+    "partnerPhone": "WhatsApp",
+    "model": "Modelo (ref.)",
+    "quantity": "Cantidad enviada",
+    "sentDate": "Fecha del envío",
+    "dueDate": "Plazo de vuelta",
+    "save": "Guardar envío",
+    "returnEmpty": "Indique cuántas piezas volvieron.",
+    "returnOver": "Solo faltan {max} piezas por volver.",
+    "returnedAll": "Todo contado: envío devuelto.",
+    "returnSaved": "Retorno registrado.",
+    "returnLead": "Fueron {sent} piezas; faltan {pending} por volver.",
+    "previewDetail": "{good} buenas de {sent} enviadas · {pending} todavía por volver",
+    "returnDate": "Fecha del retorno",
+    "saveReturn": "Guardar retorno"
   }
 }

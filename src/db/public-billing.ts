@@ -34,7 +34,8 @@ export async function workshopsToReconcile(now: Date): Promise<string[]> {
 }
 
 /**
- * Oficinas que já pagaram (ou começaram o teste) na faixa de fundador — cada uma ocupa uma vaga para sempre.
+ * Oficinas que já pagaram (ou começaram o teste) na faixa de fundador — cada uma ocupa uma vaga para sempre,
+ * mesmo que tenha cancelado e voltado no preço vigente (founderAt).
  * Checkout aberto e não pago não conta. `excludeWorkshopId` tira a própria oficina da conta.
  */
 export async function countFounders(excludeWorkshopId?: string): Promise<number> {
@@ -44,8 +45,13 @@ export async function countFounders(excludeWorkshopId?: string): Promise<number>
     .from(subscriptions)
     .where(
       and(
-        eq(subscriptions.priceTier, "founder"),
-        or(isNotNull(subscriptions.firstChargedAt), isNotNull(subscriptions.trialEndsAt), isNotNull(subscriptions.abacateSubscriptionId)),
+        or(
+          isNotNull(subscriptions.founderAt),
+          and(
+            eq(subscriptions.priceTier, "founder"),
+            or(isNotNull(subscriptions.firstChargedAt), isNotNull(subscriptions.trialEndsAt), isNotNull(subscriptions.abacateSubscriptionId)),
+          ),
+        ),
         excludeWorkshopId ? ne(subscriptions.workshopId, excludeWorkshopId) : undefined,
       ),
     );

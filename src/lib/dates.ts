@@ -46,3 +46,12 @@ export function agingBucket(days: number): AgingBucket {
   if (days <= 30) return "late";
   return "critical";
 }
+
+/** Períodos para cobrar um cliente de uma vez (fechamento): entregas com data dentro do intervalo. */
+export type ChargePeriod = "week" | "fortnight" | "month" | "all";
+
+export function chargePeriodRange(period: ChargePeriod, today: string): { from: string | null; to: string } {
+  if (period === "all") return { from: null, to: today };
+  if (period === "month") return { from: today.slice(0, 8) + "01", to: today };
+  return { from: addDaysISO(today, period === "week" ? -6 : -13), to: today };
+}

@@ -26,6 +26,8 @@ export default async function ClientesPage({ params }: { params: Promise<{ local
               phone: c.phoneE164 ?? "",
               locale: c.preferredLocale,
               notes: c.notes ?? "",
+              usualReference: c.usualReference ?? "",
+              usualUnitPriceCents: c.usualUnitPriceCents,
               owedCents: s?.owedCents ?? 0,
               batches: s?.batches ?? 0,
               openBatches: s?.openBatches ?? 0,

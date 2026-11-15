@@ -21,6 +21,7 @@ export const APP_SEGMENTS = new Set([
   "calculadora",
   "notificaciones",
   "relatorios",
+  "faccao",
   "admin",
 ]);
 

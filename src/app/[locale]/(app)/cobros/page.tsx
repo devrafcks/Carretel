@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { appUrl } from "@/config/brand";
 import { ReceivableList, AgingBars } from "./cobros-client";
+import { ClientCharges, type ChargeItem } from "./charge-client";
 import { Info, QrCode, ChevronDown } from "@/components/icons";
 import { PixForm } from "../cuenta/account-client";
 
@@ -66,6 +67,26 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
   const awaitingItems = board.awaiting.map(toItem);
   const items = board.confirmed.map(toItem);
   const nothing = items.length === 0 && awaitingItems.length === 0;
+  // cobrar por cliente (fechamento do período): todas as entregas em aberto, inclusive as que aguardam confirmação
+  const chargeItems: ChargeItem[] = [...board.confirmed.map((i) => ({ i, awaiting: false })), ...board.awaiting.map((i) => ({ i, awaiting: true }))]
+    .filter(({ i }) => i.client && i.openCents > 0)
+    .map(({ i, awaiting }) => {
+      const clientLocale = (i.client!.preferredLocale ?? "pt-BR") as "es" | "pt-BR";
+      return {
+        id: i.receivable.id,
+        clientId: i.client!.id,
+        clientName: i.client!.name,
+        clientPhone: i.client!.phoneE164 ?? null,
+        clientLocale,
+        reference: i.batch.reference,
+        quantity: i.proof.quantity,
+        openCents: i.openCents,
+        issuedOnISO: i.receivable.issuedOn,
+        issuedOn: formatDate(i.receivable.issuedOn, clientLocale),
+        proofUrl: `${appUrl()}/${clientLocale}/c/${i.proof.publicToken}`,
+        awaiting,
+      };
+    });
 
   return (
     <div className="space-y-5">
@@ -106,6 +127,15 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
           </summary>
           <PixForm pix={{ type: ws.pixKeyType ?? "evp", key: ws.pixKey ?? "", name: ws.pixMerchantName ?? ws.name.slice(0, 25), city: ws.pixCity ?? "Sao Paulo" }} />
         </details>
+      ) : null}
+
+      {chargeItems.length ? (
+        <ClientCharges
+          items={chargeItems}
+          workshopName={ws.name}
+          canMarkPaid={ctx.access.canMarkPaid}
+          pix={hasPix ? { key: ws.pixKey!, merchantName: ws.pixMerchantName!, city: ws.pixCity! } : null}
+        />
       ) : null}
 
       {nothing ? (
