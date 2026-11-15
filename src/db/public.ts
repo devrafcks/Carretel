@@ -7,6 +7,7 @@
 import "server-only";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
 import { getDb } from "./client";
+import { slidingWindowDecision, windowStartFor, type RateDecision } from "@/lib/rate-limit";
 import {
   accessAuditLogs,
   billingWebhookEvents,
@@ -262,23 +263,44 @@ export async function insertAuditLog(row: typeof accessAuditLogs.$inferInsert) {
   await db.insert(accessAuditLogs).values(row);
 }
 
-/* ───── Rate limit (janela fixa) ───── */
-export async function hitRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+/* ───── Rate limit (janela deslizante aproximada; regras em src/lib/rate-limit.ts) ───── */
+/**
+ * Conta +1 para a chave e decide. Um único UPSERT atômico (seguro entre instâncias serverless):
+ * mesma janela → count + 1; janela seguinte → a atual vira prev_count; mais antiga → zera.
+ * No SET do Postgres todas as expressões leem a linha ANTIGA, então a ordem das colunas não importa.
+ */
+export async function consumeRateLimit(key: string, limit: number, windowSeconds: number, nowMs = Date.now()): Promise<RateDecision> {
   const db = await getDb();
-  const now = new Date();
-  const windowStart = new Date(Math.floor(now.getTime() / (windowSeconds * 1000)) * windowSeconds * 1000);
+  const windowMs = windowSeconds * 1000;
+  const startMs = windowStartFor(nowMs, windowSeconds);
+  const windowStart = new Date(startMs);
+  const previousStart = new Date(startMs - windowMs);
   const rows = await db
     .insert(rateLimits)
-    .values({ key, windowStart, count: 1 })
+    .values({ key, windowStart, count: 1, prevCount: 0 })
     .onConflictDoUpdate({
       target: rateLimits.key,
       set: {
+        prevCount: sql`CASE WHEN ${rateLimits.windowStart} = ${windowStart} THEN ${rateLimits.prevCount} WHEN ${rateLimits.windowStart} = ${previousStart} THEN ${rateLimits.count} ELSE 0 END`,
         count: sql`CASE WHEN ${rateLimits.windowStart} = ${windowStart} THEN ${rateLimits.count} + 1 ELSE 1 END`,
         windowStart,
       },
     })
-    .returning({ count: rateLimits.count });
-  return (rows[0]?.count ?? 1) > limit;
+    .returning({ count: rateLimits.count, prevCount: rateLimits.prevCount });
+  const r = rows[0] ?? { count: 1, prevCount: 0 };
+  return slidingWindowDecision({ prevCount: r.prevCount, count: r.count, elapsedMs: nowMs - startMs, windowMs, limit });
+}
+
+/** Atalho booleano (link público, OTP do modo dev, sync, upload): true = passou do limite. */
+export async function hitRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+  return !(await consumeRateLimit(key, limit, windowSeconds)).allowed;
+}
+
+/** Limpeza (cron de retenção): contadores parados há mais de 2 dias não influenciam mais nada. */
+export async function purgeStaleRateLimits(olderThan = new Date(Date.now() - 2 * 86_400_000)): Promise<number> {
+  const db = await getDb();
+  const rows = await db.delete(rateLimits).where(lt(rateLimits.windowStart, olderThan)).returning({ key: rateLimits.key });
+  return rows.length;
 }
 
 /* ───── Parâmetros legais ───── */

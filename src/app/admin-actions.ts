@@ -18,10 +18,12 @@ import {
 import { tenantDb } from "@/db/tenant";
 import { cancelSubscription } from "@/server/billing";
 import { getWorkshopRow } from "@/db/public-billing";
+import { checkPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/password-strength";
 
 export type AdminResult = { ok: true; message?: string } | { ok: false; error: string };
 
-const userIdSchema = z.string().min(6).max(80);
+/** id do Neon Auth (uuid) ou do modo dev (dev_<hex>): só caracteres seguros */
+const userIdSchema = z.string().regex(/^[A-Za-z0-9_-]{6,80}$/);
 
 function done(path = "/[locale]/admin", message?: string): AdminResult {
   revalidatePath(path, "layout");
@@ -36,8 +38,12 @@ export async function adminSetPasswordAction(userId: string, newPassword: string
   const admin = await requireAdmin();
   try {
     const id = userIdSchema.parse(userId);
-    const pwd = z.string().min(8).max(128).parse(newPassword);
+    const pwd = z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH).parse(newPassword);
     if (authMode() !== "neon") return { ok: false, error: "Neon Auth não configurado" };
+    // mesma regra de força do cadastro (o admin não pode definir uma senha fraca para alguém)
+    const detail = await adminUserDetail(id);
+    const strength = await checkPassword(pwd, { locales: ["es", "pt-BR"], email: detail?.user.email, name: detail?.user.name });
+    if (!strength.ok) return { ok: false, error: "Senha fraca: use uma frase com 3 ou 4 palavras ou mais caracteres" };
     await ensureAuthAdminRole(admin.email);
     // rota oficial do Neon Auth (plugin admin do Better Auth): POST /admin/set-user-password
     const auth = neonAuth() as unknown as { admin: { setUserPassword: (b: { userId: string; newPassword: string }) => Promise<{ error?: { message?: string } | null }> } };
@@ -77,7 +83,7 @@ export async function adminBanAction(userId: string, banned: boolean, reason: st
   try {
     const id = userIdSchema.parse(userId);
     if (id === admin.id) return { ok: false, error: "Você não pode bloquear a própria conta" };
-    await adminSetBanned(id, banned, z.string().max(200).parse(reason || "") || null);
+    await adminSetBanned(id, z.boolean().parse(banned), z.string().max(200).parse(reason || "") || null);
     await audit(banned ? "admin.ban" : "admin.unban", { userId: admin.id, resource: id });
     return done();
   } catch (e) {
@@ -147,7 +153,7 @@ export async function adminDeleteUserAction(userId: string, confirmEmail: string
     if (id === admin.id) return { ok: false, error: "Você não pode apagar a própria conta por aqui" };
     const detail = await adminUserDetail(id);
     if (!detail) return { ok: false, error: "usuário não encontrado" };
-    if (confirmEmail.trim().toLowerCase() !== detail.user.email.toLowerCase()) return { ok: false, error: "O e-mail digitado não confere" };
+    if (z.string().max(320).parse(confirmEmail).trim().toLowerCase() !== detail.user.email.toLowerCase()) return { ok: false, error: "O e-mail digitado não confere" };
     // cancela a cobrança antes de apagar, para não continuar cobrando
     if (detail.workshop && detail.subscription && ["active", "trialing", "past_due"].includes(detail.workshop.plan_status)) {
       const workshop = await getWorkshopRow(detail.workshop.id);

@@ -6,22 +6,28 @@ import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/field";
+import { PasswordStrengthHint, usePasswordStrength, useWeakPasswordMessage } from "@/components/ui/password-strength";
+import { retryMinutes } from "@/lib/rate-limit-client";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-async function post(path: string, body: unknown): Promise<{ ok: boolean; status: number; code: string }> {
+type PostResult = { ok: boolean; status: number; code: string; hint?: string; retryMinutes: number | null };
+
+async function post(path: string, body: unknown): Promise<PostResult> {
   try {
     const res = await fetch(`/api/auth${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
-    const j = (await res.json().catch(() => ({}))) as { code?: string };
-    return { ok: res.ok, status: res.status, code: j.code ?? "" };
+    const j = (await res.json().catch(() => ({}))) as { code?: string; hint?: string; retryAfter?: number };
+    return { ok: res.ok, status: res.status, code: j.code ?? "", hint: j.hint, retryMinutes: res.status === 429 ? retryMinutes(res, j) : null };
   } catch {
-    return { ok: false, status: 0, code: "network" };
+    return { ok: false, status: 0, code: "network", retryMinutes: null };
   }
 }
 
 /** Passo 1: e-mail → código. Passo 2: código + senha nova. */
 export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string }) {
   const t = useTranslations("auth");
+  const ts = useTranslations("security");
+  const weakMessage = useWeakPasswordMessage();
   const [step, setStep] = React.useState<"email" | "code" | "done">("email");
   const [email, setEmail] = React.useState(initialEmail);
   const [code, setCode] = React.useState("");
@@ -30,6 +36,8 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
   const [show, setShow] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const strength = usePasswordStrength(pwd, { email: email.trim().toLowerCase() });
+  const limited = (r: PostResult) => (r.retryMinutes ? ts("rateLimited", { minutes: r.retryMinutes }) : t("rateLimited"));
 
   async function sendCode(e?: React.FormEvent) {
     e?.preventDefault();
@@ -40,7 +48,7 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
     const r = await post("/email-otp/request-password-reset", { email: mail });
     setBusy(false);
     // por segurança a resposta é a mesma exista ou não a conta
-    if (!r.ok && r.status === 429) return setError(t("rateLimited"));
+    if (!r.ok && r.status === 429) return setError(limited(r));
     if (!r.ok && r.status !== 400 && r.status !== 404) return setError(t("genericError"));
     setStep("code");
   }
@@ -52,10 +60,16 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
     if (pwd.length < 8) return setError(t("passwordShort"));
     if (pwd !== pwd2) return setError(t("passwordsDiffer"));
     setBusy(true);
+    const verdict = await strength.evaluate();
+    if (!verdict.ok) {
+      setBusy(false);
+      return setError(ts("password.weak")); // a dica já aparece no medidor do campo
+    }
     const r = await post("/email-otp/reset-password", { email: email.trim().toLowerCase(), otp: code, password: pwd });
     setBusy(false);
     if (r.ok) return setStep("done");
-    if (r.status === 429) return setError(t("rateLimited"));
+    if (r.status === 429) return setError(limited(r));
+    if (r.code === "PASSWORD_TOO_WEAK") return setError(weakMessage(r.hint));
     if (r.code.includes("PASSWORD_TOO_SHORT")) return setError(t("passwordShort"));
     setError(t("resetInvalid"));
   }
@@ -115,7 +129,7 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
           <Field
             id="np"
             label={t("newPassword")}
-            hint={t("passwordHint")}
+            hint={<PasswordStrengthHint password={pwd} result={strength.result} checking={strength.checking} emptyHint={t("passwordHint")} />}
             trailing={
               <button
                 type="button"
@@ -128,7 +142,7 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
               </button>
             }
           >
-            {(a) => <Input {...a} type={show ? "text" : "password"} autoComplete="new-password" value={pwd} onChange={(e) => setPwd(e.target.value)} />}
+            {(a) => <Input {...a} type={show ? "text" : "password"} autoComplete="new-password" maxLength={128} value={pwd} onChange={(e) => setPwd(e.target.value)} onFocus={strength.preload} />}
           </Field>
           <Field id="np2" label={t("confirmPassword")}>
             {(a) => <Input {...a} type={show ? "text" : "password"} autoComplete="new-password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} />}

@@ -33,11 +33,16 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=(), payment=(), usb=(), browsing-topics=()" },
+  // navegadores antigos ignoram frame-ancestors: X-Frame-Options cobre o clickjacking neles
+  { key: "X-Frame-Options", value: "DENY" },
+  // isola a janela de popups/abas abertas de outros sites (window.opener)
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  poweredByHeader: false,
   serverExternalPackages: ["@electric-sql/pglite", "pg"],
   turbopack: {
     rules: {

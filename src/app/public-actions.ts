@@ -7,7 +7,11 @@ import { audit, requestMeta } from "@/lib/audit";
 
 export type PublicResult = { ok: true } | { ok: false; error: "invalid" | "rate_limited" | "not_found" | "already" | "validation" };
 
+/** Token público = 16 bytes em base64url (src/lib/crypto.ts); qualquer outra coisa nem chega ao banco. */
+const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
+
 async function guard(token: string): Promise<PublicResult | null> {
+  if (typeof token !== "string" || !TOKEN_RE.test(token)) return { ok: false, error: "invalid" };
   const meta = await requestMeta();
   if (await hitRateLimit(`proof:${token}:${meta.ip ?? "-"}`, 10, 300)) return { ok: false, error: "rate_limited" };
   return null;
@@ -17,7 +21,7 @@ export async function confirmProofAction(token: string, name: string, checked: b
   const limited = await guard(token);
   if (limited) return limited;
   const n = z.string().trim().min(2).max(120).safeParse(name);
-  if (!n.success || !checked) return { ok: false, error: "validation" };
+  if (!n.success || checked !== true) return { ok: false, error: "validation" };
   const r = await findProofByToken(token);
   if (!r || r.proof.revokedAt) return { ok: false, error: "not_found" };
   if (r.proof.confirmedAt) return { ok: false, error: "already" };

@@ -1481,5 +1481,32 @@
     "mAvgTicket": "Valor médio por corte",
     "mDelivered": "Peças entregues",
     "mDeliveredValue": "Valor entregue"
+  },
+  "security": {
+    "password": {
+      "label": "Força da senha",
+      "checking": "Verificando…",
+      "levels": {
+        "s0": "Muito fraca",
+        "s1": "Fraca",
+        "s2": "Razoável",
+        "s3": "Boa",
+        "s4": "Forte"
+      },
+      "hints": {
+        "tooShort": "Use pelo menos 8 caracteres.",
+        "tooLong": "Use no máximo 128 caracteres.",
+        "common": "Essa senha é muito usada. Escolha outra.",
+        "pattern": "Evite sequências como 123, abc ou qwerty.",
+        "repeat": "Evite repetir letras ou números, como aaa ou 1111.",
+        "dates": "Evite anos e datas, como seu aniversário.",
+        "names": "Uma palavra ou um nome sozinho é fácil de adivinhar. Junte mais palavras.",
+        "personal": "Não use seu e-mail, seu nome nem o nome da oficina.",
+        "longer": "Junte mais palavras ou caracteres."
+      },
+      "weak": "Escolha uma senha mais forte para continuar.",
+      "tip": "Dica: junte 3 ou 4 palavras que só você conhece."
+    },
+    "rateLimited": "Muitas tentativas. Tente de novo em {minutes, plural, one {# minuto} other {# minutos}}."
   }
 }

@@ -57,6 +57,10 @@ function fail(err: unknown): { ok: false; error: string; field?: string } {
   return { ok: false, error: "server_error" };
 }
 
+/** ids vêm do cliente: só uuid (evita erro de banco com lixo e deixa a entrada explícita) */
+const uuid = z.uuid();
+const MAX_CENTS = 1_000_000_000; // R$ 10 milhões: teto de sanidade para valores digitados
+
 function revalidateApp() {
   revalidatePath("/[locale]", "layout");
 }
@@ -115,7 +119,7 @@ export async function createWorkshopAction(_: ActionResult | null, form: FormDat
 export async function setBatchStatusAction(batchId: string, status: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await setBatchStatusCore(ctx, batchId, status);
+    await setBatchStatusCore(ctx, uuid.parse(batchId), z.string().max(32).parse(status));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -127,7 +131,7 @@ export async function upsertOperationAction(batchId: string, machine: string, pi
   try {
     const ctx = await requireWorkshop();
     const m = z.enum(["recta", "overlock", "collareta", "interlock", "other"]).parse(machine);
-    await upsertOperationCore(ctx, batchId, m, z.number().int().min(1).parse(pieceRateCents));
+    await upsertOperationCore(ctx, uuid.parse(batchId), m, z.number().int().min(1).max(MAX_CENTS).parse(pieceRateCents));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -139,7 +143,7 @@ export async function registerDeliveryAction(input: unknown, previousProofId?: s
   try {
     const ctx = await requireWorkshop();
     const v = deliverySchema.parse(input);
-    const p = await registerDeliveryCore(ctx, v, previousProofId);
+    const p = await registerDeliveryCore(ctx, v, previousProofId === undefined ? undefined : uuid.parse(previousProofId));
     revalidateApp();
     return { ok: true, data: { token: p.publicToken, proofId: p.id } };
   } catch (e) {
@@ -151,7 +155,7 @@ export async function revokeProofAction(proofId: string): Promise<ActionResult> 
   try {
     const ctx = await requireWorkshop();
     requireWrite(ctx);
-    await revokeProofCore(ctx, proofId);
+    await revokeProofCore(ctx, uuid.parse(proofId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -176,7 +180,7 @@ export async function updateClientAction(clientId: string, input: { name: string
     const ctx = await requireWorkshop();
     requireWrite(ctx);
     const v = clientCreateSchema.parse(input);
-    await ctx.tdb.update(clients, { name: v.name, phoneE164: v.phone ? toE164(v.phone) : null, preferredLocale: v.preferredLocale, updatedAt: new Date() }, eq(clients.id, clientId));
+    await ctx.tdb.update(clients, { name: v.name, phoneE164: v.phone ? toE164(v.phone) : null, preferredLocale: v.preferredLocale, updatedAt: new Date() }, eq(clients.id, uuid.parse(clientId)));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -187,7 +191,7 @@ export async function updateClientAction(clientId: string, input: { name: string
 export async function anonymizeClientAction(clientId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await anonymizeClientCore(ctx, clientId);
+    await anonymizeClientCore(ctx, uuid.parse(clientId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -210,14 +214,22 @@ export async function createWorkerAction(input: z.input<typeof workerCreateSchem
   }
 }
 
+const workerUpdateSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  phone: z.string().trim().max(30).optional(),
+  isEmployee: z.boolean(),
+  active: z.boolean(),
+});
+
 export async function updateWorkerAction(workerId: string, input: { name: string; phone?: string; isEmployee: boolean; active: boolean }): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
     requireWrite(ctx);
+    const v = workerUpdateSchema.parse(input);
     await ctx.tdb.update(
       workers,
-      { name: z.string().trim().min(1).max(120).parse(input.name), phoneE164: input.phone ? toE164(input.phone) : null, isEmployee: input.isEmployee, active: input.active, updatedAt: new Date() },
-      eq(workers.id, workerId),
+      { name: v.name, phoneE164: v.phone ? toE164(v.phone) : null, isEmployee: v.isEmployee, active: v.active, updatedAt: new Date() },
+      eq(workers.id, uuid.parse(workerId)),
     );
     revalidateApp();
     return { ok: true };
@@ -229,7 +241,7 @@ export async function updateWorkerAction(workerId: string, input: { name: string
 export async function anonymizeWorkerAction(workerId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await anonymizeWorkerCore(ctx, workerId);
+    await anonymizeWorkerCore(ctx, uuid.parse(workerId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -243,7 +255,7 @@ const periodSchema = z.object({ start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), 
 export async function closeSettlementAction(workerId: string, period: { start: string; end: string }): Promise<ActionResult<{ id: string; token: string }>> {
   try {
     const ctx = await requireWorkshop();
-    const s = await closeSettlementCore(ctx, workerId, periodSchema.parse(period));
+    const s = await closeSettlementCore(ctx, uuid.parse(workerId), periodSchema.parse(period));
     revalidateApp();
     return { ok: true, data: { id: s.id, token: s.publicToken } };
   } catch (e) {
@@ -254,7 +266,7 @@ export async function closeSettlementAction(workerId: string, period: { start: s
 export async function reopenSettlementAction(settlementId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await reopenSettlementCore(ctx, settlementId);
+    await reopenSettlementCore(ctx, uuid.parse(settlementId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -265,7 +277,7 @@ export async function reopenSettlementAction(settlementId: string): Promise<Acti
 export async function markSettlementPaidAction(settlementId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await markSettlementPaidCore(ctx, settlementId);
+    await markSettlementPaidCore(ctx, uuid.parse(settlementId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -276,7 +288,7 @@ export async function markSettlementPaidAction(settlementId: string): Promise<Ac
 export async function createAdjustmentAction(settlementId: string, amountCents: number, note: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await createAdjustmentCore(ctx, settlementId, z.number().int().parse(amountCents), z.string().trim().min(1).max(200).parse(note));
+    await createAdjustmentCore(ctx, uuid.parse(settlementId), z.number().int().min(-MAX_CENTS).max(MAX_CENTS).parse(amountCents), z.string().trim().min(1).max(200).parse(note));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -287,7 +299,7 @@ export async function createAdjustmentAction(settlementId: string, amountCents: 
 export async function settlementTokenAction(settlementId: string): Promise<ActionResult<{ token: string }>> {
   try {
     const ctx = await requireWorkshop();
-    const s = await ctx.tdb.get(settlements, eq(settlements.id, settlementId), "settlement");
+    const s = await ctx.tdb.get(settlements, eq(settlements.id, uuid.parse(settlementId)), "settlement");
     return { ok: true, data: { token: s.publicToken } };
   } catch (e) {
     return fail(e);
@@ -298,7 +310,7 @@ export async function settlementTokenAction(settlementId: string): Promise<Actio
 export async function writeOffAction(receivableId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await writeOffCore(ctx, receivableId);
+    await writeOffCore(ctx, uuid.parse(receivableId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -310,7 +322,7 @@ export async function assumeReceivableAction(receivableId: string): Promise<Acti
   try {
     const ctx = await requireWorkshop();
     requireWrite(ctx);
-    await assumeReceivableCore(ctx, receivableId);
+    await assumeReceivableCore(ctx, uuid.parse(receivableId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -321,7 +333,7 @@ export async function assumeReceivableAction(receivableId: string): Promise<Acti
 export async function markChargedAction(receivableId: string): Promise<ActionResult> {
   try {
     const ctx = await requireWorkshop();
-    await markChargedCore(ctx, receivableId);
+    await markChargedCore(ctx, uuid.parse(receivableId));
     revalidateApp();
     return { ok: true };
   } catch (e) {
@@ -335,14 +347,16 @@ export async function updateWorkshopAction(_: ActionResult | null, form: FormDat
     const ctx = await requireWorkshop();
     requireOwner(ctx);
     const name = z.string().trim().min(2).max(80).parse(form.get("name"));
-    const docType = (form.get("docType") as string) || "";
-    const docNumber = ((form.get("docNumber") as string) || "").trim();
+    const text = (max: number) => z.string().trim().max(max).optional().catch(undefined);
+    const docType = z.enum(["cpf", "cnpj", "rnm", ""]).catch("").parse(form.get("docType") ?? "");
+    const docNumber = z.string().trim().max(30).parse(form.get("docNumber") ?? "");
+    const phone = z.string().trim().max(30).parse(form.get("phone") ?? "");
     const set: Record<string, unknown> = {
       name,
-      district: (form.get("district") as string)?.trim() || null,
-      city: (form.get("city") as string)?.trim() || null,
+      district: text(80).parse(form.get("district") ?? undefined) || null,
+      city: text(80).parse(form.get("city") ?? undefined) || null,
       machineCount: z.coerce.number().int().min(1).max(200).parse(form.get("machineCount") || 1),
-      phoneE164: form.get("phone") ? toE164(String(form.get("phone"))) : null,
+      phoneE164: phone ? toE164(phone) : null,
     };
     if (docNumber) {
       const valid = docType === "cpf" ? isValidCpf(docNumber) : docType === "cnpj" ? isValidCnpj(docNumber) : docType === "rnm" ? isValidRnm(docNumber) : false;
@@ -402,8 +416,8 @@ export async function saveCalculatorProfileAction(profile: CalculatorProfile): P
     const ctx = await requireWorkshop();
     const p = z
       .object({
-        fixedMonthlyCents: z.number().int().min(0),
-        payrollMonthlyCents: z.number().int().min(0),
+        fixedMonthlyCents: z.number().int().min(0).max(MAX_CENTS),
+        payrollMonthlyCents: z.number().int().min(0).max(MAX_CENTS),
         people: z.number().min(1).max(500),
         hoursPerDay: z.number().min(0.5).max(24),
         daysPerMonth: z.number().min(1).max(31),
@@ -458,7 +472,7 @@ export async function simulateBillingEventAction(event: string): Promise<ActionR
     const sub = ctx.subscription;
     if (!sub?.externalId) return { ok: false, error: "no_subscription" };
     const allowed = ["subscription.completed", "subscription.trial_started", "subscription.renewed", "subscription.payment_failed", "subscription.cancelled", "local.period_expired"];
-    if (!allowed.includes(event)) return { ok: false, error: "validation" };
+    if (typeof event !== "string" || !allowed.includes(event)) return { ok: false, error: "validation" };
     if (event === "local.period_expired") {
       await setPlanStatus(ctx.workshop.id, nextPlanStatus(ctx.workshop.planStatus, "local.period_expired"));
     } else if (sub.billingCycle === "annual") {
@@ -487,7 +501,7 @@ export async function cancelSubscriptionAction(withRefund: boolean): Promise<Act
     if (ctx.workshop.planStatus !== "active" && ctx.workshop.planStatus !== "trialing" && ctx.workshop.planStatus !== "past_due") {
       return { ok: false, error: "already_canceled" };
     }
-    const r = withRefund ? await requestRefund(ctx) : await cancelSubscription(ctx);
+    const r = z.boolean().parse(withRefund) ? await requestRefund(ctx) : await cancelSubscription(ctx);
     await audit(withRefund ? "subscription.refund_request" : "subscription.cancel", { workshopId: ctx.workshop.id, userId: ctx.user.id });
     revalidateApp();
     return { ok: true, data: { accessUntil: r.accessUntil ? r.accessUntil.toISOString() : null, refund: withRefund } };
@@ -500,7 +514,7 @@ export async function deleteAccountAction(confirmName: string): Promise<ActionRe
   try {
     const ctx = await requireWorkshop();
     requireOwner(ctx);
-    if (confirmName.trim() !== ctx.workshop.name.trim()) return { ok: false, error: "name_mismatch" };
+    if (z.string().max(200).parse(confirmName).trim() !== ctx.workshop.name.trim()) return { ok: false, error: "name_mismatch" };
     await softDeleteWorkshop(ctx.workshop.id);
     await audit("account.delete", { workshopId: ctx.workshop.id, userId: ctx.user.id });
     revalidateApp();

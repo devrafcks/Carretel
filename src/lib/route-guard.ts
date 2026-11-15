@@ -33,6 +33,9 @@ const PRIVATE_API = ["/api/sync", "/api/upload", "/api/media", "/api/export", "/
 /** APIs que se autenticam sozinhas (Neon Auth, webhook assinado, cron com segredo, link público por token). */
 const SELF_AUTH_API = ["/api/auth", "/api/webhooks", "/api/cron", "/api/public-media", "/api/dev-auth"];
 
+/** Dessas, as que só o nosso próprio formulário chama: escrita exige mesma origem (login CSRF / uso de fora). */
+const FIRST_PARTY_SELF_AUTH = ["/api/auth", "/api/dev-auth"];
+
 export type RouteKind =
   | { kind: "app"; locale: string; segment: string }
   | { kind: "private-api" }
@@ -64,6 +67,14 @@ export function hasSessionCookie(cookieNames: Iterable<string>): boolean {
 }
 
 export const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/** Escrita nesta rota precisa vir do próprio site? (APIs privadas, login/cadastro; webhooks e cron não). */
+export function requiresSameOrigin(pathname: string, method: string): boolean {
+  if (!MUTATING.has(method)) return false;
+  const route = classifyPath(pathname);
+  if (route.kind === "private-api") return true;
+  return route.kind === "self-auth-api" && FIRST_PARTY_SELF_AUTH.some((p) => startsWithSegment(pathname, p));
+}
 
 /**
  * Pedido de escrita veio do próprio site? Confere Origin (ou Referer, se faltar) contra o host.
