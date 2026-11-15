@@ -1,7 +1,8 @@
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { adminListUsers, adminOverview, adminRecentWebhooks } from "@/db/admin";
+import { adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
+import { cyclePriceCents, foundersLeft, isPriceTier } from "@/lib/pricing";
 import { brand } from "@/config/brand";
 import { formatBRL } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
@@ -14,15 +15,24 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin();
-  const [o, recent, hooks] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8)]);
+  const [o, recent, hooks, pr] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8), adminPricing()]);
   const paying = (o.plans.active ?? 0) + (o.plans.past_due ?? 0);
-  const mrr = paying * brand.planPriceCents;
+  const cfg = brand.pricing;
+  // MRR: mensal pelo preço da faixa; anual dividido por 12
+  const mrr = pr.paying.reduce((a, x) => {
+    const tier = isPriceTier(x.tier) ? x.tier : "founder";
+    const cents = x.cycle === "annual" ? Math.round(cyclePriceCents(tier, "annual", cfg) / 12) : cyclePriceCents(tier, "monthly", cfg);
+    return a + cents * x.n;
+  }, 0);
+  const count = (tier: string, cycle: string) => pr.paying.filter((x) => x.tier === tier && x.cycle === cycle).reduce((a, x) => a + x.n, 0);
+  const brl = (c: number) => formatBRL(c, locale);
   const storagePct = Math.min(100, (o.dbBytes / NEON_FREE_BYTES) * 100);
 
   const stats: [string, string, string?][] = [
     ["Usuários", String(o.users), `+${o.users7} em 7 dias · +${o.users30} em 30`],
     ["Assinantes pagando", String(paying), `${o.plans.trialing ?? 0} em teste grátis`],
-    ["Receita mensal (MRR)", formatBRL(mrr, locale), `${brand.planPriceCents / 100} × ${paying}`],
+    ["Receita mensal (MRR)", brl(mrr), `${count("founder", "monthly")} × ${brl(cfg.founderMonthlyCents)} · ${count("standard", "monthly")} × ${brl(cfg.standardMonthlyCents)} · ${count("founder", "annual") + count("standard", "annual")} anuais`],
+    ["Vagas de fundador", `${Math.min(pr.founders, cfg.founderSpots)} de ${cfg.founderSpots}`, foundersLeft(pr.founders, cfg.founderSpots) > 0 ? `restam ${foundersLeft(pr.founders, cfg.founderSpots)} · depois, ${brl(cfg.standardMonthlyCents)}/mês` : `esgotadas · novas assinaturas a ${brl(cfg.standardMonthlyCents)}/mês`],
     ["Talleres", String(o.workshops), `${o.plans.free ?? 0} grátis · ${o.plans.canceled ?? 0} cancelados`],
     ["Cortes registrados", String(o.batches), `+${o.batches30} em 30 dias`],
     ["Comprovantes", String(o.proofs), `a receber nos talleres: ${formatBRL(o.openReceivablesCents, locale)}`],

@@ -21,6 +21,11 @@ import { PhoneMockup } from "@/components/marketing/phone";
 import { ThinBars, SplitBar } from "@/components/app/charts";
 import { BrandMark } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
+import { formatBRL } from "@/lib/money";
+import { pricingOffer } from "@/server/billing";
+
+/** A seção de preços mostra as vagas de fundador que sobram: refaz a página a cada 5 minutos. */
+export const revalidate = 300;
 
 const pill = "group inline-flex min-h-13 items-center justify-center gap-2 rounded-full px-7 text-base font-medium transition-colors";
 const kicker = "inline-flex items-center gap-2 text-sm text-muted-foreground";
@@ -37,6 +42,12 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
   const faq = t.raw("faq") as [string, string][];
   const shot = (name: string) => `/screenshots/${name}${locale === "pt-BR" ? "-pt" : ""}.png?v=3`;
   const dot = <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />;
+  const offer = await pricingOffer(null, undefined, { cached: true });
+  const brl = (c: number) => formatBRL(c, locale);
+  // preço grande sem centavos quando é redondo (R$ 35, R$ 390)
+  const whole = (c: number) => (c % 100 === 0 ? String(c / 100) : (c / 100).toFixed(2).replace(".", ","));
+  const founder = offer.tier === "founder";
+  const annualSavings = Math.max(0, offer.monthlyCents * 12 - offer.annualCents);
 
   return (
     <>
@@ -72,7 +83,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           <div className="anim-rise delay-4 mt-12">
             <p className="text-sm text-muted-foreground">{t("trustedBy")}</p>
             <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-[0.9375rem] text-foreground/80">
-              {[t("trust1"), t("trust2"), t("trust3"), t("trust4")].map((s) => (
+              {[t("trust1"), t("trust2"), t("trust3"), t("trust4", { amount: brl(offer.monthlyCents) })].map((s) => (
                 <li key={s} className="inline-flex items-center gap-2">
                   <Check aria-hidden="true" className="size-4 text-vivid-strong" stroke={2} />
                   {s}
@@ -394,7 +405,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
               {t("pricingTitleA")} <span className="text-vivid-strong">{t("pricingTitleB")}</span>
             </h2>
           </Reveal>
-          <div className="mx-auto mt-12 grid max-w-5xl gap-5 md:grid-cols-2">
+          <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
             <div>
               <div className="flex h-full flex-col rounded-[2rem] border border-ink/[0.08] bg-background p-8">
                 <p className="text-muted-foreground">{t("planFreeName")}</p>
@@ -417,13 +428,22 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
             </div>
             <div>
               <div className="relative flex h-full flex-col rounded-[2rem] bg-ink p-8 text-primary-foreground shadow-lift">
-                <span className="absolute right-6 top-6 rounded-full bg-sun px-3 py-1 text-xs font-medium text-ink">{t("planProBadge")}</span>
+                <span className="absolute right-6 top-6 rounded-full bg-sun px-3 py-1 text-xs font-medium text-ink">{founder ? t("founderBadge") : t("planProBadge")}</span>
                 <p className="text-primary-foreground/70">{t("planProName")}</p>
                 <p className="mt-3">
                   <span className="text-2xl font-light">R$ </span>
-                  <span className="text-6xl font-light tabular-money">35</span>
+                  <span className="text-6xl font-light tabular-money">{whole(offer.monthlyCents)}</span>
                 </p>
                 <p className="mt-1 text-primary-foreground/70">{t("planProNote")}</p>
+                {founder ? (
+                  <div className="mt-5 rounded-2xl bg-primary-foreground/10 px-4 py-3 text-sm">
+                    <p className="font-medium">
+                      {t("founderLock")}
+                      {offer.foundersLeft !== null ? <> {t("founderSpots", { count: offer.foundersLeft, total: offer.founderSpots })}.</> : null}
+                    </p>
+                    <p className="mt-1 text-primary-foreground/70">{t("nextPrice", { total: offer.founderSpots, amount: brl(offer.standardMonthlyCents) })}</p>
+                  </div>
+                ) : null}
                 <ul className="mt-7 space-y-3">
                   {features.map((f) => (
                     <li key={f} className="flex gap-3">
@@ -436,6 +456,29 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
                   {t("planProCta")}
                   <ArrowRight aria-hidden="true" className="size-5 transition-transform group-hover:translate-x-1" />
                 </Link>
+              </div>
+            </div>
+            <div>
+              <div className="flex h-full flex-col rounded-[2rem] border border-ink/[0.08] bg-background p-8">
+                <p className="text-muted-foreground">{t("annualName")}</p>
+                <p className="mt-3">
+                  <span className="text-2xl font-light">R$ </span>
+                  <span className="text-6xl font-light tabular-money">{whole(offer.annualCents)}</span>
+                </p>
+                <p className="mt-1 text-muted-foreground">{t("annualNote", { n: offer.annualInstallments })}</p>
+                <ul className="mt-7 space-y-3">
+                  {[t("annualPerMonth", { amount: brl(Math.round(offer.annualCents / 12)) }), ...(annualSavings > 0 ? [t("annualSave", { amount: brl(annualSavings) })] : []), t("annualAll"), t("annualMethods")].map((f) => (
+                    <li key={f} className="flex gap-3">
+                      <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-vivid-strong" stroke={2} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto pt-9">
+                  <Link href="/assinar?plano=anual" className={cn(pill, "w-full border border-ink/20 bg-card hover:border-ink/50")}>
+                    {t("annualCta")}
+                  </Link>
+                </div>
               </div>
             </div>
           </div>

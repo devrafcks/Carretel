@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 
-export function OnboardingForm({ returnTo }: { returnTo?: "assinar" } = {}) {
+export function OnboardingForm({ returnTo }: { returnTo?: "assinar" | "assinar-anual" } = {}) {
   const t = useTranslations();
   const [state, action, pending] = useActionState<ActionResult | null, FormData>(createWorkshopAction, null);
   const [machines, setMachines] = React.useState(3);

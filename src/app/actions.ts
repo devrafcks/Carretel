@@ -107,7 +107,8 @@ export async function createWorkshopAction(_: ActionResult | null, form: FormDat
   });
   await audit("auth.signup", { workshopId, userId: user.id });
   // vindo do fluxo de assinatura, volta para ele (único destino aceito além do painel)
-  redirect(form.get("next") === "assinar" ? `/${locale}/assinar` : `/${locale}/hoy?welcome=1`);
+  const next = form.get("next");
+  redirect(next === "assinar-anual" ? `/${locale}/assinar?plano=anual` : next === "assinar" ? `/${locale}/assinar` : `/${locale}/hoy?welcome=1`);
 }
 
 /* ───── Lotes ───── */
@@ -434,13 +435,15 @@ export async function saveSettingsAction(_: ActionResult | null, form: FormData)
   }
 }
 
-export async function startCheckoutAction(method: "PIX" | "CARD"): Promise<ActionResult<{ url: string }>> {
+export async function startCheckoutAction(method: "PIX" | "CARD", cycle: "monthly" | "annual" = "monthly"): Promise<ActionResult<{ url: string }>> {
   try {
     const ctx = await requireWorkshop();
     requireOwner(ctx);
+    const m = z.enum(["PIX", "CARD"]).parse(method);
+    const c = z.enum(["monthly", "annual"]).parse(cycle);
     const locale = await getLocale();
-    const url = await startCheckout(ctx, method, locale);
-    await audit("subscription.checkout", { workshopId: ctx.workshop.id, userId: ctx.user.id, resource: method });
+    const url = await startCheckout(ctx, m, locale, c);
+    await audit("subscription.checkout", { workshopId: ctx.workshop.id, userId: ctx.user.id, resource: `${m}:${c}` });
     return { ok: true, data: { url } };
   } catch (e) {
     return fail(e);
@@ -458,6 +461,11 @@ export async function simulateBillingEventAction(event: string): Promise<ActionR
     if (!allowed.includes(event)) return { ok: false, error: "validation" };
     if (event === "local.period_expired") {
       await setPlanStatus(ctx.workshop.id, nextPlanStatus(ctx.workshop.planStatus, "local.period_expired"));
+    } else if (sub.billingCycle === "annual") {
+      // anual = pagamento único: "pago" vira checkout.completed; os outros eventos não se aplicam
+      if (event === "subscription.completed" || event === "subscription.renewed") {
+        await applySubscriptionEvent({ id: "log_sim_" + Date.now(), event: "checkout.completed", data: { checkout: { externalId: sub.externalId, id: sub.abacateCheckoutId } } });
+      }
     } else {
       await applySubscriptionEvent({
         id: "log_sim_" + Date.now(),

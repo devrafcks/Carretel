@@ -6,6 +6,7 @@ import { billingMode, reconcileSubscription } from "@/server/billing";
 import { formatDate } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { brand } from "@/config/brand";
+import { cyclePriceCents, isPriceTier } from "@/lib/pricing";
 import { subscriptions } from "@/db/schema";
 import { AutoRefresh } from "./auto-refresh";
 
@@ -53,8 +54,11 @@ export default async function ConcluidoPage({ params, searchParams }: { params: 
     }
   }
 
-  if (status === "active" || status === "trialing") {
+  // renovação do anual em aberto: o plano segue ativo, mas este pagamento ainda não foi confirmado
+  if ((status === "active" || status === "trialing") && sub?.status !== "pending_checkout") {
     const trial = status === "trialing";
+    const annual = sub?.billingCycle === "annual";
+    const cents = cyclePriceCents(isPriceTier(sub?.priceTier) ? sub.priceTier : "founder", annual ? "annual" : "monthly", brand.pricing);
     const MethodIcon = sub?.method === "PIX" ? QrCode : CreditCard;
     const when = trial ? sub?.trialEndsAt ?? sub?.currentPeriodEnd : sub?.currentPeriodEnd;
     return card(
@@ -67,25 +71,25 @@ export default async function ConcluidoPage({ params, searchParams }: { params: 
         <dl className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-mint-50 p-4 text-left text-sm">
           <div>
             <dt className="text-xs text-muted-foreground">{t("donePlan")}</dt>
-            <dd className="font-medium">{t("planName")}</dd>
+            <dd className="font-medium">{annual ? t("planNameAnnual") : t("planName")}</dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">{t("doneMethod")}</dt>
             <dd className="inline-flex items-center gap-1.5 font-medium">
               <MethodIcon aria-hidden="true" className="size-4" />
-              {sub?.method === "PIX" ? t("pixTitle") : t("cardTitle")}
+              {sub?.method === "PIX" ? (annual ? t("pixAnnualTitle") : t("pixTitle")) : t("cardTitle")}
             </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">{t("doneValue")}</dt>
             <dd className="font-medium tabular-money">
-              {formatBRL(brand.planPriceCents, locale)}
-              {t("perMonth")}
+              {formatBRL(cents, locale)}
+              {annual ? t("perYear") : t("perMonth")}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-muted-foreground">{trial ? t("doneFirstCharge") : t("doneNextCharge")}</dt>
-            <dd className="font-medium">{when ? formatDate(trial ? when : new Date(when.getTime() - 3 * 86_400_000), locale) : "—"}</dd>
+            <dt className="text-xs text-muted-foreground">{trial ? t("doneFirstCharge") : annual ? t("doneValidUntil") : t("doneNextCharge")}</dt>
+            <dd className="font-medium">{when ? formatDate(trial || annual ? when : new Date(when.getTime() - 3 * 86_400_000), locale, annual ? { year: "numeric" } : {}) : "—"}</dd>
           </div>
         </dl>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">

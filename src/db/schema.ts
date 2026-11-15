@@ -450,6 +450,10 @@ export const subscriptions = pgTable(
     trialEndsAt: ts("trial_ends_at"),
     canceledAt: ts("canceled_at"),
     refundRequestedAt: ts("refund_requested_at"),
+    /** Faixa de preço (src/lib/pricing.ts). Travada depois do primeiro pagamento ou teste: fundador fica com R$ 35 para sempre. */
+    priceTier: text("price_tier", { enum: ["founder", "standard"] }),
+    /** monthly = assinatura recorrente na AbacatePay; annual = pagamento único de 12 meses. */
+    billingCycle: text("billing_cycle", { enum: ["monthly", "annual"] }).notNull().default("monthly"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

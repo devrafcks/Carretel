@@ -6,7 +6,7 @@ import { ConnectionIndicator } from "./connection-indicator";
 import { NotificationBell } from "./notifications";
 import { UpgradePill } from "./upgrade-pill";
 
-export function TopBar({ workshopName, showUpgrade = false }: { workshopName: string; showUpgrade?: boolean }) {
+export function TopBar({ workshopName, showUpgrade = false, upgradePrice }: { workshopName: string; showUpgrade?: boolean; upgradePrice?: string }) {
   return (
     <header className="sticky top-0 z-[100] border-b border-ink/[0.06] bg-background">
       <div className="flex w-full items-center gap-3 px-4 py-2.5 sm:px-6 lg:px-10">
@@ -15,7 +15,7 @@ export function TopBar({ workshopName, showUpgrade = false }: { workshopName: st
           <BrandMark className="size-7 shrink-0 text-primary" />
           <span className="truncate text-lg font-medium text-foreground">{workshopName}</span>
         </Link>
-        {showUpgrade ? <UpgradePill /> : null}
+        {showUpgrade ? <UpgradePill price={upgradePrice} /> : null}
         <ConnectionIndicator />
         <NotificationBell />
         <Suspense>

@@ -56,6 +56,26 @@ export async function adminOverview(): Promise<AdminOverview> {
   };
 }
 
+export type AdminPricing = {
+  /** oficinas que ocupam vaga de fundador (pagaram ou começaram o teste nessa faixa) */
+  founders: number;
+  /** pagantes (ativo ou cobrança pendente) por faixa e ciclo */
+  paying: { tier: string; cycle: string; n: number }[];
+};
+
+/** Faixas de preço: vagas de fundador ocupadas e pagantes por faixa/ciclo (para o MRR). */
+export async function adminPricing(): Promise<AdminPricing> {
+  const [f] = await q<{ n: number }>(sql`
+    select count(*)::int n from subscriptions
+    where price_tier = 'founder' and (first_charged_at is not null or trial_ends_at is not null or abacate_subscription_id is not null)`);
+  const paying = await q<{ tier: string; cycle: string; n: number }>(sql`
+    select coalesce(s.price_tier, 'founder') tier, s.billing_cycle cycle, count(*)::int n
+    from subscriptions s join workshops w on w.id = s.workshop_id
+    where w.deleted_at is null and w.plan_status in ('active', 'past_due')
+    group by 1, 2`);
+  return { founders: f?.n ?? 0, paying };
+}
+
 export type AdminUserRow = {
   id: string;
   email: string;
@@ -66,6 +86,8 @@ export type AdminUserRow = {
   workshop_id: string | null;
   workshop_name: string | null;
   plan_status: string | null;
+  price_tier: string | null;
+  billing_cycle: string | null;
   batches: number;
   last_seen: string | null;
 };
@@ -74,12 +96,13 @@ export async function adminListUsers(search = ""): Promise<AdminUserRow[]> {
   const like = `%${search.trim().toLowerCase()}%`;
   return q<AdminUserRow>(sql`
     select u.id::text id, u.email, u.name, u."createdAt" created_at, u.role, u.banned,
-      w.id::text workshop_id, w.name workshop_name, w.plan_status,
+      w.id::text workshop_id, w.name workshop_name, w.plan_status, sb.price_tier, sb.billing_cycle,
       (select count(*)::int from batches bb where bb.workshop_id = w.id) batches,
       (select max(s."updatedAt") from neon_auth.session s where s."userId" = u.id) last_seen
     from neon_auth."user" u
     left join workshop_members m on m.user_id::text = u.id::text
     left join workshops w on w.id = m.workshop_id and w.deleted_at is null
+    left join subscriptions sb on sb.workshop_id = w.id
     where ${search.trim() === ""} or lower(u.email) like ${like} or lower(coalesce(u.name,'')) like ${like} or lower(coalesce(w.name,'')) like ${like}
     order by u."createdAt" desc
     limit 300`);
@@ -122,7 +145,7 @@ export async function adminUserDetail(userId: string) {
         (select coalesce(sum(bytes),0)::bigint from media_assets where workshop_id = ${ws.id}::uuid and deleted_at is null) photo_bytes`);
     counts = Object.fromEntries(Object.entries(c ?? {}).map(([k, v]) => [k, Number(v)]));
     const subs = await q(sql`
-      select status, method, abacate_subscription_id, abacate_checkout_id, abacate_customer_id, current_period_end, trial_ends_at, first_charged_at, canceled_at, refund_requested_at
+      select status, method, price_tier, billing_cycle, abacate_subscription_id, abacate_checkout_id, abacate_customer_id, current_period_end, trial_ends_at, first_charged_at, canceled_at, refund_requested_at
       from subscriptions where workshop_id = ${ws.id}::uuid`);
     sub = subs[0] ?? null;
     audit = await q(sql`select event, occurred_at, actor, resource from access_audit_logs where workshop_id = ${ws.id}::uuid order by occurred_at desc limit 15`);

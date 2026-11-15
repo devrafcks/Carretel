@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/app/page-header";
 import { Card, Notice } from "@/components/ui/card";
 import { brand } from "@/config/brand";
 import { legal, dpoContact } from "@/config/legal";
-import { billingMode, reconcileSubscription } from "@/server/billing";
+import { billingMode, canRenewAnnual, reconcileSubscription } from "@/server/billing";
+import { cyclePriceCents, isPriceTier } from "@/lib/pricing";
 import { redirect } from "next/navigation";
 import { CircleCheck, Clock } from "@/components/icons";
 import { WorkshopForm, PixForm, SettingsForm, DangerZone } from "./account-client";
@@ -30,6 +31,9 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
   const sub = ctx.subscription;
   const settings = await ctx.tdb.first(workshopSettings);
   const status = ws.planStatus;
+  // assinaturas antigas sem faixa gravada entraram a R$ 35 (a migração 0005 marca como fundador)
+  const tier = isPriceTier(sub?.priceTier) ? sub.priceTier : "founder";
+  const cycle = sub?.billingCycle === "annual" ? "annual" : "monthly";
   return (
     <div className="space-y-5">
       <PageHeader tone="ink" illustration="/illustrations/hero.svg" kicker={t(`status.plan.${status}`)} title={ws.name} subtitle={t("account.title")} backHref="/mas" backLabel={t("common.back")} />
@@ -42,7 +46,11 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
         locale={locale}
         status={status}
         sub={sub}
-        priceCents={brand.planPriceCents}
+        priceCents={cyclePriceCents(tier, cycle, brand.pricing)}
+        cycle={cycle}
+        tier={tier}
+        renewOpen={canRenewAnnual(status, sub)}
+        renewWindowDays={brand.pricing.annualRenewWindowDays}
         freeUsed={ws.freeBatchesUsed}
         freeLimit={brand.freeBatchLimit}
         refundUntil={sub?.firstChargedAt ? new Date(sub.firstChargedAt.getTime() + 7 * 86_400_000) : null}

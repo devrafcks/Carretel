@@ -91,6 +91,8 @@ export default async function AdminUserPage({ params }: { params: Promise<{ loca
                   [
                     ["Status interno", String(sub.status ?? "—")],
                     ["Forma", String(sub.method ?? "—")],
+                    ["Faixa de preço", sub.price_tier === "founder" ? "Fundador (preço travado para sempre)" : sub.price_tier === "standard" ? "Padrão" : "—"],
+                    ["Ciclo", sub.billing_cycle === "annual" ? "Anual (pagamento único)" : "Mensal"],
                     ["Período até", dt(sub.current_period_end)],
                     ["Teste até", dt(sub.trial_ends_at)],
                     ["1ª cobrança", dt(sub.first_charged_at)],

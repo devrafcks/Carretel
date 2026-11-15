@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { currentUser, loadWorkshopContext } from "@/lib/session";
 import { authMode, devAuthAllowed } from "@/lib/auth/server";
-import { billingIsTestMode, billingMode, pixAutomaticoAvailable } from "@/server/billing";
+import { billingIsTestMode, billingMode, canRenewAnnual, pixAutomaticoAvailable, pricingOffer } from "@/server/billing";
+import { hasPaidHistory } from "@/lib/pricing";
 import { brand } from "@/config/brand";
 import { SubscribeFlow } from "./subscribe-flow";
 
@@ -15,16 +16,18 @@ export const dynamic = "force-dynamic";
  * sem sessão → passo "Conta" (entrar ou criar ali mesmo); sem taller → passo "Taller"; senão → "Pagamento".
  * O botão de upgrade do painel cai aqui já logado, então começa direto no pagamento.
  */
-export default async function AssinarPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ checkout?: string }> }) {
+export default async function AssinarPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ checkout?: string; plano?: string }> }) {
   const { locale } = await params;
-  const { checkout } = await searchParams;
+  const { checkout, plano } = await searchParams;
   setRequestLocale(locale);
   const t = await getTranslations("subscribe");
   const user = await currentUser();
   const ctx = user ? await loadWorkshopContext() : null;
   const plan = ctx?.workshop.planStatus;
+  // anual nos últimos dias: em vez de "já está ativo", mostra a renovação
+  const renewAnnual = Boolean(ctx && plan && canRenewAnnual(plan, ctx.subscription));
 
-  if (plan === "active" || plan === "trialing") {
+  if ((plan === "active" || plan === "trialing") && !renewAnnual) {
     return (
       <Card className="w-full max-w-lg rounded-[2rem] p-6 text-center shadow-lift sm:p-8">
         <span className="mx-auto inline-flex size-14 items-center justify-center rounded-full bg-mint-100 text-vivid-strong">
@@ -57,8 +60,11 @@ export default async function AssinarPage({ params, searchParams }: { params: Pr
       pixAvailable={pixAutomaticoAvailable()}
       canceledNotice={checkout === "cancel"}
       trialDays={brand.cardTrialDays}
-      trialEligible={!(ctx?.subscription && (ctx.subscription.abacateSubscriptionId || ctx.subscription.firstChargedAt || ctx.subscription.trialEndsAt))}
-      priceCents={brand.planPriceCents}
+      trialEligible={!hasPaidHistory(ctx?.subscription)}
+      offer={await pricingOffer(ctx?.subscription ?? null, ctx?.workshop.id)}
+      renewAnnual={renewAnnual}
+      initialCycle={plano === "anual" ? "annual" : "monthly"}
+      renewWindowDays={brand.pricing.annualRenewWindowDays}
     />
   );
 }

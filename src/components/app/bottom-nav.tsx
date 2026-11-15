@@ -124,12 +124,15 @@ export function SideRail({
   avatarMediaId,
   authMode,
   showUpgrade = false,
+  upgradePrice,
   showAdmin = false,
 }: {
   workshopName?: string;
   avatarMediaId?: string | null;
   authMode: "neon" | "dev";
   showUpgrade?: boolean;
+  /** preço do mensal já formatado (ex.: "R$ 35,00") */
+  upgradePrice?: string;
   showAdmin?: boolean;
 }) {
   const ts = useTranslations("subscribe");
@@ -171,7 +174,7 @@ export function SideRail({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">{ts("upgrade")}</span>
-            <span className="block truncate text-xs text-muted-foreground">{ts("upgradeSub")}</span>
+            <span className="block truncate text-xs text-muted-foreground">{upgradePrice ? ts("upgradeSub", { amount: upgradePrice }) : ts("upgradeSubPlain")}</span>
           </span>
         </Link>
       ) : null}

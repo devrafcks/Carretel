@@ -4,7 +4,7 @@ import { Search } from "@/components/icons";
 import { requireAdmin } from "@/lib/admin";
 import { adminListUsers } from "@/db/admin";
 import { formatDate } from "@/lib/dates";
-import { PlanPill } from "../ui";
+import { PlanPill, TierPill } from "../ui";
 
 export default async function AdminUsers({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ q?: string }> }) {
   const { locale } = await params;
@@ -35,6 +35,7 @@ export default async function AdminUsers({ params, searchParams }: { params: Pro
               <th className="px-5 py-3 font-medium">E-mail</th>
               <th className="px-5 py-3 font-medium">Taller</th>
               <th className="px-5 py-3 font-medium">Plano</th>
+              <th className="px-5 py-3 font-medium">Faixa</th>
               <th className="px-5 py-3 font-medium">Cortes</th>
               <th className="px-5 py-3 font-medium">Cadastro</th>
               <th className="px-5 py-3 font-medium">Último acesso</th>
@@ -53,6 +54,9 @@ export default async function AdminUsers({ params, searchParams }: { params: Pro
                 <td className="px-5 py-3">{u.workshop_name ?? <span className="text-muted-foreground">—</span>}</td>
                 <td className="px-5 py-3">
                   <PlanPill status={u.plan_status ?? "none"} />
+                </td>
+                <td className="px-5 py-3">
+                  <TierPill tier={u.price_tier} cycle={u.billing_cycle} />
                 </td>
                 <td className="px-5 py-3 tabular-money">{u.batches}</td>
                 <td className="px-5 py-3 text-muted-foreground">{formatDate(u.created_at, locale)}</td>

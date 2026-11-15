@@ -1,9 +1,15 @@
 /**
- * Assinatura R$ 35/mês — AbacatePay API v2 (docs: https://docs.abacatepay.com, conferido em 14/11/2026).
+ * Cobrança do Carretel — AbacatePay API v2 (docs: https://docs.abacatepay.com, conferido em 14/11/2026).
  *
- * Fluxo:
- * 1) produto com `cycle: "MONTHLY"` (criado sozinho na primeira vez, por externalId) — um sem teste (Pix
- *    Automático ou cartão) e um com `trialDays` para o cartão;
+ * Preços (src/config/brand.ts → pricing, regras em src/lib/pricing.ts):
+ * - mensal fundador R$ 35 (10 primeiras oficinas pagantes, para sempre) ou mensal padrão R$ 49;
+ * - anual R$ 390: PAGAMENTO ÚNICO (POST /checkouts/create) com Pix comum ou cartão em até 12x. Não é assinatura
+ *   porque checkout de assinatura não aceita parcelamento ("Subscription checkouts do not support card
+ *   installments"). Dá 12 meses de acesso; a renovação abre nos últimos 30 dias e não é automática.
+ *
+ * Fluxo do mensal:
+ * 1) produto com `cycle: "MONTHLY"` (criado sozinho na primeira vez, por externalId, um por preço) — um sem
+ *    teste (Pix Automático ou cartão) e um com `trialDays` para o cartão;
  * 2) cliente (POST /customers/create devolve o existente se o e-mail já estiver cadastrado);
  * 3) checkout de assinatura (POST /subscriptions/create) → o taller paga na página da AbacatePay;
  * 4) ativação por webhook (subscription.completed / trial_started / renewed / payment_failed / cancelled)
@@ -16,13 +22,24 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { subscriptions, type PlanStatus } from "@/db/schema";
 import { findSubscriptionByRefs, setPlanStatus, updateSubscriptionById } from "@/db/public";
+import { claimPendingSubscription, countFounders } from "@/db/public-billing";
 import type { WorkshopContext } from "@/lib/session";
 import { nextPlanStatus, type SubscriptionEventType } from "@/lib/subscription";
+import {
+  annualInstallments,
+  annualPeriodEnd,
+  annualRenewalOpen,
+  choosePriceTier,
+  cyclePriceCents,
+  foundersLeft,
+  hasPaidHistory,
+  productExternalId,
+  type BillingCycle,
+  type PriceTier,
+} from "@/lib/pricing";
 import { appUrl, brand } from "@/config/brand";
 
 const API = "https://api.abacatepay.com/v2";
-const PRODUCT_EXTERNAL_ID = "carretel-mensal";
-const PRODUCT_TRIAL_EXTERNAL_ID = "carretel-mensal-teste-cartao";
 /** Folga depois do vencimento do ciclo antes de bloquear (o banco/cartão pode demorar). */
 const GRACE_DAYS = 3;
 
@@ -77,26 +94,39 @@ async function abacate<T>(path: string, init: { body?: unknown; query?: Record<s
 type Product = { id: string; externalId: string; status?: string; cycle?: string | null };
 const productCache = new Map<string, string>();
 
-async function ensureProduct(trial: boolean): Promise<string> {
-  const envId = trial ? process.env.ABACATEPAY_PRODUCT_ID_MONTHLY_CARD_TRIAL : process.env.ABACATEPAY_PRODUCT_ID_MONTHLY;
-  if (envId && !envId.includes("xxx")) return envId;
-  const externalId = trial ? PRODUCT_TRIAL_EXTERNAL_ID : PRODUCT_EXTERNAL_ID;
+/**
+ * Produto da AbacatePay para (ciclo, preço, teste). Criado uma vez por ambiente e reaproveitado pelo externalId.
+ * Os ids de ambiente ABACATEPAY_PRODUCT_ID_MONTHLY(_CARD_TRIAL) continuam valendo para o mensal de fundador.
+ */
+async function ensureProduct(p: { cycle: BillingCycle; cents: number; trial: boolean }): Promise<string> {
+  if (p.cycle === "monthly" && p.cents === brand.pricing.founderMonthlyCents) {
+    const envId = p.trial ? process.env.ABACATEPAY_PRODUCT_ID_MONTHLY_CARD_TRIAL : process.env.ABACATEPAY_PRODUCT_ID_MONTHLY;
+    if (envId && !envId.includes("xxx")) return envId;
+  }
+  const externalId = productExternalId(p);
   const cacheKey = `${billingIsTestMode() ? "dev" : "prod"}:${externalId}`;
   const cached = productCache.get(cacheKey);
   if (cached) return cached;
 
   const found = await abacate<Product[]>("/products/list", { query: { externalId, limit: "1" } });
-  let id = found.find((p) => p.externalId === externalId && p.status !== "INACTIVE")?.id;
+  let id = found.find((x) => x.externalId === externalId && x.status !== "INACTIVE")?.id;
   if (!id) {
+    const name =
+      p.cycle === "annual"
+        ? `${brand.brandName} — plano anual (12 meses)`
+        : p.trial
+          ? `${brand.brandName} — plano mensal (cartão, ${brand.cardTrialDays} dias grátis)`
+          : `${brand.brandName} — plano mensal`;
     const created = await abacate<Product>("/products/create", {
       body: {
         externalId,
-        name: trial ? `${brand.brandName} — plano mensal (cartão, ${brand.cardTrialDays} dias grátis)` : `${brand.brandName} — plano mensal`,
+        name,
         description: "Caderno digital do taller de costura: cortes, comprovantes de entrega, acerto da equipe e cobranças.",
-        price: brand.planPriceCents,
+        price: p.cents,
         currency: "BRL",
-        cycle: "MONTHLY",
-        ...(trial ? { trialDays: brand.cardTrialDays } : {}),
+        // anual é avulso (sem cycle) para aceitar Pix comum e parcelamento no cartão
+        ...(p.cycle === "monthly" ? { cycle: "MONTHLY" } : {}),
+        ...(p.trial ? { trialDays: brand.cardTrialDays } : {}),
       },
     });
     id = created.id;
@@ -105,27 +135,96 @@ async function ensureProduct(trial: boolean): Promise<string> {
   return id;
 }
 
+/* ───── Oferta (o que mostrar no checkout e na landing) ───── */
+export interface PricingOffer {
+  /** faixa que esta oficina paga (ou pagaria) no mensal */
+  tier: PriceTier;
+  /** faixa travada por pagamento anterior (cancelou e voltou) */
+  locked: boolean;
+  founderSpots: number;
+  /** vagas de fundador que sobram (null = não deu para contar) */
+  foundersLeft: number | null;
+  monthlyCents: number;
+  annualCents: number;
+  standardMonthlyCents: number;
+  annualInstallments: number;
+}
+
+let foundersMemo: { at: number; n: number } | null = null;
+
+/**
+ * Oferta para quem está assinando agora (sem oficina = visitante da landing). Nunca quebra a página.
+ * `cached`: para telas que só exibem o preço (landing, sidebar), reaproveita a contagem por 60 s.
+ * O checkout sempre conta na hora (startCheckout).
+ */
+export async function pricingOffer(
+  sub?: { priceTier: string | null; firstChargedAt: Date | null; trialEndsAt: Date | null; abacateSubscriptionId: string | null } | null,
+  workshopId?: string,
+  opts: { cached?: boolean } = {},
+): Promise<PricingOffer> {
+  const cfg = brand.pricing;
+  let taken: number | null = null;
+  try {
+    if (opts.cached && foundersMemo && foundersMemo.at > Date.now() - 60_000) taken = foundersMemo.n;
+    else {
+      taken = await countFounders(opts.cached ? undefined : workshopId);
+      if (opts.cached) foundersMemo = { at: Date.now(), n: taken };
+    }
+  } catch (err) {
+    console.warn(JSON.stringify({ level: "warn", msg: "count_founders_failed", err: String(err) }));
+  }
+  const history = hasPaidHistory(sub);
+  const lockedTier = sub?.priceTier === "founder" || sub?.priceTier === "standard" ? sub.priceTier : null;
+  // sem contagem: na dúvida, mostra o preço padrão (nunca promete uma vaga que pode não existir)
+  const tier = taken === null && !(history && lockedTier) ? "standard" : choosePriceTier({ lockedTier, hasHistory: history, foundersTaken: taken ?? 0, founderSpots: cfg.founderSpots });
+  return {
+    tier,
+    locked: Boolean(history && lockedTier),
+    founderSpots: cfg.founderSpots,
+    foundersLeft: taken === null ? null : foundersLeft(taken, cfg.founderSpots),
+    monthlyCents: cyclePriceCents(tier, "monthly", cfg),
+    annualCents: cfg.annualCents,
+    standardMonthlyCents: cfg.standardMonthlyCents,
+    annualInstallments: annualInstallments(cfg),
+  };
+}
+
+/** Plano anual ativo nos últimos dias: pode pagar mais 12 meses. */
+export function canRenewAnnual(planStatus: WorkshopRow["planStatus"], sub: { billingCycle?: string | null; currentPeriodEnd?: Date | null } | null | undefined, now = new Date()): boolean {
+  return planStatus === "active" && annualRenewalOpen(sub, brand.pricing.annualRenewWindowDays, now);
+}
+
 /* ───── Checkout ───── */
-export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD", locale: string): Promise<string> {
+export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD", locale: string, cycle: BillingCycle = "monthly"): Promise<string> {
   const mode = billingMode();
   if (mode === "disabled") throw new Error("billing_disabled");
   // um externalId novo por tentativa (a API devolve o checkout antigo se o externalId se repetir)
-  const externalId = `ws_${ctx.workshop.id}_${method}_${Date.now().toString(36)}`;
+  const externalId = `ws_${ctx.workshop.id}_${method}_${cycle === "annual" ? "A" : "M"}_${Date.now().toString(36)}`;
 
-  const plan = ctx.workshop.planStatus;
-  if (plan === "active" || plan === "trialing" || plan === "past_due") throw new Error("already_subscribed");
   let sub = await ctx.tdb.first(subscriptions);
+  const plan = ctx.workshop.planStatus;
+  const renewingAnnual = cycle === "annual" && sub?.billingCycle === "annual" && canRenewAnnual(plan, sub);
+  if ((plan === "active" || plan === "trialing" || plan === "past_due") && !renewingAnnual) throw new Error("already_subscribed");
   // teste grátis no cartão só na primeira assinatura do taller
-  const hadSubscription = Boolean(sub?.abacateSubscriptionId || sub?.firstChargedAt || sub?.trialEndsAt);
+  const hadSubscription = hasPaidHistory(sub);
+  // faixa de preço: quem já pagou mantém a sua; senão, fundador enquanto houver vaga
+  const tier = choosePriceTier({
+    lockedTier: sub?.priceTier,
+    hasHistory: hadSubscription,
+    foundersTaken: await countFounders(ctx.workshop.id),
+    founderSpots: brand.pricing.founderSpots,
+  });
+  const cents = cyclePriceCents(tier, cycle, brand.pricing);
+  const fields = { externalId, method, status: "pending_checkout", priceTier: tier, billingCycle: cycle } as const;
   if (!sub) {
-    sub = await ctx.tdb.insert(subscriptions, { status: "pending_checkout", externalId, method });
+    sub = await ctx.tdb.insert(subscriptions, fields);
   } else {
-    const [s] = await ctx.tdb.update(subscriptions, { externalId, method, status: "pending_checkout", updatedAt: new Date() }, eq(subscriptions.id, sub.id));
+    const [s] = await ctx.tdb.update(subscriptions, { ...fields, updatedAt: new Date() }, eq(subscriptions.id, sub.id));
     sub = s ?? sub;
   }
   await setPlanStatus(ctx.workshop.id, nextPlanStatus(ctx.workshop.planStatus, "local.checkout_opened"));
 
-  if (mode === "simulated") return `/${locale}/cuenta/pago-simulado?method=${method}`;
+  if (mode === "simulated") return `/${locale}/cuenta/pago-simulado?method=${method}&cycle=${cycle}`;
 
   let customerId = sub.abacateCustomerId;
   if (!customerId) {
@@ -140,18 +239,45 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
     }
   }
 
+  const completionUrl = `${appUrl()}/${locale}/assinar/concluido`;
+  const returnUrl = `${appUrl()}/${locale}/assinar?checkout=cancel`;
+
+  if (cycle === "annual") {
+    // pagamento único: Pix comum (não depende do Pix Automático) ou cartão parcelado
+    const productId = await ensureProduct({ cycle: "annual", cents, trial: false });
+    const checkout = await abacate<{ id: string; url: string }>("/checkouts/create", {
+      body: {
+        items: [{ id: productId, quantity: 1 }],
+        methods: [method],
+        ...(customerId ? { customerId } : {}),
+        externalId,
+        completionUrl,
+        returnUrl,
+        ...(method === "CARD" ? { card: { maxInstallments: annualInstallments(brand.pricing) } } : {}),
+        metadata: { workshopId: ctx.workshop.id, cycle, tier },
+      },
+    });
+    await ctx.tdb.update(
+      subscriptions,
+      { abacateCustomerId: customerId, abacateCheckoutId: checkout.id, checkoutUrl: checkout.url, updatedAt: new Date() },
+      eq(subscriptions.id, sub.id),
+    );
+    return checkout.url;
+  }
+
   if (method === "PIX" && !pixAutomaticoAvailable()) throw new Error("pix_unavailable");
-  const productId = await ensureProduct(method === "CARD" && !hadSubscription);
+  const productId = await ensureProduct({ cycle: "monthly", cents, trial: method === "CARD" && !hadSubscription });
   const checkout = await abacate<{ id: string; url: string }>("/subscriptions/create", {
     body: {
       items: [{ id: productId, quantity: 1 }],
       methods: [method],
       ...(customerId ? { customerId } : {}),
       externalId,
-      completionUrl: `${appUrl()}/${locale}/assinar/concluido`,
-      returnUrl: `${appUrl()}/${locale}/assinar?checkout=cancel`,
+      completionUrl,
+      returnUrl,
+      // assinatura não aceita parcelamento (só 1x)
       ...(method === "CARD" ? { retryPolicy: { maxRetry: 3, retryEvery: 2 }, card: { maxInstallments: 1 } } : {}),
-      metadata: { workshopId: ctx.workshop.id },
+      metadata: { workshopId: ctx.workshop.id, cycle, tier },
     },
   }).catch((err: unknown) => {
     if (err instanceof AbacateError && /PIX Autom/i.test(err.apiError)) {
@@ -190,6 +316,16 @@ export function needsReconcile(workshop: Pick<WorkshopRow, "planStatus">, sub: {
  * `force` ignora o intervalo mínimo de 30 s (usado ao voltar do checkout e na tela Conta).
  */
 export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "workshop">, opts: { force?: boolean } = {}): Promise<PlanStatus | null> {
+  // anual vencido (sem renovação automática) → modo leitura; não depende da AbacatePay
+  if (ctx.workshop.planStatus === "active") {
+    const s = await ctx.tdb.first(subscriptions);
+    if (s?.billingCycle === "annual" && s.currentPeriodEnd && s.currentPeriodEnd.getTime() < Date.now()) {
+      await updateSubscriptionById(s.id, { status: s.status === "pending_checkout" ? s.status : "read_only" });
+      await setPlanStatus(ctx.workshop.id, "read_only");
+      ctx = { ...ctx, workshop: { ...ctx.workshop, planStatus: "read_only" } };
+      if (s.status !== "pending_checkout") return "read_only";
+    }
+  }
   if (billingMode() !== "abacatepay") return null;
   const key = ctx.workshop.id;
   if (!opts.force && (lastReconcile.get(key) ?? 0) > Date.now() - 30_000) return null;
@@ -197,6 +333,20 @@ export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "
 
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) return null;
+
+  if (sub.billingCycle === "annual") {
+    // pagamento único: confere o checkout em aberto; fora isso não há nada a buscar na AbacatePay
+    if (sub.status !== "pending_checkout" || !sub.abacateCheckoutId) return null;
+    try {
+      const bill = await abacate<{ id: string; status: string }>("/checkouts/get", { query: { id: sub.abacateCheckoutId } });
+      if (bill.status !== "PAID") return null;
+      return await applyAnnualPayment(sub, ctx.workshop.planStatus, bill.id);
+    } catch (err) {
+      console.warn(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
+      return null;
+    }
+  }
+
   let remote: RemoteSubscription | undefined;
   try {
     if (sub.status === "pending_checkout" && sub.abacateCheckoutId) {
@@ -255,6 +405,31 @@ export async function reconcileWorkshopById(workshopId: string): Promise<PlanSta
   return reconcileSubscription({ tdb: await tenantDb(workshopId), workshop }, { force: true });
 }
 
+type SubscriptionRow = typeof subscriptions.$inferSelect;
+
+/**
+ * Anual pago: 12 meses de acesso (somados aos dias que ainda restam, se houver). Idempotente:
+ * só aplica se a assinatura ainda estiver aguardando este checkout (webhook e conciliação podem chegar juntos).
+ */
+async function applyAnnualPayment(sub: SubscriptionRow, current: PlanStatus, checkoutId: string | null): Promise<PlanStatus | null> {
+  if (sub.status !== "pending_checkout") return null;
+  if (checkoutId && sub.abacateCheckoutId && checkoutId !== sub.abacateCheckoutId) return null;
+  const now = new Date();
+  const stillPaid = current === "active" || current === "canceled" || current === "past_due";
+  const applied = await claimPendingSubscription(sub.id, {
+    status: "active",
+    currentPeriodEnd: annualPeriodEnd(now, stillPaid ? sub.currentPeriodEnd : null),
+    trialEndsAt: null,
+    firstChargedAt: sub.firstChargedAt ?? now,
+    canceledAt: null,
+    // a assinatura mensal antiga (se havia) já foi cancelada; o anual não tem assinatura na AbacatePay
+    abacateSubscriptionId: null,
+  });
+  if (!applied) return null;
+  await setPlanStatus(sub.workshopId, "active");
+  return "active";
+}
+
 function periodEndFrom(from: Date): Date {
   const d = new Date(from);
   d.setMonth(d.getMonth() + 1);
@@ -291,12 +466,21 @@ export async function cancelSubscription(ctx: Pick<WorkshopContext, "tdb" | "wor
 
 /**
  * A API da AbacatePay não estorna cobranças de assinatura (só o cliente, pelo Portal, ou o painel).
- * Aqui registramos o pedido (prazo de 7 dias) e cancelamos; o estorno é feito pelo painel da AbacatePay.
+ * Aqui registramos o pedido (prazo de 7 dias) e cancelamos; o estorno do mensal é feito pelo painel da AbacatePay.
+ * O anual é pagamento único: esse a API estorna (POST /checkouts/refund, valor integral).
  */
 export async function requestRefund(ctx: WorkshopContext): Promise<{ accessUntil: Date | null }> {
   const sub = await ctx.tdb.first(subscriptions);
   if (!sub) throw new Error("no_subscription");
   await ctx.tdb.update(subscriptions, { refundRequestedAt: new Date(), updatedAt: new Date() }, eq(subscriptions.id, sub.id));
+  if (billingMode() === "abacatepay" && sub.billingCycle === "annual" && sub.abacateCheckoutId && sub.status !== "pending_checkout") {
+    try {
+      await abacate("/checkouts/refund", { body: { id: sub.abacateCheckoutId, reason: "Reembolso pedido pelo taller na tela Conta (prazo de 7 dias)." } });
+    } catch (err) {
+      // fica registrado (refundRequestedAt) para estornar pelo painel
+      console.error(JSON.stringify({ level: "error", msg: "abacate_refund_failed", err: String(err) }));
+    }
+  }
   return cancelSubscription(ctx, { endAccessNow: true });
 }
 
@@ -346,6 +530,22 @@ export async function applySubscriptionEvent(evt: AbacateEvent): Promise<{ works
 
   const { getWorkshopPlan } = await import("@/db/public-billing");
   const current = await getWorkshopPlan(workshopId);
+
+  if (sub.billingCycle === "annual") {
+    // anual = pagamento único: só os eventos de checkout importam (os de assinatura seriam de um mensal antigo)
+    if (type === "checkout.completed") {
+      const status = await applyAnnualPayment(sub, current ?? "free", checkoutId);
+      return { workshopId, status: status ?? current ?? undefined };
+    }
+    if ((type as string) === "checkout.refunded" && sub.status !== "pending_checkout") {
+      const now = new Date();
+      await updateSubscriptionById(sub.id, { status: "canceled", canceledAt: sub.canceledAt ?? now, currentPeriodEnd: now });
+      await setPlanStatus(workshopId, "read_only");
+      return { workshopId, status: "read_only" };
+    }
+    return { workshopId, status: current ?? undefined };
+  }
+
   const next = nextPlanStatus(current ?? "free", type);
   const now = new Date();
   const set: Partial<typeof subscriptions.$inferInsert> = { status: next };

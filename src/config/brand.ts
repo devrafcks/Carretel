@@ -20,7 +20,23 @@ export interface BrandConfig {
   showMadeWithFooter: boolean;
   publicCalculator: boolean;
   photoStorage: "vercel-blob" | "r2" | "local";
-  planPriceCents: number;
+  pricing: PricingConfig;
+}
+
+/**
+ * Preços em centavos. As regras ficam em src/lib/pricing.ts:
+ * - fundador: as primeiras `founderSpots` oficinas que pagam ficam com `founderMonthlyCents` para sempre;
+ * - depois disso, assinaturas novas custam `standardMonthlyCents`;
+ * - anual: pagamento único de `annualCents` por 12 meses (Pix ou cartão em até `annualMaxInstallments`x).
+ */
+export interface PricingConfig {
+  founderMonthlyCents: number;
+  founderSpots: number;
+  standardMonthlyCents: number;
+  annualCents: number;
+  annualMaxInstallments: number;
+  /** Quantos dias antes do fim do plano anual a renovação fica liberada. */
+  annualRenewWindowDays: number;
 }
 
 export const brand: BrandConfig = {
@@ -42,7 +58,14 @@ export const brand: BrandConfig = {
   showMadeWithFooter: true,
   publicCalculator: false, // calculadora exige conta (pedido do responsável em 14/11/2026)
   photoStorage: process.env.BLOB_READ_WRITE_TOKEN ? "vercel-blob" : "local",
-  planPriceCents: 3500,
+  pricing: {
+    founderMonthlyCents: 3500,
+    founderSpots: 10,
+    standardMonthlyCents: 4900,
+    annualCents: 39000,
+    annualMaxInstallments: 12,
+    annualRenewWindowDays: 30,
+  },
 };
 
 /**

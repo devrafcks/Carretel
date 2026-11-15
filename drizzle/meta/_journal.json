@@ -29,6 +29,13 @@
       "when": 1794681313985,
       "tag": "0003_workshop_avatar",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794708857208,
+      "tag": "0005_pricing_tiers",
+      "breakpoints": true
     }
   ]
 }
