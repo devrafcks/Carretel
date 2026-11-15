@@ -8,10 +8,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { NeedleIllustration } from "@/components/brand/illustrations";
 import { buildPixBrCode } from "@/lib/pix-brcode";
 import { formatDate } from "@/lib/dates";
+import { formatBRL } from "@/lib/money";
 import { appUrl } from "@/config/brand";
 import { ReceivableList, AgingBars } from "./cobros-client";
-import { Info } from "@/components/icons";
-import { Link } from "@/i18n/navigation";
+import { Info, QrCode, ChevronDown } from "@/components/icons";
+import { PixForm } from "../cuenta/account-client";
 
 export default async function CobrosPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -22,7 +23,7 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
   const ws = ctx.workshop;
   const hasPix = Boolean(ws.pixKey && ws.pixMerchantName && ws.pixCity);
 
-  const items = board.open.map((i) => {
+  const toItem = (i: (typeof board.confirmed)[number]) => {
     let pix: string | null = null;
     let pixError = false;
     if (hasPix) {
@@ -59,7 +60,10 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
       pix,
       pixError,
     };
-  });
+  };
+  const awaitingItems = board.awaiting.map(toItem);
+  const items = board.confirmed.map(toItem);
+  const nothing = items.length === 0 && awaitingItems.length === 0;
 
   return (
     <div className="space-y-5">
@@ -68,7 +72,11 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
         illustration="/illustrations/cobre.svg"
         kicker={t("cobros.title")}
         title={<Money cents={board.totalOpenCents} locale={locale} className="text-4xl sm:text-5xl" />}
-        subtitle={t("hoy.owedSub", { count: board.open.length })}
+        subtitle={
+          board.totalAwaitingCents > 0
+            ? `${t("hoy.owedSub", { count: board.confirmed.length })} · ${t("hoy.awaitingPlus", { amount: formatBRL(board.totalAwaitingCents, locale) })}`
+            : t("hoy.owedSub", { count: board.confirmed.length })
+        }
       />
       {board.totalOpenCents > 0 ? (
         <Card className="anim-rise delay-1 p-5">
@@ -81,21 +89,51 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
           <p>{t("cobros.readOnlyNote")}</p>
         </Notice>
       ) : null}
-      {!hasPix && items.length > 0 ? (
-        <Notice tone="info" icon={<Info />}>
-          <p>
-            {t("cobros.pixMissing")}{" "}
-            <Link href="/cuenta" className="font-medium underline underline-offset-4">
-              {t("cobros.pixMissingCta")}
-            </Link>
-          </p>
-        </Notice>
+      {!hasPix && !nothing && ctx.access.canWrite ? (
+        <details className="group rounded-3xl border border-ink/[0.06] bg-card p-5 shadow-soft">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-mint-100 text-accent-foreground">
+              <QrCode aria-hidden="true" className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium">{t("cobros.pixInlineTitle")}</span>
+              <span className="block text-sm text-muted-foreground">{t("cobros.pixMissing")}</span>
+            </span>
+            <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <PixForm pix={{ type: ws.pixKeyType ?? "evp", key: ws.pixKey ?? "", name: ws.pixMerchantName ?? ws.name.slice(0, 25), city: ws.pixCity ?? "Sao Paulo" }} />
+        </details>
       ) : null}
 
-      {items.length === 0 ? (
+      {nothing ? (
         <EmptyState illustration={<NeedleIllustration />} title={t("cobros.empty")} />
       ) : (
-        <ReceivableList items={items} workshopName={ws.name} canWrite={ctx.access.canWrite} canMarkPaid={ctx.access.canMarkPaid} />
+        <>
+          {awaitingItems.length ? (
+            <section aria-labelledby="sec-awaiting" className="space-y-3">
+              <div>
+                <h2 id="sec-awaiting" className="font-medium">
+                  {t("cobros.sectionAwaiting")} · {formatBRL(board.totalAwaitingCents, locale)}
+                </h2>
+                <p className="text-sm text-muted-foreground">{t("cobros.sectionAwaitingLead")}</p>
+              </div>
+              <ReceivableList mode="awaiting" items={awaitingItems} workshopName={ws.name} canWrite={ctx.access.canWrite} canMarkPaid={ctx.access.canMarkPaid} />
+            </section>
+          ) : null}
+          <section aria-labelledby="sec-confirmed" className="space-y-3">
+            <div>
+              <h2 id="sec-confirmed" className="font-medium">
+                {t("cobros.sectionConfirmed")} · {formatBRL(board.totalOpenCents, locale)}
+              </h2>
+              <p className="text-sm text-muted-foreground">{t("cobros.sectionConfirmedLead")}</p>
+            </div>
+            {items.length ? (
+              <ReceivableList items={items} workshopName={ws.name} canWrite={ctx.access.canWrite} canMarkPaid={ctx.access.canMarkPaid} />
+            ) : (
+              <p className="rounded-2xl border border-dashed border-ink/15 px-5 py-6 text-center text-muted-foreground">{t("cobros.confirmedEmpty")}</p>
+            )}
+          </section>
+        </>
       )}
 
       {board.paid.length ? (

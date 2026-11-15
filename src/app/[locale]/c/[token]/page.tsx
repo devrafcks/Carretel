@@ -89,8 +89,7 @@ export default async function ProofPage({ params }: { params: Promise<{ locale: 
             {s.workshop.city ? <p className="text-muted-foreground">{s.workshop.city}</p> : null}
           </div>
           <span className="shrink-0 rounded-md border-2 border-foreground px-2 py-1 text-center font-display text-xs font-bold uppercase leading-tight tracking-wide">
-              <span lang="pt-BR" className="block">Recibo Não Fiscal</span>
-              <span lang="es" className="block border-t border-foreground">Comprobante no fiscal</span>
+              {t("proof.nonFiscal")}
             </span>
         </div>
         <hr className="stitch-rule my-4" />

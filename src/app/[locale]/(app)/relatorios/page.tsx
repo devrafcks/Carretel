@@ -38,6 +38,8 @@ export default async function RelatoriosPage({ params }: { params: Promise<{ loc
     : [SAMPLE.revenue, SAMPLE.clients, SAMPLE.team, SAMPLE.month];
 
   const f = (c: number) => formatBRL(c, locale);
+  const real = premium ? null : await monthNumbers(ctx.tdb);
+  const teaser = real && real.deliveredPieces > 0 ? t("teaser", { count: real.deliveredPieces, amount: f(real.deliveredCents) }) : null;
   const monthLabel = (k: string) => new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${k}-15T12:00:00Z`)).replace(".", "");
   const card = "rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft";
   const empty = premium && revenue.every((r) => !r.issuedCents && !r.paidCents) && clientsRank.length === 0 && team.length === 0;
@@ -122,7 +124,7 @@ export default async function RelatoriosPage({ params }: { params: Promise<{ loc
           </a>
         ) : null}
       </div>
-      <PremiumGate unlocked={premium}>{content}</PremiumGate>
+      <PremiumGate unlocked={premium} teaser={teaser}>{content}</PremiumGate>
     </div>
   );
 }

@@ -116,6 +116,12 @@ export default async function LoteDetailPage({ params }: { params: Promise<{ loc
         unitPriceCents={b.unitPriceCents}
         sizeGrid={b.sizeGrid}
         canWrite={ctx.access.canWrite}
+        share={{
+          baseUrl: appUrl(),
+          workshopName: ctx.workshop.name,
+          client: d.client ? { name: d.client.name, phone: d.client.phoneE164, locale: d.client.preferredLocale } : null,
+          reference: b.reference,
+        }}
       />
 
       <OperationsEditor batchId={b.id} ops={d.ops.map((o) => ({ id: o.id, machine: o.machine, rate: o.pieceRateCents, produced: producedByOp.get(o.id) ?? 0 }))} canWrite={ctx.access.canWrite} />

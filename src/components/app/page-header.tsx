@@ -17,7 +17,7 @@ export function Orbs({ className }: { className?: string }) {
 }
 
 /**
- * Cabeçalho de tela minimalista: rótulo pequeno com ponto verde, título fino em caixa alta,
+ * Cabeçalho de tela minimalista: rótulo pequeno com ponto verde, título fino,
  * subtítulo suave e círculos decorativos. `illustration`/`tone` ficam aceitos por compatibilidade.
  */
 export function PageHeader({
@@ -59,7 +59,7 @@ export function PageHeader({
             </p>
           ) : null}
         </div>
-        <h1 className="mt-3 font-display text-[2rem] font-light uppercase leading-[1.05] tracking-tight sm:text-5xl">{title}</h1>
+        <h1 className="mt-3 font-display text-[2rem] font-light leading-[1.05] tracking-tight sm:text-5xl">{title}</h1>
         {subtitle ? <div className="mt-2 max-w-xl text-muted-foreground">{subtitle}</div> : null}
         {children ? <div className="mt-4">{children}</div> : null}
         {action ? <div className="mt-5">{action}</div> : null}

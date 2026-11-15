@@ -14,7 +14,7 @@ import { useOffline } from "@/components/app/offline-provider";
 import { assumeReceivableAction, markChargedAction, writeOffAction } from "@/app/actions";
 import { centsToInput, formatBRL, parseMoneyInput } from "@/lib/money";
 import { todayISO } from "@/lib/dates";
-import { chargeMessage } from "@/lib/wa-templates";
+import { chargeMessage, proofReminderMessage } from "@/lib/wa-templates";
 import { cn, waLink } from "@/lib/utils";
 
 export function AgingBars({ buckets, total }: { buckets: { ok: number; watch: number; late: number; critical: number }; total: number }) {
@@ -70,7 +70,7 @@ function useErr() {
   return (code?: string) => (code && t.has(`errors.${code}`) ? t(`errors.${code}` as "errors.server_error") : t("common.errorGeneric"));
 }
 
-export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: { items: Item[]; workshopName: string; canWrite: boolean; canMarkPaid: boolean }) {
+export function ReceivableList({ items, workshopName, canWrite, canMarkPaid, mode = "confirmed" }: { items: Item[]; workshopName: string; canWrite: boolean; canMarkPaid: boolean; mode?: "awaiting" | "confirmed" }) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -78,14 +78,16 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: {
   const [payFor, setPayFor] = React.useState<Item | null>(null);
   const [qrFor, setQrFor] = React.useState<Item | null>(null);
   const [pending, start] = React.useTransition();
-  void workshopName;
 
   return (
     <>
       <ul className="grid items-start gap-4 xl:grid-cols-2">
         {items.map((i) => {
           const tone = i.days > 15 ? "late" : i.days > 7 ? "watch" : "ok";
-          const msg = chargeMessage(i.clientLocale, { client: i.clientName, amountCents: i.openCents, deliveredOn: i.issuedOn, days: i.days, pix: i.pix, url: i.proofUrl });
+          const awaitingMode = mode === "awaiting";
+          const msg = awaitingMode
+            ? proofReminderMessage(i.clientLocale, { client: i.clientName, workshop: workshopName, amountCents: i.openCents, deliveredOn: i.issuedOn, url: i.proofUrl })
+            : chargeMessage(i.clientLocale, { client: i.clientName, amountCents: i.openCents, deliveredOn: i.issuedOn, days: i.days, pix: i.pix, url: i.proofUrl });
           return (
             <li key={i.id}>
               <Card className={cn("overflow-hidden p-0", tone === "late" && "border-aging-late-border")}>
@@ -99,7 +101,7 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: {
                 >
                   <span className="inline-flex items-center gap-1.5">
                     {tone === "late" ? <TriangleAlert aria-hidden="true" className="size-4" /> : <Clock aria-hidden="true" className="size-4" />}
-                    {t("cobros.daysOpen", { days: t("common.days", { count: i.days }) })}
+                    {i.days === 0 ? t("cobros.daysOpenToday") : t("cobros.daysOpen", { days: t("common.days", { count: i.days }) })}
                     {tone === "late" ? <span className="sr-only"> · {t("status.overdue")}</span> : null}
                   </span>
                   <StatusBadge tone={receivableTone[i.status]?.tone ?? "neutral"} label={t(`status.receivable.${i.status}` as "status.receivable.open")} className="bg-card" />
@@ -141,6 +143,10 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: {
                       target="_blank"
                       rel="noreferrer"
                       onClick={() => {
+                        if (awaitingMode) {
+                          toast.success(t("cobros.resendSent", { name: i.clientName }));
+                          return;
+                        }
                         start(async () => {
                           await markChargedAction(i.id);
                         });
@@ -148,7 +154,7 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: {
                       }}
                       className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg border border-paid-solid bg-paid-solid px-4 text-lg font-semibold text-paid-solid-fg"
                     >
-                      <MessageCircle aria-hidden="true" className="size-5" /> {t("cobros.charge")}
+                      <MessageCircle aria-hidden="true" className="size-5" /> {awaitingMode ? t("cobros.resend") : t("cobros.charge")}
                     </a>
                     {canMarkPaid ? (
                       <Button size="lg" variant="outline" onClick={() => setPayFor(i)}>
@@ -157,7 +163,7 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid }: {
                     ) : null}
                   </div>
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    {i.pix ? (
+                    {awaitingMode ? null : i.pix ? (
                       <>
                         <Button
                           variant="ghost"

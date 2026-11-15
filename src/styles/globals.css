@@ -326,3 +326,21 @@
 }
 .anim-bar { transform-origin: bottom; animation: bar-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 .anim-grow-x { transform-origin: left; animation: grow-x 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* Botão do widget de acessibilidade (ver components/app/seeb-position.tsx): fica acima do que é fixo embaixo */
+:root {
+  --seeb-bottom: 20px;
+  --seeb-bottom-lg: 20px;
+}
+:root:has([data-bottom-nav]) {
+  --seeb-bottom: calc(4.75rem + env(safe-area-inset-bottom));
+}
+:root:has([data-fixed-bar]) {
+  --seeb-bottom: calc(10.75rem + env(safe-area-inset-bottom));
+  --seeb-bottom-lg: 6rem;
+}
+/* Com um diálogo aberto o fundo fica escurecido e inerte: o botão sobe para o canto de cima e não cobre os botões da folha */
+:root:has([role="dialog"]) {
+  --seeb-bottom: calc(100dvh - 4.25rem);
+  --seeb-bottom-lg: calc(100dvh - 5rem);
+}

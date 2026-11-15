@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Toaster } from "sonner";
+import { SeebPosition } from "@/components/app/seeb-position";
 import { routing } from "@/i18n/routing";
 import { fontSans, fontDisplay, fontMono, fontSerif } from "@/styles/fonts";
 import { themeInitScript } from "@/components/app/theme";
@@ -76,6 +77,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
             <div id="portal-root" />
           </NextIntlClientProvider>
           <ServiceWorkerRegister />
+          <SeebPosition />
         </div>
         <Script src={process.env.NEXT_PUBLIC_SEEB_WIDGET_URL ?? "https://seeb-widget.pages.dev/widget.js"} strategy="lazyOnload" />
       </body>

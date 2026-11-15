@@ -23,7 +23,7 @@ export function BottomNav() {
   const t = useTranslations("nav");
   const pathname = usePathname();
   return (
-    <nav aria-label={t("main")} className="fixed inset-x-0 bottom-0 z-[100] border-t border-ink/[0.06] bg-card/95 safe-bottom lg:hidden">
+    <nav data-bottom-nav aria-label={t("main")} className="fixed inset-x-0 bottom-0 z-[100] border-t border-ink/[0.06] bg-card/95 safe-bottom lg:hidden">
       <ul className="mx-auto grid max-w-xl grid-cols-5 items-center px-2">
         {items.map((it, i) =>
           it === null ? (
@@ -171,7 +171,7 @@ export function SideRail({
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-medium">{ts("upgrade")}</span>
-            <span className="block truncate text-xs text-muted-foreground">{ts("upgradeTitle")} · R$ 35/mês</span>
+            <span className="block truncate text-xs text-muted-foreground">{ts("upgradeSub")}</span>
           </span>
         </Link>
       ) : null}

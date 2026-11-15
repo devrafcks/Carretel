@@ -18,6 +18,13 @@ export function proofMessage(loc: Loc, d: { client: string; workshop: string; qu
     : `Olá, ${d.client}! Aqui é o ${d.workshop}. Entregamos hoje ${d.quantity} peças${ref}${gridText(d.grid)}. Valor: ${amount}. Por favor, confirme o recebimento neste link: ${d.url}. Obrigado!`;
 }
 
+export function proofReminderMessage(loc: Loc, d: { client: string; workshop: string; amountCents: number; deliveredOn: string; url: string }) {
+  const amount = formatBRL(d.amountCents, "pt-BR");
+  return loc === "es"
+    ? `¡Hola, ${d.client}! Le escribe ${d.workshop}. Le reenvío el comprobante de la entrega del ${d.deliveredOn} (${amount}). Cuando pueda, confirme el recibimiento en este enlace: ${d.url}. ¡Gracias!`
+    : `Olá, ${d.client}! Aqui é o ${d.workshop}. Reenvio o comprovante da entrega de ${d.deliveredOn} (${amount}). Quando puder, confirme o recebimento neste link: ${d.url}. Obrigado!`;
+}
+
 export function chargeMessage(loc: Loc, d: { client: string; amountCents: number; deliveredOn: string; days: number; pix: string | null; url: string }) {
   const amount = formatBRL(d.amountCents, "pt-BR");
   const pix = d.pix ? (loc === "es" ? ` Pix copia y pega: ${d.pix}.` : ` Pix copia e cola: ${d.pix}.`) : "";

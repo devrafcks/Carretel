@@ -20,6 +20,9 @@ import { verificationCodeShort } from "./verification";
 
 const MACHINES = ["recta", "overlock", "collareta", "interlock", "other"] as const;
 
+/** O que é preciso para montar a mensagem do comprovante logo depois de gerá-lo. */
+export type ShareInfo = { baseUrl: string; workshopName: string; client: { name: string; phone: string | null; locale: "es" | "pt-BR" } | null; reference: string | null };
+
 function useErr() {
   const t = useTranslations();
   return (code?: string) => (code && t.has(`errors.${code}`) ? t(`errors.${code}` as "errors.server_error") : t("common.errorGeneric"));
@@ -32,7 +35,9 @@ export function BatchActions({
   unitPriceCents,
   sizeGrid,
   canWrite,
+  share,
 }: {
+  share: ShareInfo;
   batchId: string;
   status: string;
   remaining: number;
@@ -55,7 +60,7 @@ export function BatchActions({
 
   const showDelivery = remaining > 0 && status !== "canceled" && status !== "closed";
   const showCancel = status !== "canceled" && status !== "closed" && status !== "delivered";
-  if (!canWrite || (!showDelivery && !showCancel)) return null;
+  if (!canWrite || (!showDelivery && !showCancel && !open)) return null;
   return (
     <Card className="anim-rise p-5">
       <h2 className="sr-only">{t("batch.actions")}</h2>
@@ -70,13 +75,15 @@ export function BatchActions({
             <Check aria-hidden="true" /> {t("batch.toReady")}
           </Button>
         ) : null}
-        {remaining > 0 && status !== "canceled" && status !== "closed" ? (
+        {showDelivery || open ? (
           <Dialog open={open} onOpenChange={setOpen}>
-            <Button size="lg" onClick={() => setOpen(true)} className="sm:order-first">
-              <Truck aria-hidden="true" /> {t("batch.registerDelivery")}
-            </Button>
+            {showDelivery ? (
+              <Button size="lg" onClick={() => setOpen(true)} className="sm:order-first">
+                <Truck aria-hidden="true" /> {t("batch.registerDelivery")}
+              </Button>
+            ) : null}
             <DialogContent title={t("delivery.title")} description={t("delivery.lead")} side="bottom" closeLabel={t("common.close")}>
-              <DeliveryForm batchId={batchId} max={remaining} unitPriceCents={unitPriceCents} sizeGrid={sizeGrid} onDone={() => setOpen(false)} />
+              <DeliveryForm batchId={batchId} max={Math.max(1, remaining)} unitPriceCents={unitPriceCents} sizeGrid={sizeGrid} share={share} onDone={() => setOpen(false)} />
             </DialogContent>
           </Dialog>
         ) : null}
@@ -104,6 +111,7 @@ function DeliveryForm({
   sizeGrid,
   onDone,
   previousProofId,
+  share,
 }: {
   batchId: string;
   max: number;
@@ -111,6 +119,7 @@ function DeliveryForm({
   sizeGrid: Record<string, number> | null;
   onDone: () => void;
   previousProofId?: string;
+  share: ShareInfo;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -123,6 +132,7 @@ function DeliveryForm({
   const [photos, setPhotos] = React.useState<PickedPhoto[]>([]);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [created, setCreated] = React.useState<{ token: string; quantity: number; amountCents: number; grid: Record<string, number> | null } | null>(null);
   const q = Number(qty) || 0;
   const discountCents = parseMoneyInput(discount) ?? 0;
   const amount = q * unitPriceCents - discountCents;
@@ -145,14 +155,16 @@ function DeliveryForm({
         setBusy(false);
         return;
       }
-      toast.success(t("delivery.created"));
-      onDone();
+      setCreated({ token: r.data!.token, quantity: q, amountCents: amount, grid: fullGrid ?? null });
+      setBusy(false);
       router.refresh();
     } catch {
       setError(t("common.errorGeneric"));
       setBusy(false);
     }
   }
+
+  if (created) return <ShareStep share={share} {...created} onDone={onDone} />;
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
@@ -176,6 +188,53 @@ function DeliveryForm({
         {busy ? t("delivery.submitting") : t("delivery.submit")}
       </Button>
     </form>
+  );
+}
+
+function ShareStep({ share, token, quantity, amountCents, grid, onDone }: { share: ShareInfo; token: string; quantity: number; amountCents: number; grid: Record<string, number> | null; onDone: () => void }) {
+  const t = useTranslations();
+  const locale = useLocale();
+  const clientLocale = share.client?.locale ?? "pt-BR";
+  const url = `${share.baseUrl}/${clientLocale}/c/${token}`;
+  const msg = proofMessage(clientLocale, { client: share.client?.name ?? "", workshop: share.workshopName, quantity, reference: share.reference, grid, amountCents, url });
+  return (
+    <div className="space-y-5" role="status">
+      <div className="flex items-start gap-3 rounded-2xl bg-mint-200/50 p-4">
+        <CircleCheck aria-hidden="true" className="mt-0.5 size-6 shrink-0 text-paid-fg" />
+        <div>
+          <p className="font-medium">{t("delivery.created")}</p>
+          <p className="text-sm text-muted-foreground">{t("delivery.nextStep", { amount: formatBRL(amountCents, locale) })}</p>
+        </div>
+      </div>
+      <a
+        href={waLink(share.client?.phone ?? null, msg)}
+        target="_blank"
+        rel="noreferrer"
+        onClick={() => toast.success(t("delivery.sentHint"))}
+        className="flex min-h-14 w-full items-center justify-center gap-2 rounded-lg border border-paid-solid bg-paid-solid px-4 text-lg font-semibold text-paid-solid-fg"
+      >
+        <MessageCircle aria-hidden="true" className="size-5" /> {t("delivery.sendWhatsapp")}
+      </a>
+      {!share.client?.phone ? <p className="text-sm text-muted-foreground">{t("delivery.noPhone")}</p> : null}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button
+          variant="outline"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(url);
+              toast.success(t("delivery.linkCopied"));
+            } catch {
+              window.prompt(t("delivery.copyLink"), url);
+            }
+          }}
+        >
+          <Copy aria-hidden="true" /> {t("delivery.copyLink")}
+        </Button>
+        <Button variant="ghost" onClick={onDone}>
+          {t("delivery.later")}
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -403,6 +462,7 @@ export function DeliveryList({
               unitPriceCents={Math.round(fixFor.amountCents / Math.max(1, fixFor.quantity))}
               sizeGrid={null}
               previousProofId={fixFor.id}
+              share={{ baseUrl, workshopName, client, reference }}
               onDone={() => setFixFor(null)}
             />
           </DialogContent>

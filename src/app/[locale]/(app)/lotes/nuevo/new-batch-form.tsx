@@ -357,10 +357,18 @@ export function NewBatchForm({ clients, initialPriceCents, initialQuantity }: { 
         </Button>
       </Card>
 
-      <div className="sticky bottom-20 z-10 bg-background/0 pb-2">
-        <Button type="submit" size="lg" block disabled={busy}>
-          {busy ? t("batch.saving") : t("batch.save")}
-        </Button>
+      {/* espaço reservado: a barra fixa nunca fica em cima do último campo */}
+      <div aria-hidden="true" className="h-24" />
+      <div data-fixed-bar className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 border-t border-ink/[0.06] bg-background/95 px-4 py-3 backdrop-blur lg:bottom-0 lg:left-64">
+        <div className="mx-auto flex max-w-3xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">{t("batch.totalShort")}</p>
+            <p className="truncate text-lg font-medium tabular-money">{formatBRL(qty * priceCents, locale)}</p>
+          </div>
+          <Button type="submit" size="lg" disabled={busy} className="shrink-0">
+            {busy ? t("batch.saving") : t("batch.save")}
+          </Button>
+        </div>
       </div>
     </form>
   );

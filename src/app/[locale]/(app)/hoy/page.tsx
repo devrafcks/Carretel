@@ -1,13 +1,12 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ChevronRight, Truck, Clock, Plus } from "@/components/icons";
+import { ChevronRight, Truck, Clock, Plus, Check, UserPlus, Scissors, MessageCircle } from "@/components/icons";
 import { requireWorkshop } from "@/lib/session";
 import { dashboardSummary, listBatches, productionSeries, monthCollection } from "@/server/queries";
 import { Link } from "@/i18n/navigation";
 import { Card, Notice } from "@/components/ui/card";
 import { Money } from "@/components/ui/money";
 import { buttonVariants } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/empty-state";
-import { SpoolIllustration } from "@/components/brand/illustrations";
+import { Orbs } from "@/components/app/page-header";
 import { StatusBadge, batchTone } from "@/components/ui/status-badge";
 import { PendingSyncNote } from "@/components/app/pending-sync-note";
 import { ThinBars, SplitBar } from "@/components/app/charts";
@@ -33,7 +32,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
   const fmt = (c: number) => formatBRL(c, locale);
   const monthLabel = (k: string) => new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${k}-15T12:00:00Z`)).replace(".", "");
   const premium = isPremium(ctx.workshop.planStatus, ctx.access);
-  const [s, recent, series, month, debtors, teamWeek, revenue, mNums] = await Promise.all([
+  const [s, recent, series, month, debtors, teamWeek, revenue, mNums, realMonth] = await Promise.all([
     dashboardSummary(ctx.tdb),
     listBatches(ctx.tdb, { limit: 6 }),
     productionSeries(ctx.tdb, 14),
@@ -42,10 +41,20 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
     workerProductivity(ctx.tdb, 7),
     premium ? monthlyRevenue(ctx.tdb, 6) : Promise.resolve(SAMPLE_REVENUE),
     premium ? monthNumbers(ctx.tdb) : Promise.resolve(SAMPLE_MONTH),
+    premium ? Promise.resolve(null) : monthNumbers(ctx.tdb),
   ]);
+  const teaserRevenue = !premium && month.issuedCents > 0 ? t("premium.teaserRevenue", { amount: fmt(month.issuedCents) }) : null;
+  const teaserMonth = realMonth && realMonth.deliveredPieces > 0 ? t("premium.teaserPieces", { count: realMonth.deliveredPieces }) : null;
   const isFree = ctx.workshop.planStatus === "free" || ctx.workshop.planStatus === "pending_checkout";
   const todayPieces = series[series.length - 1]?.pieces ?? 0;
   const weekPieces = series.slice(-7).reduce((a, d) => a + d.pieces, 0);
+  const firstRun = s.totalBatches === 0;
+  const steps = [
+    { done: s.totalClients > 0, href: "/clientes", icon: UserPlus, title: t("hoy.stepClient"), desc: t("hoy.stepClientDesc") },
+    { done: s.totalBatches > 0, href: "/lotes/nuevo", icon: Scissors, title: t("hoy.stepBatch"), desc: t("hoy.stepBatchDesc") },
+    { done: s.totalProofs > 0, href: "/lotes", icon: MessageCircle, title: t("hoy.stepProof"), desc: t("hoy.stepProofDesc") },
+  ];
+  const stepsDone = steps.filter((x) => x.done).length;
   const dateLabel = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date());
 
   return (
@@ -58,7 +67,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
               <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />
               {dateLabel}
             </p>
-            <h1 className="mt-4 font-display text-[2.5rem] font-light uppercase leading-[1] tracking-tight sm:text-6xl">{t("hoy.title")}</h1>
+            <h1 className="mt-4 font-display text-[2.5rem] font-light leading-[1] tracking-tight sm:text-6xl">{t("hoy.title")}</h1>
             <p className="mt-3 max-w-md text-muted-foreground">{t("hoy.greeting", { name: ctx.workshop.name })}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/lotes/nuevo" className={buttonVariants({ size: "lg" })}>
@@ -76,11 +85,14 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             </div>
           </div>
 
-          {/* círculos com os números ao redor */}
+          {firstRun ? (
+            <Orbs className="mx-auto hidden self-center sm:block" />
+          ) : (
+          /* círculos com os números ao redor */
           <div className="relative mx-auto aspect-[4/3] w-full max-w-md">
-            <span aria-hidden="true" className="bg-hatch absolute left-[6%] top-[14%] size-[46%] rounded-full" />
-            <span aria-hidden="true" className="anim-pop absolute right-[4%] top-[2%] size-[62%] rounded-full bg-mint-200/80" />
-            <span aria-hidden="true" className="anim-pop delay-2 absolute bottom-[4%] left-[30%] size-[34%] rounded-full border border-white bg-white/80 shadow-soft" />
+            <span aria-hidden="true" className="bg-hatch absolute left-[10%] top-[20%] size-[38%] rounded-full" />
+            <span aria-hidden="true" className="anim-pop absolute right-[6%] top-[6%] size-[54%] rounded-full bg-mint-200/80" />
+            <span aria-hidden="true" className="anim-pop delay-2 absolute bottom-[8%] left-[34%] size-[28%] rounded-full border border-white bg-white/80 shadow-soft" />
             <Link href="/cobros" className="group absolute left-0 top-0 text-left">
               <span className="block text-2xl font-light sm:text-3xl">
                 <Money cents={s.owedCents} locale={locale} />
@@ -89,6 +101,9 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
                 <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />
                 {t("hoy.owedLabel")}
               </span>
+              {s.awaitingCents > 0 ? (
+                <span className="relative z-10 mt-1 block w-fit rounded-full bg-card/95 px-2 py-0.5 text-xs text-awaiting-confirmation-fg">{t("hoy.awaitingPlus", { amount: fmt(s.awaitingCents) })}</span>
+              ) : null}
             </Link>
             <Link href="/lotes" className="group absolute bottom-[14%] left-0 text-left">
               <span className="block text-2xl font-light tabular-money sm:text-3xl">{s.piecesInProduction}</span>
@@ -113,6 +128,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
               </div>
             ) : null}
           </div>
+          )}
         </div>
       </section>
 
@@ -122,6 +138,47 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
         </Notice>
       ) : null}
       <PendingSyncNote />
+      {s.totalProofs === 0 ? (
+        <section aria-labelledby="first-steps" className="anim-rise rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="first-steps" className="text-xl font-medium">
+              {t("hoy.stepsTitle")}
+            </h2>
+            <p className="text-sm text-muted-foreground tabular-money">{t("hoy.stepsProgress", { done: stepsDone, total: steps.length })}</p>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">{t("hoy.stepsLead")}</p>
+          <ol className="mt-5 grid gap-3 md:grid-cols-3">
+            {steps.map((st, i) => (
+              <li key={st.href}>
+                <Link
+                  href={st.href}
+                  className={cn(
+                    "flex h-full min-h-20 items-start gap-3 rounded-2xl border px-4 py-4 transition-colors",
+                    st.done ? "border-ink/[0.06] bg-mint-50 text-muted-foreground" : "border-ink/10 hover:border-ink/30",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-medium",
+                      st.done ? "bg-paid-solid text-paid-solid-fg" : "border border-ink/15 bg-card",
+                    )}
+                  >
+                    {st.done ? <Check aria-hidden="true" className="size-4" /> : i + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={cn("flex items-center gap-2 font-medium", st.done ? "line-through decoration-ink/30" : "text-foreground")}>
+                      <st.icon aria-hidden="true" className="size-4 shrink-0" />
+                      {st.title}
+                    </span>
+                    <span className="mt-0.5 block text-sm text-muted-foreground">{st.desc}</span>
+                    {st.done ? <span className="sr-only">{t("hoy.stepDone")}</span> : null}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
       {s.awaitingCount > 0 ? (
         <Link href="/cobros" className="block">
           <Notice tone="awaiting" icon={<Clock />}>
@@ -130,6 +187,8 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
         </Link>
       ) : null}
 
+      {firstRun ? null : (
+      <>
       {/* ── Cartões com gráficos finos ── */}
       <section className="grid gap-4 md:grid-cols-3">
         <Card className="anim-rise delay-1 p-6 md:col-span-2">
@@ -186,7 +245,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             <p className="mt-6 text-sm text-muted-foreground">{t("hoyCharts.teamWeekEmpty")}</p>
           )}
         </Card>
-        <PremiumGate unlocked={premium} compact>
+        <PremiumGate unlocked={premium} compact teaser={teaserRevenue}>
           <Card className="h-full p-6">
             <div className="flex items-center justify-between gap-3">
               <p className="inline-flex items-center gap-2 text-muted-foreground">
@@ -202,7 +261,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             />
           </Card>
         </PremiumGate>
-        <PremiumGate unlocked={premium} compact>
+        <PremiumGate unlocked={premium} compact teaser={teaserMonth}>
           <Card className="flex h-full flex-col p-6">
             <p className="inline-flex items-center gap-2 text-muted-foreground">
               {t("hoyCharts.monthTitle")} <ProBadge />
@@ -230,20 +289,10 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
           </Card>
         </PremiumGate>
       </section>
+      </>
+      )}
 
-      {s.totalBatches === 0 ? (
-        <EmptyState
-          illustration={<SpoolIllustration />}
-          title={t("hoy.empty")}
-          action={
-            <Link href="/lotes/nuevo" className={buttonVariants({ size: "lg", block: true })}>
-              {t("hoy.emptyCta")}
-            </Link>
-          }
-        >
-          {t("hoy.onboardingBody")}
-        </EmptyState>
-      ) : (
+      {firstRun ? null : (
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <section aria-labelledby="recent">
             <div className="mb-3 flex items-center justify-between">

@@ -14,7 +14,7 @@ export function ProBadge({ className }: { className?: string }) {
  * Recurso do plano completo. Liberado: mostra o conteúdo. Bloqueado: mostra um exemplo desfocado
  * (dados de exemplo, nunca os reais) com cadeado e o convite para ativar o plano.
  */
-export function PremiumGate({ unlocked, children, title, compact = false, className }: { unlocked: boolean; children: React.ReactNode; title?: string; compact?: boolean; className?: string }) {
+export function PremiumGate({ unlocked, children, title, teaser, compact = false, className }: { unlocked: boolean; children: React.ReactNode; title?: string; teaser?: string | null; compact?: boolean; className?: string }) {
   const t = useTranslations("premium");
   if (unlocked) return <>{children}</>;
   return (
@@ -27,7 +27,8 @@ export function PremiumGate({ unlocked, children, title, compact = false, classN
           <span className="mx-auto inline-flex size-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <Lock aria-hidden="true" className="size-5" />
           </span>
-          <p className="mt-3 font-medium">{title ?? t("lockedTitle")}</p>
+          {teaser ? <p className="mt-3 text-sm text-muted-foreground">{teaser}</p> : null}
+          <p className={cn("font-medium", teaser ? "mt-1" : "mt-3")}>{title ?? t("lockedTitle")}</p>
           {!compact ? <p className="mt-1 text-sm text-muted-foreground">{t("lockedBody")}</p> : null}
           <Link href="/assinar" className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/85">
             <Sparkles aria-hidden="true" className="size-4" />

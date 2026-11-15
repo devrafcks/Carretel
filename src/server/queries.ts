@@ -20,7 +20,9 @@ import { settlementPeriod } from "@/lib/settlement";
 export async function dashboardSummary(tdb: TenantDb) {
   const today = todayISO();
   const open = await tdb.select(receivables, notInArray(receivables.status, ["paid", "written_off"]));
-  const owedCents = open.reduce((a, r) => a + (r.amountCents - r.paidCents), 0);
+  const isAwaiting = (r: { status: string }) => r.status === "awaiting_confirmation";
+  const owedCents = open.filter((r) => !isAwaiting(r)).reduce((a, r) => a + (r.amountCents - r.paidCents), 0);
+  const awaitingCents = open.filter(isAwaiting).reduce((a, r) => a + (r.amountCents - r.paidCents), 0);
   const inProd = await tdb.select(batches, inArray(batches.status, ["received", "in_production", "ready"]));
   const piecesInProduction = inProd.reduce((a, b) => a + b.quantity, 0);
   const period = settlementPeriod(new Date(today + "T00:00:00Z"));
@@ -39,17 +41,20 @@ export async function dashboardSummary(tdb: TenantDb) {
   const totalBatches = await tdb.query((db, s) =>
     db.select({ n: sql<number>`count(*)::int` }).from(batches).where(s(batches)),
   );
+  const totalClients = await tdb.query((db, s) => db.select({ n: sql<number>`count(*)::int` }).from(clients).where(s(clients)));
+  const totalProofs = await tdb.query((db, s) => db.select({ n: sql<number>`count(*)::int` }).from(deliveryProofs).where(s(deliveryProofs)));
   const oldestOpen = open
     .filter((r) => r.status !== "awaiting_confirmation")
     .reduce((m, r) => Math.max(m, daysBetween(r.issuedOn, today)), 0);
-  const awaiting = open.filter((r) => r.status === "awaiting_confirmation").length;
+  const awaiting = open.filter(isAwaiting).length;
   const dueSoon = inProd
     .filter((b) => b.dueDate && daysBetween(today, b.dueDate) <= 2)
     .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
     .slice(0, 3);
   return {
     owedCents,
-    openCount: open.length,
+    awaitingCents,
+    openCount: open.length - awaiting,
     oldestOpenDays: oldestOpen,
     awaitingCount: awaiting,
     batchesInProduction: inProd.length,
@@ -57,6 +62,8 @@ export async function dashboardSummary(tdb: TenantDb) {
     payrollPendingCents: (pendingLogs[0]?.amount ?? 0) - (pendingAdv[0]?.amount ?? 0),
     period,
     totalBatches: totalBatches[0]?.n ?? 0,
+    totalClients: totalClients[0]?.n ?? 0,
+    totalProofs: totalProofs[0]?.n ?? 0,
     dueSoon,
   };
 }
@@ -209,15 +216,19 @@ export async function receivablesBoard(tdb: TenantDb) {
     days: daysBetween(r.receivable.issuedOn, today),
   }));
   const open = items.filter((i) => i.receivable.status !== "paid");
+  const awaiting = open.filter((i) => i.receivable.status === "awaiting_confirmation");
+  const confirmed = open.filter((i) => i.receivable.status !== "awaiting_confirmation");
   const buckets = { ok: 0, watch: 0, late: 0, critical: 0 };
-  for (const i of open) {
+  for (const i of confirmed) {
     const k = i.days <= 7 ? "ok" : i.days <= 15 ? "watch" : i.days <= 30 ? "late" : "critical";
     buckets[k] += i.openCents;
   }
   return {
-    open: open.sort((a, b) => b.days - a.days),
+    awaiting: awaiting.sort((a, b) => b.days - a.days),
+    confirmed: confirmed.sort((a, b) => b.days - a.days),
     paid: items.filter((i) => i.receivable.status === "paid").slice(-10).reverse(),
-    totalOpenCents: open.reduce((a, i) => a + i.openCents, 0),
+    totalOpenCents: confirmed.reduce((a, i) => a + i.openCents, 0),
+    totalAwaitingCents: awaiting.reduce((a, i) => a + i.openCents, 0),
     buckets,
   };
 }

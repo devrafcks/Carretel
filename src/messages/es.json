@@ -34,7 +34,7 @@
     "draftLegal": "Borrador — revisar con abogado",
     "verificationCode": "Código de verificación",
     "madeWith": "Hecho con Carretel",
-    "languageLabel": "Cambiar idioma / Mudar idioma",
+    "languageLabel": "Cambiar idioma",
     "spanish": "Español",
     "portuguese": "Português",
     "online": "Con señal",
@@ -407,7 +407,18 @@
     "last7": "últimos 7 días",
     "collected": "Cobrado en el mes",
     "collectedOf": "{paid} de {total} entregados",
-    "noDue": "Ninguna entrega para los próximos días."
+    "noDue": "Ninguna entrega para los próximos días.",
+    "awaitingPlus": "+ {amount} esperando aceptación",
+    "stepsTitle": "Primeros pasos",
+    "stepsLead": "Tres pasos y su taller ya cobra con comprobante.",
+    "stepsProgress": "{done} de {total}",
+    "stepDone": "(hecho)",
+    "stepClient": "Registrar un cliente",
+    "stepClientDesc": "Nombre y WhatsApp de quien le manda los cortes.",
+    "stepBatch": "Registrar un corte",
+    "stepBatchDesc": "Cantidad y precio por pieza. Toma 20 segundos.",
+    "stepProof": "Enviar el comprobante",
+    "stepProofDesc": "Al entregar, el cliente confirma por WhatsApp."
   },
   "batch": {
     "newTitle": "Nuevo corte",
@@ -477,7 +488,8 @@
     "filterOpen": "Abiertos",
     "filterAll": "Todos",
     "freeLimit": "Usó sus 3 cortes gratis. Active su plan para seguir registrando.",
-    "photos": "Fotos"
+    "photos": "Fotos",
+    "totalShort": "Total del corte"
   },
   "machines": {
     "recta": "Recta",
@@ -498,7 +510,7 @@
     "dueOn": "Fecha para el pago",
     "submit": "Generar comprobante",
     "submitting": "Generando…",
-    "created": "Comprobante creado",
+    "created": "Comprobante listo",
     "sendWhatsapp": "Enviar al cliente por WhatsApp",
     "copyLink": "Copiar enlace",
     "openLink": "Ver comprobante",
@@ -511,7 +523,12 @@
     "notViewed": "Todavía no lo abrió",
     "confirmedBy": "Confirmado por {name} el {date} a las {time} (hora de Brasília)",
     "disputed": "Diferencia informada: recibió {quantity}. “{comment}”",
-    "payerClaimed": "El cliente avisó que ya pagó. Verifique y registre el pago."
+    "payerClaimed": "El cliente avisó que ya pagó. Verifique y registre el pago.",
+    "nextStep": "Ahora envíelo al cliente para que confirme la entrega de {amount}.",
+    "sentHint": "Cuando el cliente confirme, le avisamos.",
+    "noPhone": "Este cliente no tiene teléfono: WhatsApp abrirá para que elija el contacto.",
+    "linkCopied": "Enlace copiado",
+    "later": "Enviar después"
   },
   "production": {
     "title": "Producción",
@@ -612,7 +629,16 @@
     "remaining": "Falta {amount}",
     "readOnlyNote": "Modo lectura: sus enlaces siguen funcionando y puede registrar pagos de deudas anteriores.",
     "pixMissing": "Registre su llave Pix para mandar el Pix Copia y Pega junto con el cobro.",
-    "pixMissingCta": "Ir a Cuenta"
+    "pixMissingCta": "Ir a Cuenta",
+    "daysOpenToday": "hoy",
+    "sectionAwaiting": "Por confirmar",
+    "sectionAwaitingLead": "Comprobante enviado; el cliente todavía no aceptó la entrega.",
+    "sectionConfirmed": "Por cobrar",
+    "sectionConfirmedLead": "Entregas aceptadas (o asumidas). Esto es lo que le deben.",
+    "confirmedEmpty": "Nada aceptado por cobrar todavía.",
+    "resend": "Reenviar comprobante",
+    "resendSent": "Comprobante reenviado a {name}.",
+    "pixInlineTitle": "Registre su llave Pix"
   },
   "proof": {
     "titleFor": "Comprobante de entrega",
@@ -650,7 +676,8 @@
     "paidClaimSent": "Avisamos al taller. Gracias.",
     "noPix": "El taller todavía no registró su llave Pix.",
     "legalNote": "Comprobante electrónico simple de entrega, con fecha, hora e IP registrados. No es nota fiscal.",
-    "lang": "Ver en"
+    "lang": "Ver en",
+    "nonFiscal": "Comprobante no fiscal"
   },
   "receipt": {
     "title": "Recibo de pago",
@@ -730,7 +757,8 @@
     "workHoursValue": "{h} h",
     "negotiate": "Pida al menos {amount} por pieza para tener margen.",
     "acceptAnyway": "Aceptar igual y crear el corte",
-    "fillToSee": "Complete el precio, la cantidad y el ritmo para ver el resultado."
+    "fillToSee": "Escriba el precio ofrecido, la cantidad y el ritmo del corte. El resultado aparece aquí.",
+    "waitingTitle": "¿Este corte deja ganancia?"
   },
   "account": {
     "title": "Cuenta",
@@ -844,7 +872,7 @@
   },
   "clients": {
     "title": "Clientes",
-    "empty": "Todavía no hay clientes. Se crean al registrar un corte.",
+    "empty": "Todavía no hay clientes. Regístrelos ahora o créelos al registrar un corte.",
     "add": "+ Cliente",
     "name": "Nombre",
     "phone": "WhatsApp",
@@ -1163,7 +1191,8 @@
     "doneLoggedOutTitle": "Pago recibido",
     "doneLoggedOutBody": "Entre a su cuenta para ver su plan activo.",
     "doneLogin": "Entrar a mi cuenta",
-    "canceledNotice": "El pago no se completó y no se cobró nada. Puede intentar de nuevo."
+    "canceledNotice": "El pago no se completó y no se cobró nada. Puede intentar de nuevo.",
+    "upgradeSub": "Plan gratis · R$ 35/mes"
   },
   "plan": {
     "title": "Su plan",
@@ -1239,7 +1268,9 @@
     "lockedTitle": "Función del plan completo",
     "lockedBody": "Active el plan para ver estos números con los datos de su taller.",
     "unlock": "Activar plan",
-    "sample": "Ejemplo"
+    "sample": "Ejemplo",
+    "teaserRevenue": "Este mes usted facturó {amount}.",
+    "teaserPieces": "{count, plural, one {Este mes usted entregó # pieza.} other {Este mes usted entregó # piezas.}}"
   },
   "reports": {
     "title": "Informes",
@@ -1265,7 +1296,8 @@
     "mDeliveredValue": "Valor entregado",
     "export": "Exportar CSV",
     "empty": "Todavía no hay datos suficientes. Los gráficos aparecen a medida que registra cortes.",
-    "navLabel": "Informes"
+    "navLabel": "Informes",
+    "teaser": "{count, plural, one {Este mes: # pieza entregada} other {Este mes: # piezas entregadas}} ({amount}). Vea el detalle con el plan completo."
   },
   "hoyCharts": {
     "debtorsTitle": "Quién le debe más",

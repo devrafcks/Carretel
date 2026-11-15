@@ -50,7 +50,9 @@ function UnitInput({
   error,
   hint,
   big,
+  placeholder,
 }: {
+  placeholder?: string;
   id: string;
   label: string;
   value: string;
@@ -70,6 +72,7 @@ function UnitInput({
             {...a}
             inputMode="decimal"
             value={value}
+            placeholder={placeholder}
             onChange={(e) => onChange(clean(e.target.value))}
             className={cn("tabular-money", prefix && "pl-11", suffix && "pr-20", big && "min-h-14 text-xl")}
           />
@@ -103,9 +106,9 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
   const [days, setDays] = React.useState(String(base.daysPerMonth));
   const [margin, setMargin] = React.useState(String(base.marginPct ?? DEFAULT_MARGIN_PCT));
   const [paceMode, setPaceMode] = React.useState<"pph" | "mpp">("pph");
-  const [pace, setPace] = React.useState(String(CALC_EXAMPLE.piecesPerHour));
-  const [price, setPrice] = React.useState(centsToInput(CALC_EXAMPLE.offeredPriceCents));
-  const [qty, setQty] = React.useState(String(CALC_EXAMPLE.quantity));
+  const [pace, setPace] = React.useState("");
+  const [price, setPrice] = React.useState("");
+  const [qty, setQty] = React.useState("");
   const [editing, setEditing] = React.useState(!profile);
   const [pending, start] = React.useTransition();
 
@@ -121,8 +124,12 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
     quantity: Math.round(num(qty)),
     marginPct: num(margin),
   };
-  const err = validateCalc(input);
-  const r = err ? null : calculate(input);
+  const offerFilled = Boolean(price.trim() && qty.trim() && pace.trim());
+  const rawErr = validateCalc(input);
+  const offerErr = rawErr === "offeredPrice" || rawErr === "quantity" || rawErr === "pace";
+  // enquanto o corte não está preenchido, não acusa erro nesses campos
+  const err = !offerFilled && offerErr ? null : rawErr;
+  const r = !offerFilled || rawErr ? null : calculate(input);
   const f = (c: number) => formatBRL(Math.round(c), locale);
   const profileData: CalculatorProfile = {
     fixedMonthlyCents: input.fixedMonthlyCents,
@@ -172,8 +179,8 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
         <section className="rounded-3xl xl:col-start-1 xl:row-start-1 border border-ink/[0.06] bg-card p-6 shadow-soft">
           <StepTitle n={1} title={t("step1")} />
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <UnitInput id="op" label={t("offeredPrice")} value={price} onChange={setPrice} prefix="R$" suffix={t("perPiece")} big error={err === "offeredPrice" ? t("errors.offeredPrice") : null} />
-            <UnitInput id="qt" label={t("quantity")} value={qty} onChange={setQty} suffix={t("piecesUnit")} big error={err === "quantity" ? t("errors.quantity") : null} />
+            <UnitInput id="op" label={t("offeredPrice")} value={price} onChange={setPrice} placeholder={centsToInput(CALC_EXAMPLE.offeredPriceCents)} prefix="R$" suffix={t("perPiece")} big error={err === "offeredPrice" ? t("errors.offeredPrice") : null} />
+            <UnitInput id="qt" label={t("quantity")} value={qty} onChange={setQty} placeholder={String(CALC_EXAMPLE.quantity)} suffix={t("piecesUnit")} big error={err === "quantity" ? t("errors.quantity") : null} />
           </div>
           <fieldset className="mt-5">
             <legend className="text-[0.9375rem] font-medium">{t("paceMode")}</legend>
@@ -204,6 +211,7 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
                 label={paceMode === "pph" ? t("piecesPerHour") : t("minutesPerPiece")}
                 value={pace}
                 onChange={setPace}
+                placeholder={paceMode === "pph" ? String(CALC_EXAMPLE.piecesPerHour) : "6"}
                 suffix={paceMode === "pph" ? t("pphUnit") : t("mppUnit")}
                 hint={t("paceHint")}
                 error={err === "pace" ? t("errors.pace") : null}
@@ -282,7 +290,10 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
             </div>
           </div>
         ) : (
-          <p className="rounded-3xl border border-dashed border-ink/15 px-6 py-12 text-center text-muted-foreground">{t("fillToSee")}</p>
+          <div className="rounded-3xl border border-dashed border-ink/15 px-6 py-12 text-center">
+            <p className="font-medium">{t("waitingTitle")}</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm text-muted-foreground">{t("fillToSee")}</p>
+          </div>
         )}
       </section>
 
