@@ -344,3 +344,21 @@
   --seeb-bottom: calc(100dvh - 4.25rem);
   --seeb-bottom-lg: calc(100dvh - 5rem);
 }
+
+/* Paleta categórica dos gráficos (ordem fixa; validada para daltonismo com o validador do dataviz:
+   faixa de luminosidade, croma, separação CVD ≥ 14 e visão normal ≥ 15). O âmbar fica abaixo de 3:1
+   sobre o branco, por isso todo gráfico mostra legenda com valores e uma tabela para leitor de tela. */
+:root {
+  --chart-1: #1f855d; /* verde carretel */
+  --chart-2: #3464a0; /* azul */
+  --chart-3: #dd9730; /* âmbar */
+  --chart-4: #a15e9c; /* ameixa */
+  --chart-5: #d6715e; /* coral */
+}
+@theme inline {
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+}

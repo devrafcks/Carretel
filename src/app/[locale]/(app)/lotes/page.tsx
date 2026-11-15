@@ -1,6 +1,8 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ChevronRight, Plus } from "@/components/icons";
 import { requireWorkshop } from "@/lib/session";
+import { ExcelButton } from "@/components/app/excel-button";
+import { isPremium } from "@/lib/subscription";
 import { listBatches } from "@/server/queries";
 import { PageHeader } from "@/components/app/page-header";
 import { Link } from "@/i18n/navigation";
@@ -37,7 +39,8 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
           </Link>
         }
       />
-      <div role="group" className="mb-4 inline-flex gap-1 rounded-full border border-ink/10 bg-card p-1 shadow-soft">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div role="group" className="inline-flex gap-1 rounded-full border border-ink/10 bg-card p-1 shadow-soft">
         {(
           [
             ["open", t("batch.filterOpen")],
@@ -53,6 +56,8 @@ export default async function LotesPage({ params, searchParams }: { params: Prom
             {label}
           </Link>
         ))}
+      </div>
+        <ExcelButton kind="lotes" premium={isPremium(ctx.workshop.planStatus, ctx.access)} />
       </div>
       {rows.length === 0 ? (
         <EmptyState

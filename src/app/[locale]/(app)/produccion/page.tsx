@@ -1,5 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireWorkshop } from "@/lib/session";
+import { ExcelButton } from "@/components/app/excel-button";
+import { isPremium } from "@/lib/subscription";
 import { productionBoard } from "@/server/queries";
 import { settlementPreviewCore } from "@/server/core";
 import { settlementPeriod } from "@/lib/settlement";
@@ -55,6 +57,10 @@ export default async function ProduccionPage({ params, searchParams }: { params:
   return (
     <div>
       <PageHeader tone="terracota" illustration="/illustrations/acerto.svg" title={t("production.title")} subtitle={t("production.settlePeriod", { start: formatDate(period.start, locale), end: formatDate(period.end, locale) })} />
+      <div className="-mt-2 mb-4 flex flex-wrap gap-2">
+        <ExcelButton kind="producao" premium={isPremium(ctx.workshop.planStatus, ctx.access)} />
+        <ExcelButton kind="acertos" premium={isPremium(ctx.workshop.planStatus, ctx.access)} />
+      </div>
       <ProductionTabs
         initial={tab}
         labels={labels}

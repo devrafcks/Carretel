@@ -7,7 +7,7 @@ import {
   IconAccessible, IconAlertTriangle, IconArchive, IconArrowBackUp, IconArrowLeft, IconArrowRight, IconBan,
   IconBrandWhatsapp, IconCalculator, IconCamera, IconCash, IconCheck, IconChevronDown, IconChevronRight,
   IconCircleCheck, IconCircleDot, IconCircleX, IconClock, IconCloudOff, IconCopy, IconCreditCard, IconDeviceMobile,
-  IconDownload, IconExternalLink, IconEye, IconEyeOff, IconFileText, IconHome, IconInfoCircle, IconLinkOff,
+  IconDownload, IconFileSpreadsheet, IconExternalLink, IconEye, IconEyeOff, IconFileText, IconHome, IconInfoCircle, IconLinkOff,
   IconListCheck, IconLock, IconLogout, IconMenu2, IconMicrophone, IconMicrophoneOff, IconMinus, IconMoon,
   IconPackage, IconPencil, IconPlus, IconQrcode, IconRefresh, IconScale, IconScissors, IconShield, IconShieldCheck,
   IconSparkles, IconSun, IconTrash, IconTrendingDown, IconTrendingUp, IconTruckDelivery, IconUserPlus, IconUsers,
@@ -43,6 +43,7 @@ export const CloudOff = soft(IconCloudOff, "CloudOff");
 export const Copy = soft(IconCopy, "Copy");
 export const CreditCard = soft(IconCreditCard, "CreditCard");
 export const Download = soft(IconDownload, "Download");
+export const FileSpreadsheet = soft(IconFileSpreadsheet, "FileSpreadsheet");
 export const ExternalLink = soft(IconExternalLink, "ExternalLink");
 export const Eye = soft(IconEye, "Eye");
 export const EyeOff = soft(IconEyeOff, "EyeOff");

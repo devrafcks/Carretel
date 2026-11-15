@@ -1,5 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireWorkshop } from "@/lib/session";
+import { ExcelButton } from "@/components/app/excel-button";
+import { isPremium } from "@/lib/subscription";
 import { receivablesBoard } from "@/server/queries";
 import { PageHeader } from "@/components/app/page-header";
 import { Money } from "@/components/ui/money";
@@ -72,6 +74,7 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
         illustration="/illustrations/cobre.svg"
         kicker={t("cobros.title")}
         title={<Money cents={board.totalOpenCents} locale={locale} className="text-4xl sm:text-5xl" />}
+        action={<ExcelButton kind="cobros" premium={isPremium(ws.planStatus, ctx.access)} />}
         subtitle={
           board.totalAwaitingCents > 0
             ? `${t("hoy.owedSub", { count: board.confirmed.length })} · ${t("hoy.awaitingPlus", { amount: formatBRL(board.totalAwaitingCents, locale) })}`

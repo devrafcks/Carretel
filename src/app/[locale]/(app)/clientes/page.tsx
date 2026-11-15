@@ -1,5 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { requireWorkshop } from "@/lib/session";
+import { ExcelButton } from "@/components/app/excel-button";
+import { isPremium } from "@/lib/subscription";
 import { listClients, clientStats } from "@/server/queries";
 import { PageHeader } from "@/components/app/page-header";
 import { ClientsManager } from "./clients-client";
@@ -12,7 +14,7 @@ export default async function ClientesPage({ params }: { params: Promise<{ local
   const [clients, stats] = await Promise.all([listClients(ctx.tdb), clientStats(ctx.tdb)]);
   return (
     <div>
-      <PageHeader title={t("clients.title")} subtitle={t("more.clientsDesc")} />
+      <PageHeader title={t("clients.title")} subtitle={t("more.clientsDesc")} action={<ExcelButton kind="clientes" premium={isPremium(ctx.workshop.planStatus, ctx.access)} />} />
       <ClientsManager
         canWrite={ctx.access.canWrite}
         clients={clients

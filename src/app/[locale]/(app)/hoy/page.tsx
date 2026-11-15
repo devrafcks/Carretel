@@ -18,9 +18,12 @@ import { isPremium } from "@/lib/subscription";
 import { monthNumbers, monthlyRevenue, topDebtors, workerProductivity } from "@/server/reports";
 import { PairBars, HBars } from "@/components/app/report-charts";
 import { PremiumGate, ProBadge } from "@/components/app/premium";
+import { agingBuckets, batchPipeline, paymentMethods, weekKeys, weeklyDelivered } from "@/server/analytics";
+import { ChartCard, Columns, Donut, Segments } from "@/components/app/viz";
 
 /* exemplos (desfocados) para quem ainda não assina — nunca os dados reais */
 const SAMPLE_REVENUE = [480000, 560000, 510000, 640000, 700000, 760000].map((v, i) => ({ month: `2026-${String(i + 4).padStart(2, "0")}`, issuedCents: v, paidCents: Math.round(v * 0.85) }));
+const SAMPLE_WEEKLY = () => weekKeys(8).map((w, i) => ({ week: w, pieces: [420, 510, 380, 600, 560, 640, 590, 700][i]! }));
 const SAMPLE_MONTH = { batches: 11, receivedCents: 1180000, avgPricePerPieceCents: 310, avgTicketCents: 107000, deliveredPieces: 3200, deliveredCents: 990000 };
 
 export default async function HoyPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ welcome?: string }> }) {
@@ -43,6 +46,16 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
     premium ? monthNumbers(ctx.tdb) : Promise.resolve(SAMPLE_MONTH),
     premium ? Promise.resolve(null) : monthNumbers(ctx.tdb),
   ]);
+  const [pipeline, aging, weekly, methods] = await Promise.all([
+    batchPipeline(ctx.tdb),
+    agingBuckets(ctx.tdb),
+    premium ? weeklyDelivered(ctx.tdb, 8) : Promise.resolve(SAMPLE_WEEKLY()),
+    premium ? paymentMethods(ctx.tdb) : Promise.resolve({ pix: 820000, cash: 210000, other: 60000 }),
+  ]);
+  const weekLabel = (iso: string) => new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", timeZone: "UTC" }).format(new Date(iso + "T12:00:00Z"));
+  const agingTotal = aging.ok + aging.watch + aging.late + aging.critical;
+  const methodsTotal = methods.pix + methods.cash + methods.other;
+  const teaserWeekly = !premium && series.slice(-7).some((d) => d.pieces > 0) ? t("premium.teaserWeek", { count: series.slice(-7).reduce((a, d) => a + d.pieces, 0) }) : null;
   const teaserRevenue = !premium && month.issuedCents > 0 ? t("premium.teaserRevenue", { amount: fmt(month.issuedCents) }) : null;
   const teaserMonth = realMonth && realMonth.deliveredPieces > 0 ? t("premium.teaserPieces", { count: realMonth.deliveredPieces }) : null;
   const isFree = ctx.workshop.planStatus === "free" || ctx.workshop.planStatus === "pending_checkout";
@@ -287,6 +300,59 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
               </Link>
             ) : null}
           </Card>
+        </PremiumGate>
+      </section>
+
+      {/* ── Etapas, idade das cobranças, entregas por semana e formas de pagamento ── */}
+      <section className="grid gap-4 md:grid-cols-2">
+        <ChartCard quiet title={t("hoyCharts.pipelineTitle")} lead={t("hoyCharts.pipelineLead")}>
+          <Segments
+            label={t("hoyCharts.pipelineTitle")}
+            parts={[
+              { key: "r", label: t("status.batch.received"), value: pipeline.received, display: String(pipeline.received) },
+              { key: "p", label: t("status.batch.in_production"), value: pipeline.inProduction, display: String(pipeline.inProduction) },
+              { key: "y", label: t("status.batch.ready"), value: pipeline.ready, display: String(pipeline.ready) },
+              { key: "d", label: t("status.batch.delivered"), value: pipeline.delivered, display: String(pipeline.delivered) },
+            ]}
+          />
+        </ChartCard>
+        <ChartCard quiet title={t("hoyCharts.agingTitle")} lead={t("hoyCharts.agingLead")}>
+          {agingTotal > 0 ? (
+            <Donut
+              label={t("hoyCharts.agingTitle")}
+              center={{ value: fmt(agingTotal), label: t("hoy.owedLabel") }}
+              slices={[
+                { key: "ok", label: t("cobros.bucketOk"), value: aging.ok, display: fmt(aging.ok) },
+                { key: "watch", label: t("cobros.bucketWatch"), value: aging.watch, display: fmt(aging.watch) },
+                { key: "late", label: t("cobros.bucketLate"), value: aging.late, display: fmt(aging.late) },
+                { key: "critical", label: t("cobros.bucketCritical"), value: aging.critical, display: fmt(aging.critical) },
+              ]}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">{t("hoyCharts.agingEmpty")}</p>
+          )}
+        </ChartCard>
+        <PremiumGate unlocked={premium} compact teaser={teaserWeekly}>
+          <ChartCard quiet className="h-full" title={t("hoyCharts.weeklyTitle")} lead={t("hoyCharts.weeklyLead")} badge={<ProBadge />}>
+            <Columns label={t("hoyCharts.weeklyTitle")} data={weekly.map((w) => ({ key: w.week, label: weekLabel(w.week), value: w.pieces, display: t("common.pieces", { count: w.pieces }) }))} />
+          </ChartCard>
+        </PremiumGate>
+        <PremiumGate unlocked={premium} compact>
+          <ChartCard quiet className="h-full" title={t("hoyCharts.methodsTitle")} lead={t("hoyCharts.methodsLead")} badge={<ProBadge />}>
+            {methodsTotal > 0 ? (
+              <Donut
+                label={t("hoyCharts.methodsTitle")}
+                center={{ value: fmt(methodsTotal), label: t("hoyCharts.methodsCenter") }}
+                slices={[
+                  { key: "pix", label: t("cobros.methodPix"), value: methods.pix, display: fmt(methods.pix) },
+                  { key: "cash", label: t("cobros.methodCash"), value: methods.cash, display: fmt(methods.cash) },
+                  { key: "other", label: t("cobros.methodOther"), value: methods.other, display: fmt(methods.other) },
+                ]}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("hoyCharts.methodsEmpty")}</p>
+            )}
+          </ChartCard>
         </PremiumGate>
       </section>
       </>
