@@ -602,10 +602,12 @@ export const mediaAssets = pgTable(
     width: integer("width"),
     height: integer("height"),
     exifStripped: boolean("exif_stripped").notNull().default(false),
+    /** sha256 do arquivo: a mesma foto enviada de novo (reenvio da fila) reaproveita o registro em vez de duplicar */
+    sha256: text("sha256"),
     deletedAt: ts("deleted_at"),
     createdAt: createdAt(),
   },
-  (t) => [index("media_assets_ws_idx").on(t.workshopId, t.createdAt)],
+  (t) => [index("media_assets_ws_idx").on(t.workshopId, t.createdAt), index("media_assets_ws_sha_idx").on(t.workshopId, t.sha256)],
 );
 
 /* ─────────────── 14. Legal ─────────────── */

@@ -35,6 +35,7 @@ import {
   writeOffCore,
   requireWrite,
   requireOwner,
+  existingMediaIds,
 } from "@/server/core";
 import { cancelSubscription, requestRefund, startCheckout, applySubscriptionEvent, billingMode } from "@/server/billing";
 import { TenantNotFoundError } from "@/db/tenant";
@@ -380,7 +381,7 @@ export async function setWorkshopAvatarAction(mediaId: string | null): Promise<A
     requireOwner(ctx);
     if (mediaId !== null) {
       const id = z.string().uuid().parse(mediaId);
-      await ctx.tdb.get(mediaAssets, eq(mediaAssets.id, id), "media");
+      if (!(await existingMediaIds(ctx, [id])).length) throw new TenantNotFoundError("media");
     }
     const previous = ctx.workshop.avatarMediaId;
     await updateWorkshopRow(ctx.workshop.id, { avatarMediaId: mediaId });

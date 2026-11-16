@@ -189,16 +189,20 @@ export async function claimPaidByPayer(proofId: string) {
     .where(eq(receivables.deliveryProofId, proofId));
 }
 
-/** Mídia só é servida publicamente se pertencer à prova do token. */
-export async function findPublicProofMedia(token: string, mediaId: string) {
+/**
+ * Mídia só é servida publicamente se pertencer à prova do token.
+ * withData=false confere o acesso sem ler os bytes (para responder 304 quando o navegador já tem a foto).
+ */
+export async function findPublicProofMedia(token: string, mediaId: string, withData = true): Promise<{ id: string; mime: string; data: Buffer | null } | null> {
   const r = await findProofByToken(token);
   if (!r || r.proof.revokedAt || !r.proof.photoIds.includes(mediaId)) return null;
   const db = await getDb();
-  const rows = await db
-    .select()
-    .from(mediaAssets)
-    .where(and(eq(mediaAssets.id, mediaId), eq(mediaAssets.workshopId, r.workshop.id), isNull(mediaAssets.deletedAt)))
-    .limit(1);
+  const where = and(eq(mediaAssets.id, mediaId), eq(mediaAssets.workshopId, r.workshop.id), isNull(mediaAssets.deletedAt));
+  if (!withData) {
+    const meta = await db.select({ id: mediaAssets.id, mime: mediaAssets.mime }).from(mediaAssets).where(where).limit(1);
+    return meta[0] ? { ...meta[0], data: null } : null;
+  }
+  const rows = await db.select({ id: mediaAssets.id, mime: mediaAssets.mime, data: mediaAssets.data }).from(mediaAssets).where(where).limit(1);
   return rows[0] ?? null;
 }
 

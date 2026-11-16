@@ -3,7 +3,8 @@
  * Armazena no Postgres (bytea) enquanto o Vercel Blob não estiver configurado.
  * Verificação extra: recusa JPEG com segmento APP1 (EXIF) e PNG com chunk eXIf.
  */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { mediaAssets } from "@/db/schema";
 import { workshopFromRequest } from "@/lib/session";
@@ -44,15 +45,33 @@ export async function POST(req: Request) {
   const dim = z.coerce.number().int().min(1).max(20_000).nullable().catch(null);
   const width = dim.parse(form?.get("width") ?? null);
   const height = dim.parse(form?.get("height") ?? null);
-  const row = await ctx.tdb.insert(mediaAssets, {
-    storage: "db",
-    storageKey: randomBytes(16).toString("hex"),
-    data: buf,
-    mime: file.type,
-    bytes: buf.length,
-    width,
-    height,
-    exifStripped: true,
-  });
-  return Response.json({ id: row.id });
+  // a mesma foto de novo (reenvio da fila depois de cair a rede): reaproveita, não grava outra cópia
+  const sha256 = createHash("sha256").update(buf).digest("hex");
+  const same = await ctx.tdb.query((db, scope) =>
+    db
+      .select({ id: mediaAssets.id })
+      .from(mediaAssets)
+      .where(and(scope(mediaAssets), eq(mediaAssets.sha256, sha256), isNull(mediaAssets.deletedAt)))
+      .limit(1),
+  );
+  if (same[0]) return Response.json({ id: same[0].id, reused: true });
+  // grava e devolve só o id (sem trazer os bytes de volta do banco)
+  const [row] = await ctx.tdb.query((db) =>
+    db
+      .insert(mediaAssets)
+      .values({
+        workshopId: ctx.workshop.id,
+        storage: "db",
+        storageKey: randomBytes(16).toString("hex"),
+        data: buf,
+        mime: file.type,
+        bytes: buf.length,
+        width,
+        height,
+        exifStripped: true,
+        sha256,
+      })
+      .returning({ id: mediaAssets.id }),
+  );
+  return Response.json({ id: row!.id });
 }

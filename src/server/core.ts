@@ -50,6 +50,18 @@ export class DomainError extends Error {
 
 type Ctx = Pick<WorkshopContext, "tdb" | "workshop" | "access" | "user">;
 
+/** Ids de fotos desta oficina que existem (só o id: não traz os bytes da imagem do banco). */
+export async function existingMediaIds(ctx: Pick<Ctx, "tdb">, ids: string[]): Promise<string[]> {
+  if (!ids.length) return [];
+  const rows = await ctx.tdb.query((db, scope) =>
+    db
+      .select({ id: mediaAssets.id })
+      .from(mediaAssets)
+      .where(and(scope(mediaAssets), inArray(mediaAssets.id, ids), isNull(mediaAssets.deletedAt))),
+  );
+  return rows.map((r) => r.id);
+}
+
 /** Plano permite criar/editar registros do dia a dia (grátis dentro do limite, teste ou pago em dia). */
 export function requireWrite(ctx: Ctx) {
   if (!ctx.access.canWrite) throw new DomainError("read_only");
@@ -123,8 +135,7 @@ export async function createBatchCore(ctx: Ctx, v: BatchCreateInput, cmid?: stri
   }
   if (!ctx.access.canCreateBatch) throw new DomainError(ctx.access.reason === "read_only" ? "read_only" : "free_exhausted");
   if (v.photoIds.length) {
-    const found = await ctx.tdb.select(mediaAssets, inArray(mediaAssets.id, v.photoIds));
-    if (found.length !== v.photoIds.length) throw new DomainError("photo_not_found");
+    if ((await existingMediaIds(ctx, v.photoIds)).length !== new Set(v.photoIds).size) throw new DomainError("photo_not_found");
   }
   const result = await ctx.tdb.transaction(async (tx) => {
     let clientId = v.clientId ?? null;
@@ -416,8 +427,7 @@ export async function registerDeliveryCore(ctx: Ctx, v: DeliveryInput, previousP
   const amountCents = v.quantity * batch.unitPriceCents - v.discountCents;
   if (amountCents < 0) throw new DomainError("discount_too_high");
   if (v.photoIds.length) {
-    const found = await ctx.tdb.select(mediaAssets, inArray(mediaAssets.id, v.photoIds));
-    if (found.length !== v.photoIds.length) throw new DomainError("photo_not_found");
+    if ((await existingMediaIds(ctx, v.photoIds)).length !== new Set(v.photoIds).size) throw new DomainError("photo_not_found");
   }
   const prev = previousProofId ? await ctx.tdb.get(deliveryProofs, eq(deliveryProofs.id, previousProofId), "proof") : undefined;
   const version = prev ? prev.version + 1 : 1;

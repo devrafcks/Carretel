@@ -130,3 +130,28 @@ describe("upload: detecção de EXIF no JPEG", () => {
     expect(jpegHasExif(Buffer.concat([soi, seg(0xe0, Buffer.from("JFIF\0", "binary")), xmp, dqt, sos, scan]))).toBe(false);
   });
 });
+
+describe("compressão: degraus de qualidade", () => {
+  it("desce de 0,08 em 0,08 até o piso de 0,66", async () => {
+    const { nextQualities } = await import("@/lib/offline/image-steps");
+    expect(nextQualities(0.82)).toEqual([0.74, 0.66]);
+    expect(nextQualities(0.78)).toEqual([0.7]);
+    expect(nextQualities(0.66)).toEqual([]);
+  });
+
+  it("para no primeiro que cabe no alvo e nunca troca por um arquivo maior", async () => {
+    const { pickEncoding } = await import("@/lib/offline/image-steps");
+    const blob = (n: number) => new Blob([new Uint8Array(n)]);
+    const asked: number[] = [];
+    const sizes: Record<number, number> = { 0.74: 190_000, 0.66: 150_000 };
+    const out = await pickEncoding(blob(260_000), 0.82, 200_000, async (q) => (asked.push(q), blob(sizes[q]!)));
+    expect(out.size).toBe(190_000);
+    expect(asked).toEqual([0.74]);
+    // já cabe: não recomprime
+    const calls: number[] = [];
+    expect((await pickEncoding(blob(120_000), 0.82, 200_000, async (q) => (calls.push(q), blob(1)))).size).toBe(120_000);
+    expect(calls).toEqual([]);
+    // nenhum cabe: fica com o menor
+    expect((await pickEncoding(blob(500_000), 0.82, 200_000, async (q) => blob(q === 0.74 ? 420_000 : 380_000))).size).toBe(380_000);
+  });
+});

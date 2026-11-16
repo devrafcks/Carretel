@@ -49,7 +49,11 @@ export default async function proxy(request: NextRequest) {
     if (route.kind === "self-auth-api") return NextResponse.next(); // webhook/cron validam a própria assinatura; auth limita tentativas na rota
     if (!hasSessionCookie(request.cookies.getAll().map((c) => c.name))) return deny(401, "unauthorized");
     const res = NextResponse.next();
-    for (const [k, v] of PRIVATE_HEADERS) res.headers.set(k, v);
+    for (const [k, v] of PRIVATE_HEADERS) {
+      // fotos do taller: a de um id nunca muda; a rota manda cache privado longo + ETag (não sobrescrever com no-store)
+      if (k === "Cache-Control" && request.method === "GET" && pathname.startsWith("/api/media/")) continue;
+      res.headers.set(k, v);
+    }
     return res;
   }
 
