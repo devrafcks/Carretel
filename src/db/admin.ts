@@ -5,6 +5,7 @@
 import "server-only";
 import { sql } from "drizzle-orm";
 import { getDb } from "./client";
+import { deleteBlobs } from "@/server/media-store";
 
 type Row = Record<string, unknown>;
 async function q<T = Row>(query: ReturnType<typeof sql>): Promise<T[]> {
@@ -181,6 +182,11 @@ export async function adminResetFreeUsage(workshopId: string) {
 /** Apaga o usuário e o taller dele de vez (dados em cascata). Irreversível. */
 export async function adminDeleteUser(userId: string) {
   const db = await getDb();
+  // fotos no Vercel Blob das oficinas que somem junto (o banco apaga em cascata, o Blob não)
+  const blobs = await q<{ key: string }>(sql`
+    select ma.storage_key key from media_assets ma join workshop_members m on m.workshop_id = ma.workshop_id
+    where m.user_id::text = ${userId} and m.role = 'owner' and ma.storage = 'vercel-blob'`);
+  await deleteBlobs(blobs.map((b) => b.key));
   await db.transaction(async (tx) => {
     const run = (query: ReturnType<typeof sql>) => tx.execute(query);
     await run(sql`

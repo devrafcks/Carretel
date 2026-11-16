@@ -114,7 +114,6 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
         <dl className="mt-2 space-y-1">
           {(
             [
-              [t("legal.company"), legal.companyName],
               [t("legal.cnpj"), legal.cnpj],
               [t("legal.email"), legal.supportEmail],
               [t("legal.dpo"), dpoContact()],

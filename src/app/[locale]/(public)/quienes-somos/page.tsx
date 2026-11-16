@@ -18,7 +18,6 @@ export default async function QuienesSomosPage({ params }: { params: Promise<{ l
   ];
   const company = (
     [
-      [tl("company"), legal.companyName],
       [tl("cnpj"), legal.cnpj],
       [tl("email"), legal.supportEmail],
     ] as [string, string][]

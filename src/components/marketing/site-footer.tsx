@@ -59,7 +59,6 @@ export async function SiteFooter() {
           {/* só mostra o que já foi preenchido em config/legal.ts */}
           {(
             [
-              [t("legal.company"), legal.companyName],
               [t("legal.cnpj"), legal.cnpj],
               [t("legal.email"), legal.supportEmail],
             ] as const

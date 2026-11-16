@@ -10,6 +10,7 @@ import { mediaAssets } from "@/db/schema";
 import { workshopFromRequest } from "@/lib/session";
 import { hitRateLimit } from "@/db/public";
 import { jpegHasExif } from "@/lib/image-check";
+import { putBlob } from "@/server/media-store";
 
 const MAX_BYTES = 2.5 * 1024 * 1024;
 const ALLOWED = new Set(["image/webp", "image/jpeg", "image/png"]);
@@ -55,15 +56,18 @@ export async function POST(req: Request) {
       .limit(1),
   );
   if (same[0]) return Response.json({ id: same[0].id, reused: true });
+  // Vercel Blob (privado) quando ligado; senão, ou se o Blob falhar, no Postgres
+  const key = randomBytes(16).toString("hex");
+  const blobPath = await putBlob(ctx.workshop.id, key, buf, file.type);
   // grava e devolve só o id (sem trazer os bytes de volta do banco)
   const [row] = await ctx.tdb.query((db) =>
     db
       .insert(mediaAssets)
       .values({
         workshopId: ctx.workshop.id,
-        storage: "db",
-        storageKey: randomBytes(16).toString("hex"),
-        data: buf,
+        storage: blobPath ? "vercel-blob" : "db",
+        storageKey: blobPath ?? key,
+        data: blobPath ? null : buf,
         mime: file.type,
         bytes: buf.length,
         width,

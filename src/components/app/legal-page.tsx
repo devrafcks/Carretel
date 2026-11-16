@@ -11,12 +11,9 @@ export async function LegalPage({ doc, version, related }: { doc: LegalDoc; vers
   const t = await getTranslations("legal");
   const contact = (
     [
-      [t("company"), legal.companyName],
       [t("cnpj"), legal.cnpj],
-      [t("address"), legal.address],
       [t("email"), legal.supportEmail],
       [t("dpo"), dpoContact()],
-      [t("forum"), legal.forumCity],
       [t("abuse"), abuseChannel()],
     ] as [string, string][]
   ).filter(([, v]) => v.trim() !== "");

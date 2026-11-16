@@ -155,3 +155,13 @@ describe("compressão: degraus de qualidade", () => {
     expect((await pickEncoding(blob(500_000), 0.82, 200_000, async (q) => blob(q === 0.74 ? 420_000 : 380_000))).size).toBe(380_000);
   });
 });
+
+describe("saudação pelo horário de São Paulo", () => {
+  it("manhã, tarde e noite no fuso do taller (UTC−3)", async () => {
+    const { dayPeriod } = await import("@/lib/dates");
+    expect(dayPeriod(new Date("2026-11-16T01:30:00Z"))).toBe("evening"); // 22h30 em SP
+    expect(dayPeriod(new Date("2026-11-16T12:00:00Z"))).toBe("morning"); // 9h
+    expect(dayPeriod(new Date("2026-11-16T17:00:00Z"))).toBe("afternoon"); // 14h
+    expect(dayPeriod(new Date("2026-11-16T06:00:00Z"))).toBe("evening"); // 3h da madrugada
+  });
+});

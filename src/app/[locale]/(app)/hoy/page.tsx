@@ -10,7 +10,7 @@ import { Orbs } from "@/components/app/page-header";
 import { StatusBadge, batchTone } from "@/components/ui/status-badge";
 import { PendingSyncNote } from "@/components/app/pending-sync-note";
 import { ThinBars, SplitBar } from "@/components/app/charts";
-import { formatDate } from "@/lib/dates";
+import { dayPeriod, formatDate } from "@/lib/dates";
 import { formatBRL } from "@/lib/money";
 import { brand } from "@/config/brand";
 import { cn } from "@/lib/utils";
@@ -68,7 +68,11 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
     { done: s.totalProofs > 0, href: "/lotes", icon: MessageCircle, title: t("hoy.stepProof"), desc: t("hoy.stepProofDesc") },
   ];
   const stepsDone = steps.filter((x) => x.done).length;
-  const dateLabel = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date());
+  const rawDate = new Intl.DateTimeFormat(locale, { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }).format(new Date());
+  // maiúscula no JS: o first-letter do CSS não vale em elemento flex
+  const dateLabel = rawDate.charAt(0).toLocaleUpperCase(locale) + rawDate.slice(1);
+  const period = dayPeriod();
+  const greetingKey = period === "morning" ? "hoy.greetingMorning" : period === "afternoon" ? "hoy.greetingAfternoon" : "hoy.greetingEvening";
 
   return (
     <div className="space-y-6">
@@ -76,12 +80,12 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       <section className="anim-rise overflow-hidden rounded-[2rem] border border-ink/[0.06] bg-card shadow-soft">
         <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1.1fr_1fr] lg:p-10">
           <div className="flex flex-col">
-            <p className="inline-flex items-center gap-2 text-sm text-muted-foreground first-letter:uppercase">
+            <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
               <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />
               {dateLabel}
             </p>
             <h1 className="mt-4 font-display text-[2.5rem] font-light leading-[1] tracking-tight sm:text-6xl">{t("hoy.title")}</h1>
-            <p className="mt-3 max-w-md text-muted-foreground">{t("hoy.greeting", { name: ctx.workshop.name })}</p>
+            <p className="mt-3 max-w-md text-muted-foreground">{t(greetingKey, { name: ctx.workshop.name })}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Link href="/lotes/nuevo" className={buttonVariants({ size: "lg" })}>
                 <Plus aria-hidden="true" />

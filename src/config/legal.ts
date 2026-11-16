@@ -1,20 +1,12 @@
 /**
  * Grupo B — dados legais do SaaS (Decreto 7.962/2013, LGPD, Marco Civil).
- * NUNCA inventar estes dados. Campos vazios aparecem como "—" na UI,
- * geram aviso no build e um item na página interna /[locale]/go-live.
+ * NUNCA inventar estes dados. Só ficam aqui os que existem: o contato de atendimento também é o
+ * canal do encarregado de dados (LGPD) e de denúncias. CNPJ vazio gera aviso no build e no /go-live.
  */
 export interface LegalConfig {
-  companyName: string;
   cnpj: string;
-  address: string;
   supportEmail: string;
   supportSlaDays: number;
-  supportWhatsapp: string;
-  dpoName: string;
-  dpoEmail: string;
-  taxRegime: string;
-  forumCity: string;
-  abuseReportChannel: string;
   accessLogRetentionMonths: number;
   purgeMarginDays: number;
   /** Versões vigentes dos documentos (legal_documents.version) */
@@ -22,17 +14,9 @@ export interface LegalConfig {
 }
 
 export const legal: LegalConfig = {
-  companyName: "", // TODO B1
-  cnpj: "65.605.980/0001-00", // B2 (CNPJ do SaaS, informado pelo responsável em 14/11/2026)
-  address: "", // TODO B3
-  supportEmail: "rafcksps@gmail.com", // B4 e-mail de atendimento (pedido do responsável em 14/11/2026)
+  cnpj: "65.605.980/0001-00", // CNPJ do SaaS, informado pelo responsável em 14/11/2026
+  supportEmail: "rafcksps@gmail.com", // e-mail de atendimento (pedido do responsável em 14/11/2026)
   supportSlaDays: 5,
-  supportWhatsapp: "", // B5 opcional
-  dpoName: "", // TODO B6
-  dpoEmail: "", // TODO B6
-  taxRegime: "", // TODO B7 (com o contador)
-  forumCity: "", // TODO B8
-  abuseReportChannel: "", // B9 → cai em supportEmail
   accessLogRetentionMonths: 6,
   purgeMarginDays: 30,
   documentVersions: {
@@ -49,21 +33,17 @@ export function legalValue(v: string): string {
   return v.trim() === "" ? LEGAL_PLACEHOLDER : v;
 }
 
-/** Contato do encarregado de dados (LGPD): o e-mail próprio, ou o de atendimento. */
+/** Contato do encarregado de dados (LGPD): o e-mail de atendimento. */
 export function dpoContact(): string {
-  return [legal.dpoName, legal.dpoEmail || legal.supportEmail].filter(Boolean).join(" · ");
+  return legal.supportEmail;
 }
 
 export function abuseChannel(): string {
-  return legal.abuseReportChannel || legal.supportEmail;
+  return legal.supportEmail;
 }
 
 /** Itens do Grupo B ainda vazios (para o checklist de go-live e o aviso de build). */
 export function missingLegalFields(): string[] {
-  // Razão social, endereço, foro e afins são opcionais: aparecem só quando preenchidos.
-  const required: Array<[keyof LegalConfig, string]> = [
-    ["cnpj", "B2 CNPJ do SaaS"],
-
-  ];
+  const required: Array<[keyof LegalConfig, string]> = [["cnpj", "CNPJ do SaaS"]];
   return required.filter(([k]) => String(legal[k]).trim() === "").map(([, label]) => label);
 }

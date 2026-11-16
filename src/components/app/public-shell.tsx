@@ -52,9 +52,7 @@ export async function PublicFooter() {
         <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
           {(
             [
-              [t("legal.company"), legal.companyName],
               [t("legal.cnpj"), legal.cnpj],
-              [t("legal.address"), legal.address],
               [t("legal.email"), legal.supportEmail],
             ] as [string, string][]
           )

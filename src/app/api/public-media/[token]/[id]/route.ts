@@ -1,6 +1,7 @@
 /** Foto de uma prova pública: só se pertencer à prova do token (e a prova não estiver anulada). */
 import { findPublicProofMedia, hitRateLimit } from "@/db/public";
 import { requestMeta } from "@/lib/audit";
+import { readMedia } from "@/server/media-store";
 
 export async function GET(req: Request, { params }: { params: Promise<{ token: string; id: string }> }) {
   const { token, id } = await params;
@@ -17,6 +18,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     return new Response(null, { status: 304, headers });
   }
   const m = await findPublicProofMedia(token, id);
-  if (!m?.data) return new Response(null, { status: 404 });
-  return new Response(new Uint8Array(m.data), { headers: { ...headers, "Content-Type": m.mime } });
+  const bytes = m ? await readMedia(m) : null;
+  if (!m || !bytes) return new Response(null, { status: 404 });
+  return new Response(bytes, { headers: { ...headers, "Content-Type": m.mime } });
 }

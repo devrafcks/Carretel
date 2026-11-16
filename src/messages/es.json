@@ -434,7 +434,10 @@
     "stepBatch": "Registrar un corte",
     "stepBatchDesc": "Cantidad y precio por pieza. Toma 20 segundos.",
     "stepProof": "Enviar el comprobante",
-    "stepProofDesc": "Al entregar, el cliente confirma por WhatsApp."
+    "stepProofDesc": "Al entregar, el cliente confirma por WhatsApp.",
+    "greetingMorning": "Buenos días, {name}",
+    "greetingAfternoon": "Buenas tardes, {name}",
+    "greetingEvening": "Buenas noches, {name}"
   },
   "batch": {
     "newTitle": "Nuevo corte",

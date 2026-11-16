@@ -55,3 +55,11 @@ export function chargePeriodRange(period: ChargePeriod, today: string): { from: 
   if (period === "month") return { from: today.slice(0, 8) + "01", to: today };
   return { from: addDaysISO(today, period === "week" ? -6 : -13), to: today };
 }
+
+/** Período do dia no fuso do taller (São Paulo): manhã até 12h, tarde até 18h, noite (inclui madrugada até 5h). */
+export function dayPeriod(now = new Date()): "morning" | "afternoon" | "evening" {
+  const h = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hourCycle: "h23", timeZone: TZ }).format(now));
+  if (h >= 5 && h < 12) return "morning";
+  if (h >= 12 && h < 18) return "afternoon";
+  return "evening";
+}

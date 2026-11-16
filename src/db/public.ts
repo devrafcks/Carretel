@@ -7,6 +7,7 @@
 import "server-only";
 import { and, desc, eq, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
 import { getDb } from "./client";
+import { deleteBlobs } from "@/server/media-store";
 import { slidingWindowDecision, windowStartFor, type RateDecision } from "@/lib/rate-limit";
 import {
   accessAuditLogs,
@@ -193,16 +194,24 @@ export async function claimPaidByPayer(proofId: string) {
  * Mídia só é servida publicamente se pertencer à prova do token.
  * withData=false confere o acesso sem ler os bytes (para responder 304 quando o navegador já tem a foto).
  */
-export async function findPublicProofMedia(token: string, mediaId: string, withData = true): Promise<{ id: string; mime: string; data: Buffer | null } | null> {
+export async function findPublicProofMedia(
+  token: string,
+  mediaId: string,
+  withData = true,
+): Promise<{ id: string; mime: string; storage: string; storageKey: string; data: Buffer | null } | null> {
   const r = await findProofByToken(token);
   if (!r || r.proof.revokedAt || !r.proof.photoIds.includes(mediaId)) return null;
   const db = await getDb();
   const where = and(eq(mediaAssets.id, mediaId), eq(mediaAssets.workshopId, r.workshop.id), isNull(mediaAssets.deletedAt));
   if (!withData) {
-    const meta = await db.select({ id: mediaAssets.id, mime: mediaAssets.mime }).from(mediaAssets).where(where).limit(1);
+    const meta = await db.select({ id: mediaAssets.id, mime: mediaAssets.mime, storage: mediaAssets.storage, storageKey: mediaAssets.storageKey }).from(mediaAssets).where(where).limit(1);
     return meta[0] ? { ...meta[0], data: null } : null;
   }
-  const rows = await db.select({ id: mediaAssets.id, mime: mediaAssets.mime, data: mediaAssets.data }).from(mediaAssets).where(where).limit(1);
+  const rows = await db
+    .select({ id: mediaAssets.id, mime: mediaAssets.mime, storage: mediaAssets.storage, storageKey: mediaAssets.storageKey, data: mediaAssets.data })
+    .from(mediaAssets)
+    .where(where)
+    .limit(1);
   return rows[0] ?? null;
 }
 
@@ -354,6 +363,13 @@ export async function purgeOldAuditLogs(olderThan: Date): Promise<number> {
 
 export async function hardDeleteWorkshops(deletedBefore: Date): Promise<number> {
   const db = await getDb();
+  // fotos no Vercel Blob não somem em cascata com o banco: apaga lá também (LGPD)
+  const blobs = await db
+    .select({ key: mediaAssets.storageKey })
+    .from(mediaAssets)
+    .innerJoin(workshops, eq(workshops.id, mediaAssets.workshopId))
+    .where(and(eq(mediaAssets.storage, "vercel-blob"), isNotNull(workshops.deletedAt), lt(workshops.deletedAt, deletedBefore)));
+  await deleteBlobs(blobs.map((b) => b.key));
   const rows = await db
     .delete(workshops)
     .where(and(isNotNull(workshops.deletedAt), lt(workshops.deletedAt, deletedBefore)))
