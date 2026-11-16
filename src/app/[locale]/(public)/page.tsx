@@ -405,7 +405,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
               {t("pricingTitleA")} <span className="text-vivid-strong">{t("pricingTitleB")}</span>
             </h2>
           </Reveal>
-          <div className="mx-auto mt-12 grid max-w-[96rem] gap-6 lg:grid-cols-3">
+          <div className="mx-auto mt-12 grid max-w-[84rem] gap-6 lg:grid-cols-3">
             <div>
               <div className="flex h-full flex-col rounded-[2rem] border border-ink/[0.08] bg-background p-8">
                 <p className="text-muted-foreground">{t("planFreeName")}</p>

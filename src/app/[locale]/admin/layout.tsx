@@ -17,7 +17,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
   return (
     <div className="min-h-dvh">
       <header className="sticky top-0 z-[100] border-b border-ink/[0.06] bg-background/95">
-        <div className="mx-auto flex max-w-[110rem] flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-[96rem] flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
           <Link href="/admin" className="inline-flex items-center gap-2 font-medium">
             <BrandMark className="size-7 text-primary" />
             Carretel <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">admin</span>
@@ -36,7 +36,7 @@ export default async function AdminLayout({ children, params }: { children: Reac
           </Link>
         </div>
       </header>
-      <main id="conteudo" className="mx-auto max-w-[110rem] px-4 py-8 sm:px-6">
+      <main id="conteudo" className="mx-auto max-w-[96rem] px-4 py-8 sm:px-6">
         {children}
       </main>
     </div>

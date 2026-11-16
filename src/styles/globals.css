@@ -234,7 +234,7 @@
 @layer utilities {
   .container-wide {
     width: 100%;
-    max-width: 120rem;
+    max-width: 104rem;
     margin-inline: auto;
     padding-inline: 1.25rem;
   }
@@ -245,7 +245,7 @@
   }
   @media (min-width: 1024px) {
     .container-wide {
-      padding-inline: 2.5rem;
+      padding-inline: 3rem;
     }
     .hero-diagonal {
       clip-path: polygon(0 0, 60% 0, 47% 100%, 0 100%);

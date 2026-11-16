@@ -10,7 +10,7 @@ export async function PublicHeader({ loggedIn = false }: { loggedIn?: boolean })
   const t = await getTranslations("landing");
   return (
     <header className="border-b border-border bg-background">
-      <div className="mx-auto flex max-w-[96rem] items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[84rem] items-center gap-3 px-4 py-3 sm:px-6">
         <Link href="/" className="mr-auto inline-flex min-h-12 items-center" aria-label="Carretel">
           <BrandLockup />
         </Link>
@@ -36,7 +36,7 @@ export async function PublicFooter() {
   ] as const;
   return (
     <footer className="mt-16 border-t border-border bg-secondary text-secondary-foreground">
-      <div className="mx-auto max-w-[96rem] space-y-4 px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-[84rem] space-y-4 px-4 py-8 sm:px-6">
         <nav aria-label={t("landing.footerAbout")}>
           <ul className="flex flex-wrap gap-x-5 gap-y-1">
             {links.map(([href, label]) => (
