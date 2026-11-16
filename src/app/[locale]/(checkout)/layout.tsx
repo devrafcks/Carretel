@@ -18,7 +18,7 @@ export default async function CheckoutLayout({ children, params }: { children: R
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/illustrations/hero-panorama.svg" alt="" width={1600} height={760} className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 w-full object-cover object-bottom opacity-25 sm:h-72" />
 
-      <header className="mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-4 sm:px-6">
+      <header className="mx-auto flex w-full max-w-7xl items-center gap-3 px-4 py-4 sm:px-6">
         <Link href="/" className="mr-auto inline-flex min-h-11 items-center" aria-label="Carretel">
           <BrandLockup />
         </Link>

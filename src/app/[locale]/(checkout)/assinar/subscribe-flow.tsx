@@ -55,7 +55,7 @@ export function SubscribeFlow(props: Props) {
   const idx = shown.indexOf(current);
 
   return (
-    <div className={cn("w-full", current === "payment" ? "max-w-4xl" : "max-w-xl")}>
+    <div className={cn("w-full", current === "payment" ? "max-w-6xl" : "max-w-2xl")}>
       <div className="text-center">
         <h1 className="text-hero text-4xl sm:text-5xl">{t("title")}</h1>
         <p className="mt-2 text-muted-foreground">{t("lead")}</p>

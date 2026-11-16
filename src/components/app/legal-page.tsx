@@ -24,7 +24,7 @@ export async function LegalPage({ doc, version, related }: { doc: LegalDoc; vers
   return (
     <article className="container-wide pb-24 pt-12 sm:pt-16">
       {/* cabeçalho */}
-      <header className="max-w-3xl">
+      <header className="max-w-4xl">
         <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
           <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />
           Carretel
@@ -74,7 +74,7 @@ export async function LegalPage({ doc, version, related }: { doc: LegalDoc; vers
         )}
 
         {/* seções */}
-        <div className="max-w-3xl">
+        <div className="max-w-4xl">
           <div className="divide-y divide-ink/[0.07]">
             {doc.sections.map((s, i) => (
               <section key={s.h} id={slug(i)} className="scroll-mt-24 py-8 first:pt-0">

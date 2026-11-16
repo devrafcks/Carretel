@@ -67,7 +67,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
           className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_46%_58%_at_50%_42%,var(--background)_55%,transparent_100%)]"
         />
         <div className="container-wide flex min-h-[44rem] flex-col items-center pb-64 pt-16 text-center sm:min-h-[52rem] sm:pb-64 sm:pt-24">
-          <h1 className="text-hero anim-rise delay-1 max-w-5xl text-[2.9rem] text-balance text-foreground sm:text-7xl xl:text-[5.5rem]">
+          <h1 className="text-hero anim-rise delay-1 max-w-6xl text-[2.9rem] text-balance text-foreground sm:text-7xl xl:text-[5.5rem]">
             {t("titleA")} <span className="text-vivid-strong">{t("titleB")}</span>
           </h1>
           <p className="anim-rise delay-2 mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">{t("lead")}</p>
@@ -208,7 +208,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       {/* ───────── COMO FUNCIONA: grade de blocos (ref.: quadro Aidency) ───────── */}
       <section id="como-funciona" className="scroll-mt-20 pb-20 sm:pb-28">
         <div className="container-wide">
-          <Reveal className="max-w-3xl">
+          <Reveal className="max-w-4xl">
             <p className={kicker}>
               {dot}
               {t("bentoKicker")}
@@ -396,7 +396,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       {/* ───────── PREÇOS ───────── */}
       <section id="precios" className="scroll-mt-20 bg-card py-20 sm:py-28">
         <div className="container-wide">
-          <Reveal className="mx-auto max-w-3xl text-center">
+          <Reveal className="mx-auto max-w-5xl text-center">
             <p className={cn(kicker, "justify-center")}>
               {dot}
               {t("pricingKicker")}
@@ -405,7 +405,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
               {t("pricingTitleA")} <span className="text-vivid-strong">{t("pricingTitleB")}</span>
             </h2>
           </Reveal>
-          <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
+          <div className="mx-auto mt-12 grid max-w-[96rem] gap-6 lg:grid-cols-3">
             <div>
               <div className="flex h-full flex-col rounded-[2rem] border border-ink/[0.08] bg-background p-8">
                 <p className="text-muted-foreground">{t("planFreeName")}</p>
@@ -517,7 +517,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
         <img src="/illustrations/hero-panorama.svg" alt="" width={1600} height={760} loading="lazy" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-full w-full object-cover object-bottom" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_44%_60%_at_50%_40%,var(--background)_55%,transparent_100%)]" />
         <Reveal className="container-wide flex min-h-[38rem] flex-col items-center justify-start pb-48 pt-24 text-center">
-          <h2 className="text-hero max-w-4xl text-5xl text-balance sm:text-7xl">
+          <h2 className="text-hero max-w-5xl text-5xl text-balance sm:text-7xl">
             {t("finalA")} <span className="text-vivid-strong">{t("finalB")}</span>
           </h2>
           <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">{t("finalBody")}</p>
