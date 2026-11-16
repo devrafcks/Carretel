@@ -292,7 +292,7 @@
     "annualPerMonth": "equivale a {amount}/mes",
     "annualSave": "Ahorre {amount} en el año",
     "annualCta": "Suscribirse al anual",
-    "annualAll": "Todo lo que tiene el plan completo",
+    "annualAll": "Todo del plan completo",
     "annualMethods": "No se renueva solo: usted decide al final del año",
     "annualDiscount": "12 mensualidades con {pct}% de descuento"
   },
