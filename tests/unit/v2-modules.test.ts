@@ -111,3 +111,22 @@ describe("lembrete de cobrança por WhatsApp", () => {
     expect(reminderMessage("es", "gentle", { ...base, items: [base.items[0]!], pix: null })).toContain("de la entrega pendiente de pago");
   });
 });
+
+describe("upload: detecção de EXIF no JPEG", () => {
+  const seg = (marker: number, payload: Buffer) => Buffer.concat([Buffer.from([0xff, marker, (payload.length + 2) >> 8, (payload.length + 2) & 0xff]), payload]);
+  const soi = Buffer.from([0xff, 0xd8]);
+  const sos = Buffer.from([0xff, 0xda, 0x00, 0x02]);
+
+  it("acusa APP1 Exif de verdade", async () => {
+    const { jpegHasExif } = await import("@/lib/image-check");
+    expect(jpegHasExif(Buffer.concat([soi, seg(0xe1, Buffer.from("Exif\0\0MM", "binary")), sos]))).toBe(true);
+  });
+
+  it("não confunde XMP (também APP1) nem bytes FF E1 dentro de tabelas ou da imagem", async () => {
+    const { jpegHasExif } = await import("@/lib/image-check");
+    const xmp = seg(0xe1, Buffer.from("http://ns.adobe.com/xap/1.0/\0<x/>", "binary"));
+    const dqt = seg(0xdb, Buffer.from([0x00, 0xff, 0xe1, 0x10]));
+    const scan = Buffer.from([0x12, 0xff, 0xe1, 0x34, 0xff, 0xd9]);
+    expect(jpegHasExif(Buffer.concat([soi, seg(0xe0, Buffer.from("JFIF\0", "binary")), xmp, dqt, sos, scan]))).toBe(false);
+  });
+});

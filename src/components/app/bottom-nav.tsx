@@ -141,7 +141,8 @@ export function SideRail({
   const pathname = usePathname();
   const tab = useSearchParams().get("tab");
   return (
-    <nav aria-label={t("main")} className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-ink/[0.06] bg-card px-4 py-5 lg:flex">
+    // fixa na tela (não "sticky"): sempre da altura da janela, mesmo quando algo abaixo do painel estica a página
+    <nav aria-label={t("main")} className="fixed inset-y-0 left-0 z-30 hidden h-dvh w-64 flex-col border-r border-ink/[0.06] bg-card px-4 py-5 lg:flex">
       <Link href="/hoy" aria-label="Carretel" className="inline-flex min-h-11 items-center px-2">
         <BrandLockup />
       </Link>

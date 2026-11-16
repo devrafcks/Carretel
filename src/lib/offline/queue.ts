@@ -75,6 +75,24 @@ function notify() {
   for (const fn of listeners) fn();
 }
 
+/** Falha no envio de foto. status 0 = rede. */
+export class UploadError extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+  ) {
+    super(`upload_${status}`);
+  }
+}
+
+/**
+ * Recusa definitiva (o servidor nunca vai aceitar esta foto: tipo, tamanho, EXIF, dados inválidos).
+ * Repetir não adianta: o registro segue sem a foto. Rede, sessão, limite de envios e erro 5xx tentam de novo.
+ */
+export function isPermanentUploadError(err: unknown): err is UploadError {
+  return err instanceof UploadError && [400, 403, 413, 415, 422].includes(err.status);
+}
+
 export async function uploadPhoto(blob: Blob, width: number, height: number, onProgress?: (p: number) => void): Promise<string> {
   return new Promise((resolve, reject) => {
     const form = new FormData();
@@ -87,37 +105,67 @@ export async function uploadPhoto(blob: Blob, width: number, height: number, onP
       if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
     };
     xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve(JSON.parse(xhr.responseText).id as string);
-      else reject(new Error(`upload_${xhr.status}`));
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(JSON.parse(xhr.responseText).id as string);
+      let code = "server_error";
+      try {
+        code = (JSON.parse(xhr.responseText) as { error?: string }).error ?? code;
+      } catch {
+        /* resposta sem JSON */
+      }
+      reject(new UploadError(xhr.status, code));
     };
-    xhr.onerror = () => reject(new Error("network"));
+    xhr.onerror = () => reject(new UploadError(0, "network"));
     xhr.send(form);
   });
 }
 
 export type SyncResult = { clientMutationId: string; status: "applied" | "duplicate" | "rejected"; serverId?: string; error?: string };
 
-let syncing: Promise<{ sent: number; rejected: SyncResult[] }> | null = null;
+/** Envia as fotos; as recusadas de vez ficam de fora (com o motivo) para não travar o registro. */
+async function uploadAll(photos: NonNullable<QueuedMutation["photos"]>, photoErrors: string[]): Promise<string[]> {
+  const ids: string[] = [];
+  for (const p of photos) {
+    try {
+      ids.push(await uploadPhoto(p.blob, p.width, p.height));
+    } catch (err) {
+      if (!isPermanentUploadError(err)) throw err;
+      photoErrors.push(err.code);
+    }
+  }
+  return ids;
+}
+
+let syncing: Promise<{ sent: number; rejected: SyncResult[]; photoErrors: string[] }> | null = null;
 
 /** Envia a fila (lotes de 50). Mutações rejeitadas por regra saem da fila e são reportadas. */
-export function syncNow(workshopId: string): Promise<{ sent: number; rejected: SyncResult[] }> {
+export function syncNow(workshopId: string): Promise<{ sent: number; rejected: SyncResult[]; photoErrors: string[] }> {
   if (syncing) return syncing;
   syncing = (async () => {
     let sent = 0;
     const rejected: SyncResult[] = [];
+    const photoErrors: string[] = [];
     const items = await pending(workshopId);
     for (let i = 0; i < items.length; i += 50) {
-      const chunk = items.slice(i, i + 50);
-      // fotos primeiro
-      for (const m of chunk) {
+      const ready: QueuedMutation[] = [];
+      // fotos primeiro; uma foto com problema não segura o resto da fila
+      for (const m of items.slice(i, i + 50)) {
         if (m.photos?.length && m.photoField) {
-          const ids: string[] = Array.isArray(m.payload[m.photoField]) ? [...(m.payload[m.photoField] as string[])] : [];
-          for (const p of m.photos) ids.push(await uploadPhoto(p.blob, p.width, p.height));
-          m.payload = { ...m.payload, [m.photoField]: ids };
-          m.photos = [];
-          await update(m);
+          try {
+            const ids: string[] = Array.isArray(m.payload[m.photoField]) ? [...(m.payload[m.photoField] as string[])] : [];
+            ids.push(...(await uploadAll(m.photos, photoErrors)));
+            m.payload = { ...m.payload, [m.photoField]: ids };
+            m.photos = [];
+            await update(m);
+          } catch (err) {
+            // rede/limite/5xx: este item espera a próxima rodada, os outros seguem
+            await update({ ...m, attempts: m.attempts + 1, lastError: err instanceof UploadError ? err.code : "upload" });
+            continue;
+          }
         }
+        ready.push(m);
       }
+      const chunk = ready;
+      if (!chunk.length) continue;
       const res = await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,7 +186,7 @@ export function syncNow(workshopId: string): Promise<{ sent: number; rejected: S
         sent++;
       }
     }
-    return { sent, rejected };
+    return { sent, rejected, photoErrors };
   })().finally(() => {
     syncing = null;
   });
@@ -153,15 +201,16 @@ export async function submitMutation(
   type: MutationType,
   payload: Record<string, unknown>,
   opts: { photos?: QueuedMutation["photos"]; photoField?: string } = {},
-): Promise<{ queued: boolean; result?: SyncResult }> {
+): Promise<{ queued: boolean; result?: SyncResult; photoErrors?: string[] }> {
   const clientMutationId = uuidv7();
   const online = typeof navigator === "undefined" ? true : navigator.onLine;
   if (online) {
     try {
       let finalPayload = payload;
+      const photoErrors: string[] = [];
       if (opts.photos?.length && opts.photoField) {
-        const ids: string[] = [];
-        for (const p of opts.photos) ids.push(await uploadPhoto(p.blob, p.width, p.height));
+        // foto recusada de vez não vai para a fila: o registro segue sem ela e a pessoa é avisada
+        const ids = await uploadAll(opts.photos, photoErrors);
         finalPayload = { ...payload, [opts.photoField]: ids };
       }
       const res = await fetch("/api/sync", {
@@ -174,7 +223,7 @@ export async function submitMutation(
       const { results } = (await res.json()) as { results: SyncResult[] };
       const r = results[0]!;
       if (r.status === "rejected" && r.error === "server_error") throw new Error("server_error");
-      return { queued: false, result: r };
+      return { queued: false, result: r, photoErrors };
     } catch (err) {
       if ((err as { fatal?: boolean }).fatal) throw err;
       // cai para a fila (rede caiu no meio)

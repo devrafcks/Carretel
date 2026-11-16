@@ -25,7 +25,9 @@ export async function AppShell({ ctx, children }: { ctx: WorkshopContext; childr
   return (
     <OfflineProvider workshopId={ctx.workshop.id}>
       <div className="flex min-h-dvh">
-        <Suspense fallback={<div className="hidden w-64 shrink-0 lg:block" />}>
+        {/* espaço da sidebar fixa no computador */}
+        <div aria-hidden="true" className="hidden w-64 shrink-0 lg:block" />
+        <Suspense fallback={null}>
           <SideRail workshopName={ctx.workshop.name} avatarMediaId={ctx.workshop.avatarMediaId} authMode={authMode()} showUpgrade={showUpgrade} upgradePrice={upgradePrice} showAdmin={isAdminEmail(ctx.user.email)} />
         </Suspense>
         <div className="min-w-0 flex-1">

@@ -198,3 +198,24 @@ export async function adminDeleteUser(userId: string) {
 export async function ensureAuthAdminRole(email: string) {
   await q(sql`update neon_auth."user" set role = 'admin', "updatedAt" = now() where lower(email) = ${email.toLowerCase()} and coalesce(role,'') <> 'admin'`);
 }
+
+export type AdminAttention = {
+  pastDue: { id: string; name: string; since: string | null }[];
+  refunds: { id: string; name: string; at: string }[];
+  staleCheckouts: number;
+  webhookErrors7: number;
+};
+
+/** O que pede ação do admin: cobrança falhando, reembolso pedido, checkout parado e webhook com erro. */
+export async function adminAttention(): Promise<AdminAttention> {
+  const pastDue = await q<{ id: string; name: string; since: string | null }>(sql`
+    select w.id::text id, w.name, s.updated_at since from workshops w left join subscriptions s on s.workshop_id = w.id
+    where w.deleted_at is null and w.plan_status = 'past_due' order by s.updated_at asc limit 10`);
+  const refunds = await q<{ id: string; name: string; at: string }>(sql`
+    select w.id::text id, w.name, s.refund_requested_at at from subscriptions s join workshops w on w.id = s.workshop_id
+    where s.refund_requested_at > now() - interval '30 days' order by s.refund_requested_at desc limit 10`);
+  const [c] = await q<{ n: number }>(sql`
+    select count(*)::int n from subscriptions where status = 'pending_checkout' and abacate_checkout_id is not null and updated_at < now() - interval '1 day'`);
+  const [e] = await q<{ n: number }>(sql`select count(*)::int n from billing_webhook_events where error is not null and received_at > now() - interval '7 days'`);
+  return { pastDue, refunds, staleCheckouts: c?.n ?? 0, webhookErrors7: e?.n ?? 0 };
+}

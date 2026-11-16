@@ -507,7 +507,11 @@
     "photos": "Fotos",
     "totalShort": "Total del corte",
     "recurringTitle": "Clientes de siempre",
-    "recurringHint": "Toque el cliente: el modelo y el precio ya vienen llenos. Solo falta la cantidad."
+    "recurringHint": "Toque el cliente: el modelo y el precio ya vienen llenos. Solo falta la cantidad.",
+    "micDenied": "El micrófono está bloqueado. Toque el candado junto a la dirección del sitio y permita el micrófono.",
+    "micNetwork": "El dictado necesita internet y no pudo conectar. Intente de nuevo o escriba.",
+    "micNoSpeech": "No escuché nada. Toque el micrófono y hable cerca del celular.",
+    "micNoDevice": "No encontramos un micrófono en este aparato."
   },
   "machines": {
     "recta": "Recta",
@@ -1647,5 +1651,14 @@
     "previewDetail": "{good} buenas de {sent} enviadas · {pending} todavía por volver",
     "returnDate": "Fecha del retorno",
     "saveReturn": "Guardar retorno"
+  },
+  "photoErrors": {
+    "generic": "La foto no se envió; el registro se guardó sin ella.",
+    "type": "Formato de foto no aceptado; el registro se guardó sin ella. Pruebe otra foto.",
+    "too_large": "La foto quedó demasiado grande; el registro se guardó sin ella.",
+    "exif_present": "La foto traía datos de ubicación y fue rechazada; el registro se guardó sin ella.",
+    "no_file": "La foto no llegó; el registro se guardó sin ella.",
+    "read_only": "Su cuenta está en modo lectura: la foto no se envió.",
+    "server_error": "La foto no se envió; el registro se guardó sin ella."
   }
 }

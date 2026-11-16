@@ -43,6 +43,14 @@ export function OfflineProvider({ workshopId, children }: { workshopId: string; 
   const [pendingCount, setPending] = React.useState(0);
   const [syncing, setSyncing] = React.useState(false);
   const backoff = React.useRef(5_000);
+  // foto recusada pelo servidor: o registro foi salvo sem ela; diz o motivo em vez de tentar para sempre
+  const photoErrorText = React.useCallback(
+    (code: string) => {
+      const key = `photoErrors.${code}`;
+      return t.has(key) ? t(key as "photoErrors.server_error") : t("photoErrors.generic");
+    },
+    [t],
+  );
 
   const refreshCount = React.useCallback(async () => {
     try {
@@ -60,6 +68,7 @@ export function OfflineProvider({ workshopId, children }: { workshopId: string; 
     try {
       const r = await syncNow(workshopId);
       backoff.current = 5_000;
+      if (r.photoErrors.length) toast.error(photoErrorText(r.photoErrors[0]!));
       if (r.sent > 0) {
         if (r.rejected.length) {
           for (const rej of r.rejected) toast.error(t.has(`errors.${rej.error}`) ? t(`errors.${rej.error}` as "errors.server_error") : t("common.errorGeneric"));
@@ -74,7 +83,7 @@ export function OfflineProvider({ workshopId, children }: { workshopId: string; 
       setSyncing(false);
       refreshCount();
     }
-  }, [workshopId, router, t, refreshCount]);
+  }, [workshopId, router, t, refreshCount, photoErrorText]);
 
   React.useEffect(() => {
     const t0 = setTimeout(refreshCount, 0);
@@ -105,6 +114,7 @@ export function OfflineProvider({ workshopId, children }: { workshopId: string; 
   const submit = React.useCallback<OfflineCtx["submit"]>(
     async (type, payload, opts) => {
       const r = await submitMutation(workshopId, type, payload, opts);
+      if (r.photoErrors?.length) toast.error(photoErrorText(r.photoErrors[0]!));
       if (r.queued) {
         refreshCount();
         return { queued: true, ok: true };
@@ -114,7 +124,7 @@ export function OfflineProvider({ workshopId, children }: { workshopId: string; 
       router.refresh();
       return { queued: false, ok: true, serverId: res.serverId };
     },
-    [workshopId, router, refreshCount],
+    [workshopId, router, refreshCount, photoErrorText],
   );
 
   const value = React.useMemo(() => ({ online, pendingCount, syncing, workshopId, sync, submit }), [online, pendingCount, syncing, workshopId, sync, submit]);

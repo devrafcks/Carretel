@@ -1,12 +1,24 @@
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
+import { adminAttention, adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
 import { cyclePriceCents, foundersLeft, isPriceTier } from "@/lib/pricing";
 import { brand } from "@/config/brand";
 import { formatBRL } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
-import { PlanPill, fmtBytes } from "./ui";
+import { PlanPill, TierPill, fmtBytes } from "./ui";
+import { CircleCheck, TriangleAlert } from "@/components/icons";
+
+const PLAN_ORDER = ["active", "trialing", "past_due", "pending_checkout", "free", "canceled", "read_only"] as const;
+const PLAN_BAR: Record<string, string> = {
+  active: "bg-vivid-strong",
+  trialing: "bg-vivid",
+  past_due: "bg-overdue-calote-fg",
+  pending_checkout: "bg-awaiting-confirmation-solid",
+  free: "bg-ink/25",
+  canceled: "bg-ink/45",
+  read_only: "bg-ink/65",
+};
 
 /** Limite de armazenamento do plano grátis do Neon (0,5 GB por projeto). */
 const NEON_FREE_BYTES = 512 * 1024 * 1024;
@@ -15,7 +27,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin();
-  const [o, recent, hooks, pr] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8), adminPricing()]);
+  const [o, recent, hooks, pr, att] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8), adminPricing(), adminAttention()]);
   const paying = (o.plans.active ?? 0) + (o.plans.past_due ?? 0);
   const cfg = brand.pricing;
   // MRR: mensal pelo preço da faixa; anual dividido por 12
@@ -28,15 +40,43 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   const brl = (c: number) => formatBRL(c, locale);
   const storagePct = Math.min(100, (o.dbBytes / NEON_FREE_BYTES) * 100);
 
-  const stats: [string, string, string?][] = [
-    ["Usuários", String(o.users), `+${o.users7} em 7 dias · +${o.users30} em 30`],
-    ["Assinantes pagando", String(paying), `${o.plans.trialing ?? 0} em teste grátis`],
-    ["Receita mensal (MRR)", brl(mrr), `${count("founder", "monthly")} × ${brl(cfg.founderMonthlyCents)} · ${count("standard", "monthly")} × ${brl(cfg.standardMonthlyCents)} · ${count("founder", "annual") + count("standard", "annual")} anuais`],
-    ["Vagas de fundador", `${Math.min(pr.founders, cfg.founderSpots)} de ${cfg.founderSpots}`, foundersLeft(pr.founders, cfg.founderSpots) > 0 ? `restam ${foundersLeft(pr.founders, cfg.founderSpots)} · depois, ${brl(cfg.standardMonthlyCents)}/mês` : `esgotadas · novas assinaturas a ${brl(cfg.standardMonthlyCents)}/mês`],
-    ["Talleres", String(o.workshops), `${o.plans.free ?? 0} grátis · ${o.plans.canceled ?? 0} cancelados`],
-    ["Cortes registrados", String(o.batches), `+${o.batches30} em 30 dias`],
-    ["Comprovantes", String(o.proofs), `a receber nos talleres: ${formatBRL(o.openReceivablesCents, locale)}`],
+  const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` : "—");
+  const left = foundersLeft(pr.founders, cfg.founderSpots);
+  const annualCount = count("founder", "annual") + count("standard", "annual");
+  type Stat = { label: string; value: string; hint?: string };
+  const revenue: Stat[] = [
+    { label: "Receita mensal (MRR)", value: brl(mrr), hint: `${count("founder", "monthly")} × ${brl(cfg.founderMonthlyCents)} · ${count("standard", "monthly")} × ${brl(cfg.standardMonthlyCents)} · ${annualCount} anual${annualCount === 1 ? "" : "is"}` },
+    { label: "Receita anualizada", value: brl(mrr * 12), hint: "MRR × 12" },
+    { label: "Assinantes pagando", value: String(paying), hint: `${o.plans.trialing ?? 0} em teste grátis · ${o.plans.past_due ?? 0} com cobrança pendente` },
+    {
+      label: "Vagas de fundador",
+      value: `${Math.min(pr.founders, cfg.founderSpots)} de ${cfg.founderSpots}`,
+      hint: left > 0 ? `restam ${left} · depois, ${brl(cfg.standardMonthlyCents)}/mês` : `esgotadas · novas a ${brl(cfg.standardMonthlyCents)}/mês`,
+    },
   ];
+  const usage: Stat[] = [
+    { label: "Usuários", value: String(o.users), hint: `+${o.users7} em 7 dias · +${o.users30} em 30` },
+    { label: "Talleres", value: String(o.workshops), hint: `conversão para pago: ${pct(paying, o.workshops)}` },
+    { label: "Cortes registrados", value: String(o.batches), hint: `+${o.batches30} em 30 dias` },
+    { label: "Comprovantes", value: String(o.proofs), hint: `a receber nos talleres: ${brl(o.openReceivablesCents)}` },
+  ];
+  const attentionCount = att.pastDue.length + att.refunds.length + att.staleCheckouts + att.webhookErrors7;
+  const planTotal = Object.values(o.plans).reduce((a, n) => a + n, 0);
+
+  const statGrid = (title: string, items: Stat[]) => (
+    <section aria-label={title} className="space-y-3">
+      <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">{title}</h2>
+      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {items.map((it) => (
+          <li key={it.label} className="rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
+            <p className="text-sm text-muted-foreground">{it.label}</p>
+            <p className="mt-1 text-4xl font-light tabular-money">{it.value}</p>
+            {it.hint ? <p className="mt-1 text-xs text-muted-foreground">{it.hint}</p> : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 
   return (
     <div className="space-y-8">
@@ -45,23 +85,51 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
         <p className="mt-2 text-muted-foreground">Tudo o que importa do Carretel, de todos os talleres.</p>
       </div>
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {stats.map(([k, v, hint]) => (
-          <li key={k} className="rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
-            <p className="text-sm text-muted-foreground">{k}</p>
-            <p className="mt-1 text-4xl font-light tabular-money">{v}</p>
-            {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
-          </li>
-        ))}
-      </ul>
+      <section aria-labelledby="att-title" className={attentionCount ? "rounded-3xl border border-overdue-calote-border bg-overdue-calote-bg p-6" : "rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft"}>
+        <h2 id="att-title" className="flex items-center gap-2 font-medium">
+          {attentionCount ? <TriangleAlert aria-hidden="true" className="size-5 text-overdue-calote-fg" /> : <CircleCheck aria-hidden="true" className="size-5 text-vivid-strong" />}
+          {attentionCount ? "Precisa de atenção" : "Nada pedindo atenção agora"}
+        </h2>
+        {attentionCount ? (
+          <ul className="mt-3 space-y-2 text-sm">
+            {att.pastDue.map((w) => (
+              <li key={`pd-${w.id}`}>
+                Cobrança falhando: <Link href={`/admin/usuarios?q=${encodeURIComponent(w.name)}`} className="font-medium underline underline-offset-4">{w.name}</Link>
+                {w.since ? <span className="text-muted-foreground"> · desde {formatDate(w.since, locale)}</span> : null}
+              </li>
+            ))}
+            {att.refunds.map((w) => (
+              <li key={`rf-${w.id}`}>
+                Reembolso pedido: <Link href={`/admin/usuarios?q=${encodeURIComponent(w.name)}`} className="font-medium underline underline-offset-4">{w.name}</Link>
+                <span className="text-muted-foreground"> · {formatDate(w.at, locale)} (confira o estorno no painel da AbacatePay)</span>
+              </li>
+            ))}
+            {att.staleCheckouts ? <li>{att.staleCheckouts} checkout{att.staleCheckouts === 1 ? "" : "s"} aberto{att.staleCheckouts === 1 ? "" : "s"} há mais de 1 dia sem pagamento</li> : null}
+            {att.webhookErrors7 ? <li>{att.webhookErrors7} evento{att.webhookErrors7 === 1 ? "" : "s"} da AbacatePay com erro nos últimos 7 dias</li> : null}
+          </ul>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">Sem cobrança falhando, reembolso pedido, checkout parado ou erro de webhook.</p>
+        )}
+      </section>
+
+      {statGrid("Receita", revenue)}
+      {statGrid("Uso", usage)}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
-          <h2 className="font-medium">Planos</h2>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {Object.entries(o.plans).map(([k, n]) => (
+          <h2 className="font-medium">Planos dos talleres</h2>
+          {planTotal ? (
+            <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-mint-50" aria-hidden="true">
+              {PLAN_ORDER.filter((k) => o.plans[k]).map((k) => (
+                <span key={k} className={PLAN_BAR[k]} style={{ width: `${(o.plans[k]! / planTotal) * 100}%` }} />
+              ))}
+            </div>
+          ) : null}
+          <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+            {PLAN_ORDER.filter((k) => o.plans[k]).map((k) => (
               <li key={k} className="inline-flex items-center gap-2">
-                <PlanPill status={k} /> <span className="tabular-money text-sm">{n}</span>
+                <PlanPill status={k} /> <span className="tabular-money text-sm">{o.plans[k]}</span>
+                <span className="text-xs text-muted-foreground">{pct(o.plans[k]!, planTotal)}</span>
               </li>
             ))}
           </ul>
@@ -94,6 +162,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
                     <span className="block truncate text-sm font-medium">{u.email}</span>
                     <span className="block truncate text-xs text-muted-foreground">{u.workshop_name ?? "sem taller"} · {formatDate(u.created_at, locale)}</span>
                   </span>
+                  {u.price_tier ? <TierPill tier={u.price_tier} cycle={u.billing_cycle} /> : null}
                   <PlanPill status={u.plan_status ?? "none"} />
                 </Link>
               </li>

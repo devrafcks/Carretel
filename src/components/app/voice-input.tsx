@@ -26,6 +26,17 @@ export function VoiceButton({
   const supported = useSpeechSupported();
   const { online } = useOffline();
   const { listening, listen, stop } = useSpeech(locale);
+  // cada causa com a sua mensagem: "não entendi" escondia microfone bloqueado e falta de conexão
+  const micErrorText = (code: string) =>
+    code === "unsupported"
+      ? t("micUnsupported")
+      : code === "not-allowed" || code === "service-not-allowed"
+        ? t("micDenied")
+        : code === "network"
+          ? t("micNetwork")
+          : code === "no-speech" || code === "audio-capture"
+            ? t(code === "no-speech" ? "micNoSpeech" : "micNoDevice")
+            : t("micNotUnderstood");
 
   if (!supported || !online) return null;
 
@@ -45,7 +56,7 @@ export function VoiceButton({
               }
               onError(t("micNotUnderstood"));
             },
-            (code) => onError(code === "unsupported" ? t("micUnsupported") : t("micNotUnderstood")),
+            (code) => onError(micErrorText(code)),
           );
         }}
         className={cn(
