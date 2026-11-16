@@ -1,15 +1,15 @@
 /**
- * Proxy do Neon Auth (/api/auth/*). Todo POST passa antes por guardAuthPost (src/lib/auth/guard.ts):
+ * Login (/api/auth/*) pelo Better Auth próprio. Todo POST passa antes por guardAuthPost (src/lib/auth/guard.ts):
  * limite de tentativas por IP/e-mail (429 + Retry-After) e regra de força da senha nova.
- * O Neon Auth também tem limites próprios; os nossos valem por IP real (x-real-ip da Vercel) e por conta.
  */
-import { authMode, neonAuth } from "@/lib/auth/server";
+import { authMode } from "@/lib/auth/server";
+import { auth } from "@/lib/auth/better";
 import { guardAuthPost } from "@/lib/auth/guard";
 
 type Params = { params: Promise<{ path: string[] }> };
 
 function notConfigured() {
-  return Response.json({ error: "neon_auth_not_configured" }, { status: 404 });
+  return Response.json({ error: "auth_not_configured" }, { status: 404 });
 }
 
 async function pathOf(ctx: Params): Promise<string> {
@@ -17,25 +17,26 @@ async function pathOf(ctx: Params): Promise<string> {
   return (path ?? []).join("/");
 }
 
-export async function GET(req: Request, ctx: Params) {
+async function handle(req: Request) {
   if (authMode() !== "neon") return notConfigured();
-  return neonAuth().handler().GET(req, ctx);
+  return (await auth()).handler(req);
+}
+
+export async function GET(req: Request) {
+  return handle(req);
 }
 export async function POST(req: Request, ctx: Params) {
   if (authMode() !== "neon") return notConfigured();
   const blocked = await guardAuthPost(req, await pathOf(ctx));
   if (blocked) return blocked;
-  return neonAuth().handler().POST(req, ctx);
+  return handle(req);
 }
-export async function PUT(req: Request, ctx: Params) {
-  if (authMode() !== "neon") return notConfigured();
-  return neonAuth().handler().PUT(req, ctx);
+export async function PUT(req: Request) {
+  return handle(req);
 }
-export async function DELETE(req: Request, ctx: Params) {
-  if (authMode() !== "neon") return notConfigured();
-  return neonAuth().handler().DELETE(req, ctx);
+export async function DELETE(req: Request) {
+  return handle(req);
 }
-export async function PATCH(req: Request, ctx: Params) {
-  if (authMode() !== "neon") return notConfigured();
-  return neonAuth().handler().PATCH(req, ctx);
+export async function PATCH(req: Request) {
+  return handle(req);
 }

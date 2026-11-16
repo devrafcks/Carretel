@@ -34,7 +34,7 @@ export async function adminOverview(): Promise<AdminOverview> {
     select count(*)::int total,
       count(*) filter (where "createdAt" > now() - interval '7 days')::int d7,
       count(*) filter (where "createdAt" > now() - interval '30 days')::int d30
-    from neon_auth."user"`);
+    from app_auth."user"`);
   const plans = await q<{ plan_status: string; n: number }>(sql`select plan_status, count(*)::int n from workshops where deleted_at is null group by plan_status`);
   const [b] = await q<{ total: number; d30: number }>(sql`select count(*)::int total, count(*) filter (where created_at > now() - interval '30 days')::int d30 from batches`);
   const [p] = await q<{ n: number }>(sql`select count(*)::int n from delivery_proofs`);
@@ -101,8 +101,8 @@ export async function adminListUsers(search = ""): Promise<AdminUserRow[]> {
     select u.id::text id, u.email, u.name, u."createdAt" created_at, u.role, u.banned,
       w.id::text workshop_id, w.name workshop_name, w.plan_status, sb.price_tier, sb.billing_cycle,
       (select count(*)::int from batches bb where bb.workshop_id = w.id) batches,
-      (select max(s."updatedAt") from neon_auth.session s where s."userId" = u.id) last_seen
-    from neon_auth."user" u
+      (select max(s."updatedAt") from app_auth.session s where s."userId" = u.id) last_seen
+    from app_auth."user" u
     left join workshop_members m on m.user_id::text = u.id::text
     left join workshops w on w.id = m.workshop_id and w.deleted_at is null
     left join subscriptions sb on sb.workshop_id = w.id
@@ -119,9 +119,9 @@ export async function adminRecentWebhooks(limit = 12) {
 export async function adminUserDetail(userId: string) {
   const [user] = await q<{ id: string; email: string; name: string | null; email_verified: boolean; created_at: string; role: string | null; banned: boolean | null; ban_reason: string | null }>(sql`
     select id::text id, email, name, "emailVerified" email_verified, "createdAt" created_at, role, banned, "banReason" ban_reason
-    from neon_auth."user" where id::text = ${userId}`);
+    from app_auth."user" where id::text = ${userId}`);
   if (!user) return null;
-  const [sessions] = await q<{ n: number; last: string | null }>(sql`select count(*)::int n, max("updatedAt") last from neon_auth.session where "userId"::text = ${userId} and "expiresAt" > now()`);
+  const [sessions] = await q<{ n: number; last: string | null }>(sql`select count(*)::int n, max("updatedAt") last from app_auth.session where "userId"::text = ${userId} and "expiresAt" > now()`);
   const [ws] = await q<{
     id: string;
     name: string;
@@ -158,12 +158,12 @@ export async function adminUserDetail(userId: string) {
 
 /* ───── escrita ───── */
 export async function adminSetBanned(userId: string, banned: boolean, reason: string | null) {
-  await q(sql`update neon_auth."user" set banned = ${banned}, "banReason" = ${banned ? reason : null}, "banExpires" = null, "updatedAt" = now() where id::text = ${userId}`);
+  await q(sql`update app_auth."user" set banned = ${banned}, "banReason" = ${banned ? reason : null}, "banExpires" = null, "updatedAt" = now() where id::text = ${userId}`);
   if (banned) await adminRevokeSessions(userId);
 }
 
 export async function adminRevokeSessions(userId: string) {
-  await q(sql`delete from neon_auth.session where "userId"::text = ${userId}`);
+  await q(sql`delete from app_auth.session where "userId"::text = ${userId}`);
 }
 
 export async function adminSetPlan(workshopId: string, status: string, periodEnd: Date | null) {
@@ -194,15 +194,15 @@ export async function adminDeleteUser(userId: string) {
         select m.workshop_id from workshop_members m where m.user_id::text = ${userId} and m.role = 'owner'
       )`);
     await run(sql`delete from workshop_members where user_id::text = ${userId}`);
-    await run(sql`delete from neon_auth.session where "userId"::text = ${userId}`);
-    await run(sql`delete from neon_auth.account where "userId"::text = ${userId}`);
-    await run(sql`delete from neon_auth."user" where id::text = ${userId}`);
+    await run(sql`delete from app_auth.session where "userId"::text = ${userId}`);
+    await run(sql`delete from app_auth.account where "userId"::text = ${userId}`);
+    await run(sql`delete from app_auth."user" where id::text = ${userId}`);
   });
 }
 
 /** Garante papel "admin" no Neon Auth para os e-mails da lista (necessário para as rotas /admin/* dele). */
 export async function ensureAuthAdminRole(email: string) {
-  await q(sql`update neon_auth."user" set role = 'admin', "updatedAt" = now() where lower(email) = ${email.toLowerCase()} and coalesce(role,'') <> 'admin'`);
+  await q(sql`update app_auth."user" set role = 'admin', "updatedAt" = now() where lower(email) = ${email.toLowerCase()} and coalesce(role,'') <> 'admin'`);
 }
 
 export type AdminAttention = {

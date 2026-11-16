@@ -2,8 +2,8 @@
  * Conexão crua com o banco. NÃO importe fora de src/db/ (regra de lint + guardrail):
  * use tenantDb(workshopId) (src/db/tenant.ts) ou as funções de src/db/public.ts.
  *
- * - Com DATABASE_URL (Neon, pooled): node-postgres (`pg`) + attachDatabasePool da Vercel
- *   (recomendação da skill neon-postgres para Next na Vercel; suporta transações).
+ * - Com DATABASE_URL (Supabase, pooler em modo transação :6543): node-postgres (`pg`) + attachDatabasePool
+ *   da Vercel; suporta transações (sem prepared statements nomeados, o que o pooler exige).
  * - Sem DATABASE_URL: PGlite (Postgres em WASM) persistido em .data/pglite, com as
  *   mesmas migrações. Serve para desenvolvimento offline e para os testes.
  */
@@ -18,7 +18,9 @@ const g = globalThis as G;
 
 async function createNeonDb(url: string): Promise<DB> {
   const { Pool } = await import("pg");
-  const pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 10_000 });
+  // Supabase: conexão sempre cifrada (TLS); o certificado é da Supabase e não está na cadeia pública padrão
+  const ssl = /supabase\.(co|com)/.test(url) ? { rejectUnauthorized: false } : undefined;
+  const pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 10_000, ssl });
   try {
     const { attachDatabasePool } = await import("@vercel/functions");
     attachDatabasePool(pool);

@@ -86,7 +86,7 @@ async function main() {
   const email = (process.argv[2] ?? "").trim().toLowerCase();
   if (!email) throw new Error("uso: pnpm db:seed-demo <email>");
   const db = await getDb();
-  const users = (await db.execute(sql`select id from neon_auth."user" where lower(email) = ${email}`)) as unknown as { rows: { id: string }[] };
+  const users = (await db.execute(sql`select id from app_auth."user" where lower(email) = ${email}`)) as unknown as { rows: { id: string }[] };
   const userId = users.rows[0]?.id;
   if (!userId) throw new Error("conta não encontrada");
   const m = await findWorkshopForUser(userId);

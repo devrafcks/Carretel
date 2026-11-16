@@ -1,36 +1,24 @@
 /**
  * Autenticação.
- * - Produção: Neon Auth (Managed Better Auth) com e-mail + senha; guarda users/sessions no schema neon_auth.
- *   Sem e-mail de confirmação por enquanto (RESEND_API_KEY fica reservado para envios futuros).
- * - Dev sem NEON_AUTH_BASE_URL: modo local com código de 6 dígitos mostrado na tela e no console.
+ * - Produção: Better Auth próprio (src/lib/auth/better.ts) com e-mail + senha, sem confirmação de e-mail;
+ *   usuários e sessões no schema app_auth. O modo continua se chamando "neon" (= login de verdade) para não
+ *   mexer em todos os componentes que recebem esse valor.
+ * - Dev sem BETTER_AUTH_SECRET: modo local com código de 6 dígitos mostrado na tela e no console.
  */
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createHash, createHmac } from "node:crypto";
-import { createNeonAuth } from "@neon/auth/next/server";
+import { auth } from "./better";
 
 export type SessionUser = { id: string; email: string; name: string | null };
 export type AuthMode = "neon" | "dev";
 
 export function authMode(): AuthMode {
-  return process.env.NEON_AUTH_BASE_URL && process.env.NEON_AUTH_COOKIE_SECRET ? "neon" : "dev";
+  return process.env.BETTER_AUTH_SECRET ? "neon" : "dev";
 }
 
 export function devAuthAllowed(): boolean {
   return authMode() === "dev" && (process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_AUTH === "1");
-}
-
-type NeonAuthInstance = ReturnType<typeof createNeonAuth>;
-const g = globalThis as typeof globalThis & { __carretelNeonAuth?: NeonAuthInstance };
-
-export function neonAuth(): NeonAuthInstance {
-  if (!g.__carretelNeonAuth) {
-    g.__carretelNeonAuth = createNeonAuth({
-      baseUrl: process.env.NEON_AUTH_BASE_URL!,
-      cookies: { secret: process.env.NEON_AUTH_COOKIE_SECRET! },
-    });
-  }
-  return g.__carretelNeonAuth;
 }
 
 /* ───── modo dev ───── */
@@ -74,12 +62,14 @@ export function devUserId(email: string): string {
 export async function getSessionUser(): Promise<SessionUser | null> {
   if (authMode() === "neon") {
     try {
-      const { data } = await neonAuth().getSession();
+      const a = await auth();
+      const data = await a.api.getSession({ headers: await headers() });
       const u = data?.user;
+      if (u && (u as { banned?: boolean | null }).banned) return null;
       if (!u) return null;
       return { id: u.id, email: u.email, name: u.name ?? null };
     } catch (err) {
-      console.error(JSON.stringify({ level: "error", msg: "neon_auth_session_failed", err: String(err) }));
+      console.error(JSON.stringify({ level: "error", msg: "auth_session_failed", err: String(err) }));
       return null;
     }
   }

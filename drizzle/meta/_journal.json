@@ -64,6 +64,13 @@
       "when": 1794792682808,
       "tag": "0008_salario_minimo_2026",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794840420782,
+      "tag": "0009_app_auth",
+      "breakpoints": true
     }
   ]
 }

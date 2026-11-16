@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
 import { audit } from "@/lib/audit";
-import { neonAuth, authMode } from "@/lib/auth/server";
+import { authMode } from "@/lib/auth/server";
+import { auth } from "@/lib/auth/better";
 import { appUrl } from "@/config/brand";
 import {
   adminDeleteUser,
@@ -39,16 +40,15 @@ export async function adminSetPasswordAction(userId: string, newPassword: string
   try {
     const id = userIdSchema.parse(userId);
     const pwd = z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH).parse(newPassword);
-    if (authMode() !== "neon") return { ok: false, error: "Neon Auth não configurado" };
+    if (authMode() !== "neon") return { ok: false, error: "Login não configurado" };
     // mesma regra de força do cadastro (o admin não pode definir uma senha fraca para alguém)
     const detail = await adminUserDetail(id);
     const strength = await checkPassword(pwd, { locales: ["es", "pt-BR"], email: detail?.user.email, name: detail?.user.name });
     if (!strength.ok) return { ok: false, error: "Senha fraca: use uma frase com 3 ou 4 palavras ou mais caracteres" };
     await ensureAuthAdminRole(admin.email);
-    // rota oficial do Neon Auth (plugin admin do Better Auth): POST /admin/set-user-password
-    const auth = neonAuth() as unknown as { admin: { setUserPassword: (b: { userId: string; newPassword: string }) => Promise<{ error?: { message?: string } | null }> } };
-    const r = await auth.admin.setUserPassword({ userId: id, newPassword: pwd });
-    if (r?.error) return { ok: false, error: r.error.message ?? "Neon Auth recusou" };
+    // grava o hash pelo próprio Better Auth (mesmo formato do cadastro)
+    const ctx = await (await auth()).$context;
+    await ctx.internalAdapter.updatePassword(id, await ctx.password.hash(pwd));
     await adminRevokeSessions(id); // senha nova derruba as sessões abertas
     await audit("admin.set_password", { userId: admin.id, resource: id });
     return done();
@@ -63,14 +63,14 @@ export async function adminSendResetLinkAction(userId: string, locale: string): 
     const detail = await adminUserDetail(userIdSchema.parse(userId));
     if (!detail) return { ok: false, error: "usuário não encontrado" };
     void locale;
-    // mesmo fluxo do "Esqueci minha senha": o Neon Auth manda um código de 6 números pelo e-mail dele (grátis)
+    // mesmo fluxo do "Esqueci minha senha": código de 6 números pelo e-mail (Resend)
     const res = await fetch(`${appUrl()}/api/auth/email-otp/request-password-reset`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: appUrl() },
       body: JSON.stringify({ email: detail.user.email }),
       cache: "no-store",
     });
-    if (!res.ok) return { ok: false, error: `Neon Auth recusou (${res.status})` };
+    if (!res.ok) return { ok: false, error: `O login recusou (${res.status})` };
     await audit("admin.reset_link", { userId: admin.id, resource: userId });
     return done(undefined, "Código enviado para o e-mail do usuário");
   } catch (e) {

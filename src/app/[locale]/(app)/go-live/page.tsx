@@ -19,8 +19,8 @@ export default async function GoLivePage({ params }: { params: Promise<{ locale:
   const missing = missingLegalFields();
   const minWage = await currentLegalParam("minimum_wage_monthly_cents", todayISO());
   const services: [string, boolean, string][] = [
-    [t("db"), dbMode() === "neon", dbMode() === "neon" ? "Neon" : t("local")],
-    [t("auth"), authMode() === "neon", authMode() === "neon" ? "Neon Auth" : t("local")],
+    [t("db"), dbMode() === "neon", dbMode() === "neon" ? "Supabase (Postgres)" : t("local")],
+    [t("auth"), authMode() === "neon", authMode() === "neon" ? "Better Auth" : t("local")],
     [t("billing"), billingMode() === "abacatepay", billingMode() === "abacatepay" ? "AbacatePay" : t("simulated")],
     [t("minWage"), Boolean(minWage), minWage ? `${minWage.valueCents} (${minWage.validFrom})` : t("missing")],
     ["DATA_ENCRYPTION_KEY", Boolean(process.env.DATA_ENCRYPTION_KEY), process.env.DATA_ENCRYPTION_KEY ? t("ok") : t("missing")],

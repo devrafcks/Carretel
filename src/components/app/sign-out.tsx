@@ -7,8 +7,7 @@ import { cn } from "@/lib/utils";
 async function signOut(mode: "neon" | "dev", locale: string) {
   try {
     if (mode === "neon") {
-      const { createAuthClient } = await import("@neon/auth/next");
-      await createAuthClient().signOut();
+      await fetch("/api/auth/sign-out", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", credentials: "same-origin" });
     } else {
       await fetch("/api/dev-auth", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "signout" }) });
     }

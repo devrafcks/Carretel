@@ -34,7 +34,7 @@ export function LoginForm({
     if (!devAllowed) {
       return (
         <Notice tone="danger" className="mt-4" role="alert">
-          Neon Auth não configurado (NEON_AUTH_BASE_URL / NEON_AUTH_COOKIE_SECRET).
+          Login não configurado (BETTER_AUTH_SECRET).
         </Notice>
       );
     }

@@ -32,7 +32,9 @@ describe("classifyPath", () => {
 
 describe("sessão e origem", () => {
   it("reconhece só os cookies de sessão", () => {
-    expect(hasSessionCookie(["__Secure-neon-auth.session_token"])).toBe(true);
+    expect(hasSessionCookie(["__Secure-carretel.session_token"])).toBe(true);
+    expect(hasSessionCookie(["carretel.session_token"])).toBe(true);
+    expect(hasSessionCookie(["__Secure-neon-auth.session_token"])).toBe(false);
     expect(hasSessionCookie(["carretel_dev_session"])).toBe(true);
     expect(hasSessionCookie(["NEXT_LOCALE", "session_token_fake"])).toBe(false);
   });

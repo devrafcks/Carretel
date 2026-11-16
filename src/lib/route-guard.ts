@@ -59,10 +59,10 @@ export function classifyPath(pathname: string): RouteKind {
   return { kind: "public" };
 }
 
-/** Há cookie de sessão (Neon Auth ou login de desenvolvimento)? Não valida — só evita trabalho à toa. */
+/** Há cookie de sessão (Better Auth ou login de desenvolvimento)? Não valida — só evita trabalho à toa. */
 export function hasSessionCookie(cookieNames: Iterable<string>): boolean {
   for (const n of cookieNames) {
-    if (n === "carretel_dev_session" || n.endsWith("neon-auth.session_token")) return true;
+    if (n === "carretel_dev_session" || n === "carretel.session_token" || n === "__Secure-carretel.session_token") return true;
   }
   return false;
 }

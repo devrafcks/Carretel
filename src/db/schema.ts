@@ -30,7 +30,7 @@ export type SizeGrid = Record<string, number>;
 export type PlanStatus = "free" | "pending_checkout" | "trialing" | "active" | "past_due" | "canceled" | "read_only";
 
 /* ─────────────── 1. Oficina e acesso ─────────────── */
-/* Usuários e sessões vivem no Neon Auth (schema neon_auth). user_id aqui é o id do Better Auth gerenciado. */
+/* Usuários e sessões vivem no schema app_auth (Better Auth, ver src/db/auth-schema.ts). user_id aqui é o id do usuário de lá. */
 
 export const workshops = pgTable("workshops", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -668,7 +668,7 @@ export const rateLimits = pgTable(
   (t) => [index("rate_limits_window_idx").on(t.windowStart)],
 );
 
-/* Sessões do modo de desenvolvimento (só quando NEON_AUTH_BASE_URL não está configurado) */
+/* Sessões do modo de desenvolvimento (só quando BETTER_AUTH_SECRET não está configurado) */
 export const devAuthCodes = pgTable("dev_auth_codes", {
   email: text("email").primaryKey(),
   codeHash: text("code_hash").notNull(),
