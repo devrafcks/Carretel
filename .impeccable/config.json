@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-11-16T14:59:28.117Z",
+        "reason": "Claude: e-mail HTML (src/lib/auth/email.ts) precisa de fonte segura; clientes de e-mail não carregam fontes da web"
+      }
+    ]
+  }
+}

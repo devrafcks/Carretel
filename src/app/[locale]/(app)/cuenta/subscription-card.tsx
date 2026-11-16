@@ -66,10 +66,13 @@ export async function SubscriptionCard({
   const annual = cycle === "annual";
   // o anual não tem cobrança automática nem folga: a data é o fim do acesso
   const periodEnd = accessEnd && status === "active" && !annual ? new Date(accessEnd.getTime() - 3 * 86_400_000) : accessEnd;
-  const subscribed = status === "trialing" || status === "active" || status === "past_due" || status === "canceled";
+  // acesso liberado pelo admin: plano ativo sem assinatura no AbacatePay (nada é cobrado)
+  const complimentary = (status === "active" || status === "trialing") && !sub?.abacateSubscriptionId;
+  const subscribed = !complimentary && (status === "trialing" || status === "active" || status === "past_due" || status === "canceled");
 
-  const headline =
-    status === "free"
+  const headline = complimentary
+    ? t("headlineComplimentary")
+    : status === "free"
       ? t("headline.free", { used: Math.min(freeUsed, freeLimit), limit: freeLimit })
       : status === "trialing"
         ? t("headline.trialing", { date: d(trialEnd ?? periodEnd) })
@@ -84,7 +87,7 @@ export async function SubscriptionCard({
   // barra de progresso: dias do teste ou do ciclo atual
   let progress: { pct: number; daysLeft: number } | null = null;
   const end = status === "trialing" ? (trialEnd ?? periodEnd) : status === "active" || status === "canceled" ? periodEnd : null;
-  if (end) {
+  if (end && !complimentary) {
     const total = status === "trialing" ? 7 * 86_400_000 : annual ? 366 * 86_400_000 : 31 * 86_400_000;
     const left = Math.max(0, end.getTime() - now);
     progress = { pct: Math.min(100, Math.max(4, 100 - (left / total) * 100)), daysLeft: Math.ceil(left / 86_400_000) };
@@ -93,7 +96,12 @@ export async function SubscriptionCard({
 
   const MethodIcon = sub?.method === "PIX" ? QrCode : CreditCard;
   const Tone = TONE[status];
-  const details: [string, string][] = subscribed
+  const details: [string, string][] = complimentary
+    ? [
+        [t("fPrice"), t("noCharge")],
+        [t("fTier"), t("tierComplimentary")],
+      ]
+    : subscribed
     ? [
         [t("fPrice"), annual ? t("priceYear", { amount: formatBRL(priceCents, locale) }) : t("price", { amount: formatBRL(priceCents, locale) })],
         [t("fMethod"), sub?.method === "PIX" ? (annual ? t("pixOnce") : t("pix")) : t("card")],
@@ -110,7 +118,7 @@ export async function SubscriptionCard({
         ? t("resubscribe")
         : status === "pending_checkout"
           ? t("retry")
-          : status === "active" && annual && renewOpen
+          : status === "active" && annual && renewOpen && !complimentary
             ? t("renew")
             : null;
 
@@ -126,7 +134,7 @@ export async function SubscriptionCard({
               <p id="plan-title" className="text-sm text-muted-foreground">
                 {t("title")}
               </p>
-              <p className="font-medium">{annual ? t("nameAnnual") : t("name")}</p>
+              <p className="font-medium">{complimentary ? t("nameComplimentary") : annual ? t("nameAnnual") : t("name")}</p>
             </div>
           </div>
           <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium", Tone.pill)}>
@@ -136,7 +144,7 @@ export async function SubscriptionCard({
         </div>
 
         <p className="mt-5 text-2xl font-light sm:text-3xl">{headline}</p>
-        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">{status === "active" && annual ? t("subActiveAnnual", { days: renewWindowDays }) : t(`sub.${status}`)}</p>
+        <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">{complimentary ? t("subComplimentary") : status === "active" && annual ? t("subActiveAnnual", { days: renewWindowDays }) : t(`sub.${status}`)}</p>
 
         {progress ? (
           <div className="mt-4 max-w-md">
@@ -163,7 +171,7 @@ export async function SubscriptionCard({
             <div key={k}>
               <dt className="text-xs text-muted-foreground">{k}</dt>
               <dd className="mt-0.5 inline-flex items-center gap-1.5 font-medium tabular-money">
-                {i === 1 ? <MethodIcon aria-hidden="true" className="size-4" /> : null}
+                {i === 1 && !complimentary ? <MethodIcon aria-hidden="true" className="size-4" /> : null}
                 {v}
               </dd>
             </div>
@@ -171,7 +179,8 @@ export async function SubscriptionCard({
         </dl>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-ink/[0.06] px-6 py-4 sm:px-7">
+      {/* acesso liberado não tem ação (nem assinar, nem cancelar): a faixa some, mas o componente segue montado */}
+      <div className={cn("flex flex-wrap items-center gap-3 border-t border-ink/[0.06] px-6 py-4 sm:px-7", complimentary && "hidden")}>
         {cta && billingEnabled ? (
           <Link href="/assinar" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 font-medium text-primary-foreground transition-colors hover:bg-primary/85">
             <Sparkles aria-hidden="true" className="size-4" />
@@ -180,12 +189,12 @@ export async function SubscriptionCard({
         ) : null}
         {/* sempre montado: assim a confirmação do cancelamento continua na tela quando o cartão atualiza */}
         <CancelSubscription
-          canCancel={status === "trialing" || status === "active" || status === "past_due"}
+          canCancel={!complimentary && (status === "trialing" || status === "active" || status === "past_due")}
           trialing={status === "trialing"}
           accessUntil={d(status === "trialing" ? (trialEnd ?? periodEnd) : periodEnd)}
           refundEligible={(status === "active" || status === "past_due") && Boolean(refundUntil && refundUntil.getTime() > now)}
         />
-        {refundUntil && refundUntil.getTime() > now && status === "active" ? (
+        {refundUntil && refundUntil.getTime() > now && status === "active" && !complimentary ? (
           <p className="text-xs text-muted-foreground">{t("refundUntil", { date: d(refundUntil) })}</p>
         ) : null}
       </div>

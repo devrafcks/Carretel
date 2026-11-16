@@ -1332,7 +1332,12 @@
     "subActiveAnnual": "Pagamento único: não renova sozinho. A renovação abre nos últimos {days} dias.",
     "fUntil": "Válido até",
     "renew": "Renovar por mais 12 meses",
-    "pixOnce": "Pix"
+    "pixOnce": "Pix",
+    "nameComplimentary": "Carretel — acesso liberado",
+    "headlineComplimentary": "Acesso completo liberado",
+    "subComplimentary": "Liberado pelo administrador. Não há cobrança automática: nada é cobrado no cartão ou no Pix.",
+    "noCharge": "Sem cobrança",
+    "tierComplimentary": "Cortesia"
   },
   "premium": {
     "badge": "PRO",
