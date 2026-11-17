@@ -54,7 +54,8 @@ function build(db: AuthDb) {
       admin(),
       emailOTP({
         otpLength: 6,
-        expiresIn: 600,
+        expiresIn: 1800, // 30 min: dá tempo de o suporte mandar pelo WhatsApp quando não há e-mail
+        // sem SMTP o código não sai por e-mail: o admin gera no /admin e passa para a pessoa
         sendVerificationOTP: async ({ email, otp, type }) => {
           await sendAuthCode(email, otp, type);
         },

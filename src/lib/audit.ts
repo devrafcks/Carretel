@@ -20,6 +20,7 @@ export type AuditEvent =
   | "subscription.webhook"
   | "admin.set_password"
   | "admin.reset_link"
+  | "admin.reset_code"
   | "admin.ban"
   | "admin.unban"
   | "admin.revoke_sessions"

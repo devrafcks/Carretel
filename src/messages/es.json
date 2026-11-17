@@ -366,7 +366,13 @@
     "backToLogin": "Volver a entrar",
     "resendCode": "Enviar otro código",
     "spamTitle": "¿No llegó? Mire en la carpeta de spam",
-    "spamBody": "A veces el correo cae en Spam o Promociones. Si está allí, márquelo como \"No es spam\" para que los próximos lleguen bien."
+    "spamBody": "A veces el correo cae en Spam o Promociones. Si está allí, márquelo como \"No es spam\" para que los próximos lleguen bien.",
+    "forgotLeadSupport": "Escriba su correo. El soporte de Carretel le pasa un código de 6 números para crear una contraseña nueva.",
+    "resetCodeLeadSupport": "Escriba el código que le pasó el soporte y su contraseña nueva. El código vale 30 minutos.",
+    "supportTitle": "Pida el código al soporte",
+    "supportBody": "Escriba desde el correo de su cuenta y le enviamos el código:",
+    "supportSubject": "Código para nueva contraseña",
+    "haveCodeContinue": "Ya tengo el código"
   },
   "onboarding": {
     "title": "Datos del taller",

@@ -6,7 +6,6 @@ import { requireAdmin } from "@/lib/admin";
 import { audit } from "@/lib/audit";
 import { authMode } from "@/lib/auth/server";
 import { auth } from "@/lib/auth/better";
-import { appUrl } from "@/config/brand";
 import {
   adminDeleteUser,
   adminResetFreeUsage,
@@ -21,7 +20,7 @@ import { cancelSubscription } from "@/server/billing";
 import { getWorkshopRow } from "@/db/public-billing";
 import { checkPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/password-strength";
 
-export type AdminResult = { ok: true; message?: string } | { ok: false; error: string };
+export type AdminResult = { ok: true; message?: string; code?: string } | { ok: false; error: string };
 
 /** id do Neon Auth (uuid) ou do modo dev (dev_<hex>): só caracteres seguros */
 const userIdSchema = z.string().regex(/^[A-Za-z0-9_-]{6,80}$/);
@@ -57,22 +56,16 @@ export async function adminSetPasswordAction(userId: string, newPassword: string
   }
 }
 
-export async function adminSendResetLinkAction(userId: string, locale: string): Promise<AdminResult> {
+/** Gera um código de 6 números para a pessoa criar uma senha nova (vale 30 min). Nada é enviado: o admin passa o código. */
+export async function adminCreateResetCodeAction(userId: string): Promise<AdminResult> {
   const admin = await requireAdmin();
   try {
     const detail = await adminUserDetail(userIdSchema.parse(userId));
     if (!detail) return { ok: false, error: "usuário não encontrado" };
-    void locale;
-    // mesmo fluxo do "Esqueci minha senha": código de 6 números pelo e-mail (Gmail/SMTP)
-    const res = await fetch(`${appUrl()}/api/auth/email-otp/request-password-reset`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Origin: appUrl() },
-      body: JSON.stringify({ email: detail.user.email }),
-      cache: "no-store",
-    });
-    if (!res.ok) return { ok: false, error: `O login recusou (${res.status})` };
-    await audit("admin.reset_link", { userId: admin.id, resource: userId });
-    return done(undefined, "Código enviado para o e-mail do usuário");
+    if (authMode() !== "neon") return { ok: false, error: "Login não configurado" };
+    const code = await (await auth()).api.createVerificationOTP({ body: { email: detail.user.email, type: "forget-password" } });
+    await audit("admin.reset_code", { userId: admin.id, resource: userId });
+    return { ok: true, message: "Código gerado", code: String(code) };
   } catch (e) {
     return { ok: false, error: errorText(e) };
   }

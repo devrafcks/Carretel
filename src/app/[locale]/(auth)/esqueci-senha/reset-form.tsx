@@ -24,11 +24,12 @@ async function post(path: string, body: unknown): Promise<PostResult> {
 }
 
 /** Passo 1: e-mail → código. Passo 2: código + senha nova. */
-export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string }) {
+export function ResetPasswordForm({ initialEmail = "", emailEnabled = true, supportEmail = "", startAtCode = false }: { initialEmail?: string; emailEnabled?: boolean; supportEmail?: string; startAtCode?: boolean }) {
   const t = useTranslations("auth");
   const ts = useTranslations("security");
   const weakMessage = useWeakPasswordMessage();
-  const [step, setStep] = React.useState<"email" | "code" | "done">("email");
+  // vindo do botão do e-mail (?codigo=1) já abre no passo do código
+  const [step, setStep] = React.useState<"email" | "code" | "done">(startAtCode ? "code" : "email");
   const [email, setEmail] = React.useState(initialEmail);
   const [code, setCode] = React.useState("");
   const [pwd, setPwd] = React.useState("");
@@ -44,6 +45,7 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
     setError(null);
     const mail = email.trim().toLowerCase();
     if (!EMAIL_RE.test(mail)) return setError(t("invalidEmail"));
+    if (!emailEnabled) return setStep("code"); // sem envio de e-mail: o código vem do suporte
     setBusy(true);
     const r = await post("/email-otp/request-password-reset", { email: mail });
     setBusy(false);
@@ -91,7 +93,18 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
   return (
     <div>
       <h1 className="text-hero text-4xl">{t("forgotTitle")}</h1>
-      <p className="mt-2 text-muted-foreground">{step === "email" ? t("forgotLead") : t("resetCodeLead", { email: email.trim() })}</p>
+      <p className="mt-2 text-muted-foreground">{step === "email" ? (emailEnabled ? t("forgotLead") : t("forgotLeadSupport")) : emailEnabled ? t("resetCodeLead", { email: email.trim() }) : t("resetCodeLeadSupport")}</p>
+      {!emailEnabled && supportEmail ? (
+        <Notice tone="info" className="mt-4" icon={<Mail />}>
+          <p className="font-medium">{t("supportTitle")}</p>
+          <p className="text-sm">
+            {t("supportBody")}{" "}
+            <a href={`mailto:${supportEmail}?subject=${encodeURIComponent(t("supportSubject"))}`} className="font-medium underline underline-offset-4">
+              {supportEmail}
+            </a>
+          </p>
+        </Notice>
+      ) : null}
 
       {step === "email" ? (
         <form onSubmit={sendCode} className="mt-6 space-y-4" noValidate>
@@ -99,12 +112,14 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
             {(a) => <Input {...a} type="email" inputMode="email" autoComplete="email" autoCapitalize="none" spellCheck={false} value={email} onChange={(e) => setEmail(e.target.value)} autoFocus />}
           </Field>
           <Button type="submit" size="lg" block disabled={busy}>
-            {busy ? t("sending") : t("sendResetCode")}
+            {busy ? t("sending") : emailEnabled ? t("sendResetCode") : t("haveCodeContinue")}
           </Button>
           <div className="flex flex-wrap justify-between gap-3 text-sm">
+            {emailEnabled ? (
             <button type="button" onClick={() => (EMAIL_RE.test(email.trim()) ? setStep("code") : setError(t("invalidEmail")))} className="min-h-11 underline underline-offset-4">
               {t("haveCode")}
             </button>
+            ) : <span />}
             <Link href="/entrar" className="inline-flex min-h-11 items-center text-muted-foreground underline underline-offset-4">
               {t("backToLogin")}
             </Link>
@@ -112,10 +127,12 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
         </form>
       ) : (
         <form onSubmit={reset} className="mt-6 space-y-4" noValidate>
+          {emailEnabled ? (
           <Notice tone="awaiting" icon={<Mail />}>
             <p className="font-medium">{t("spamTitle")}</p>
             <p className="text-sm">{t("spamBody")}</p>
           </Notice>
+          ) : null}
           <Field id="otp" label={t("code")}>
             {(a) => (
               <Input

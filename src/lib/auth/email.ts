@@ -7,6 +7,9 @@
  */
 import "server-only";
 import nodemailer from "nodemailer";
+import { appUrl } from "@/config/brand";
+import { legal } from "@/config/legal";
+import { codeEmailHtml, codeEmailText } from "./email-template";
 
 const SUBJECT: Record<string, Record<"pt-BR" | "es", string>> = {
   "forget-password": { "pt-BR": "Seu código para trocar a senha", es: "Su código para cambiar la contraseña" },
@@ -31,6 +34,11 @@ function smtp(): nodemailer.Transporter | null {
   return transport;
 }
 
+/** Há envio de e-mail configurado? Sem ele, o código de troca de senha é gerado pelo admin. */
+export function emailEnabled(): boolean {
+  return Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
+}
+
 export async function sendAuthCode(email: string, otp: string, type: string, locale: "pt-BR" | "es" = "pt-BR") {
   const subject = SUBJECT[type]?.[locale] ?? SUBJECT["forget-password"]![locale];
   const t = smtp();
@@ -38,24 +46,22 @@ export async function sendAuthCode(email: string, otp: string, type: string, loc
     console.info(`\n[carretel] ${subject} para ${email}: ${otp}\n`);
     return;
   }
-  const lead = locale === "es" ? "Use este código en Carretel. Vence en 10 minutos." : "Use este código no Carretel. Ele vale por 10 minutos.";
-  const ignore = locale === "es" ? "Si no lo pidió usted, ignore este correo." : "Se não foi você que pediu, ignore este e-mail.";
-  const html = `<!doctype html><html><body style="margin:0;background:#f4f7f5;font-family:Arial,Helvetica,sans-serif;color:#121815">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 16px"><tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#ffffff;border-radius:20px;padding:32px">
-<tr><td style="font-size:18px;font-weight:bold">carretel</td></tr>
-<tr><td style="padding-top:20px;font-size:16px">${subject}</td></tr>
-<tr><td style="padding-top:8px;font-size:14px;color:#515b57">${lead}</td></tr>
-<tr><td style="padding-top:24px"><div style="font-size:34px;letter-spacing:10px;font-weight:bold;background:#eafaf0;border-radius:14px;padding:16px;text-align:center">${otp}</div></td></tr>
-<tr><td style="padding-top:24px;font-size:12px;color:#515b57">${ignore}</td></tr>
-</table></td></tr></table></body></html>`;
+  const data = {
+    locale,
+    subject,
+    code: otp,
+    minutes: 30,
+    actionUrl: `${appUrl()}/${locale}/esqueci-senha?email=${encodeURIComponent(email)}&codigo=1`,
+    supportEmail: legal.supportEmail,
+    cnpj: legal.cnpj,
+  };
   try {
     await t.sendMail({
       from: { name: process.env.EMAIL_FROM_NAME || "Carretel", address: process.env.SMTP_USER! },
       to: email,
       subject,
-      text: `${subject}: ${otp}\n${lead}\n${ignore}`,
-      html,
+      text: codeEmailText(data),
+      html: codeEmailHtml(data),
     });
   } catch (err) {
     console.error(JSON.stringify({ level: "error", msg: "auth_email_failed", err: String(err).slice(0, 300) }));

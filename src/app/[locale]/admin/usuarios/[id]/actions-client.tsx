@@ -12,13 +12,13 @@ import {
   adminDeleteUserAction,
   adminResetFreeAction,
   adminRevokeSessionsAction,
-  adminSendResetLinkAction,
+  adminCreateResetCodeAction,
   adminSetPasswordAction,
   adminSetPlanAction,
   type AdminResult,
 } from "@/app/admin-actions";
 
-type Dlg = null | "password" | "ban" | "plan" | "delete" | "cancel";
+type Dlg = null | "password" | "ban" | "plan" | "delete" | "cancel" | "code";
 
 function Item({ icon: Icon, label, hint, onClick, danger, disabled, busy }: { busy?: boolean; icon: typeof Ban; label: string; hint: string; onClick: () => void; danger?: boolean; disabled?: boolean }) {
   return (
@@ -64,6 +64,9 @@ export function AdminUserActions({
   const [plan, setPlan] = React.useState("active");
   const [days, setDays] = React.useState("30");
   const [confirm, setConfirm] = React.useState("");
+  const [resetCode, setResetCode] = React.useState("");
+  const resetLink = `${typeof window === "undefined" ? "" : window.location.origin}/${locale}/esqueci-senha?email=${encodeURIComponent(email)}`;
+  const resetMsg = `Seu código para criar uma senha nova no Carretel: ${resetCode}\nVale por 30 minutos. Abra ${resetLink}, toque em "Já tenho um código" e digite o código.`;
 
   const run = (fn: () => Promise<AdminResult>, ok: string, after?: () => void) =>
     start(async () => {
@@ -83,7 +86,21 @@ export function AdminUserActions({
       <section className="rounded-3xl border border-ink/[0.06] bg-card p-3 shadow-soft">
         <h2 className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Acesso</h2>
         <Item busy={pending} icon={KeyRound} label="Trocar senha" hint="Define uma senha nova e derruba as sessões abertas" onClick={() => setDlg("password")} />
-        <Item busy={pending} icon={Mail} label="Enviar código de nova senha" hint="O usuário recebe um código por e-mail e cria a senha em “Esqueci minha senha”" onClick={() => run(() => adminSendResetLinkAction(userId, locale), "Código enviado")} />
+        <Item
+          busy={pending}
+          icon={Mail}
+          label="Gerar código de nova senha"
+          hint="Gera um código de 6 números (30 min) para você mandar à pessoa; ela cria a senha em “Esqueci minha senha”"
+          onClick={() =>
+            start(async () => {
+              const r = await adminCreateResetCodeAction(userId);
+              if (r.ok && r.code) {
+                setResetCode(r.code);
+                setDlg("code");
+              } else toast.error(r.ok ? "Não foi possível gerar o código" : r.error);
+            })
+          }
+        />
         <Item busy={pending} icon={LogOut} label="Encerrar sessões" hint="Desconecta de todos os aparelhos" onClick={() => run(() => adminRevokeSessionsAction(userId), "Sessões encerradas")} />
         {banned ? (
           <Item busy={pending} icon={RotateCcw} label="Desbloquear" hint="Volta a poder entrar" onClick={() => run(() => adminBanAction(userId, false, ""), "Desbloqueado")} />
@@ -106,6 +123,37 @@ export function AdminUserActions({
         <Item busy={pending} icon={Trash2} label="Excluir usuário e dados" hint="Apaga a conta, o taller e tudo dele. Não tem volta." onClick={() => setDlg("delete")} danger disabled={isSelf} />
       </section>
 
+      <Dialog open={dlg === "code"} onOpenChange={(o) => !o && setDlg(null)}>
+        {dlg === "code" ? (
+          <DialogContent title="Código de nova senha" description={`Para ${email}. Vale por 30 minutos e só pode ser usado uma vez.`} closeLabel="Fechar">
+            <p className="rounded-2xl bg-mint-50 py-4 text-center font-mono text-4xl font-bold tracking-[0.3em]">{resetCode}</p>
+            <p className="mt-3 text-sm text-muted-foreground">A pessoa abre “Esqueci minha senha”, toca em “Já tenho um código”, digita este código e cria a senha nova.</p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(resetMsg);
+                    toast.success("Mensagem copiada");
+                  } catch {
+                    window.prompt("Copie a mensagem", resetMsg);
+                  }
+                }}
+              >
+                Copiar mensagem
+              </Button>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(resetMsg)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-paid-solid px-4 font-medium text-paid-solid-fg"
+              >
+                Mandar pelo WhatsApp
+              </a>
+            </div>
+          </DialogContent>
+        ) : null}
+      </Dialog>
       <Dialog open={Boolean(dlg)} onOpenChange={(o) => !o && setDlg(null)}>
         {dlg === "password" ? (
           <DialogContent title="Trocar senha" closeLabel="Fechar">
