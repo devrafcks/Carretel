@@ -87,7 +87,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             <h1 className="mt-4 font-display text-[2.5rem] font-light leading-[1] tracking-tight sm:text-6xl">{t("hoy.title")}</h1>
             <p className="mt-3 max-w-md text-muted-foreground">{t(greetingKey, { name: ctx.workshop.name })}</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Link href="/lotes/nuevo" className={buttonVariants({ size: "lg" })}>
+              <Link href="/lotes/nuevo" data-tour="hoy-new-batch" className={buttonVariants({ size: "lg" })}>
                 <Plus aria-hidden="true" />
                 {t("nav.newBatchAria")}
               </Link>
@@ -107,7 +107,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
           ) : (
           <>
           {/* celular: blocos simples, nada se sobrepõe */}
-          <dl className="grid grid-cols-2 gap-3 sm:hidden">
+          <dl data-tour="hoy-numbers-mobile" className="grid grid-cols-2 gap-3 sm:hidden">
             <Link href="/cobros" className="col-span-2 rounded-2xl bg-mint-50 px-4 py-3">
               <dt className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                 <span className="size-2 rounded-full bg-vivid" aria-hidden="true" />
@@ -136,7 +136,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
             ) : null}
           </dl>
           {/* tablet/computador: círculos com os números ao redor */}
-          <div className="relative mx-auto hidden aspect-[4/3] w-full max-w-md sm:block">
+          <div data-tour="hoy-numbers" className="relative mx-auto hidden aspect-[4/3] w-full max-w-md sm:block">
             <span aria-hidden="true" className="bg-hatch absolute left-[10%] top-[20%] size-[38%] rounded-full" />
             <span aria-hidden="true" className="anim-pop absolute right-[6%] top-[6%] size-[54%] rounded-full bg-mint-200/80" />
             <span aria-hidden="true" className="anim-pop delay-2 absolute bottom-[8%] left-[34%] size-[28%] rounded-full border border-white bg-white/80 shadow-soft" />
@@ -187,7 +187,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       ) : null}
       <PendingSyncNote />
       {s.totalProofs === 0 ? (
-        <section aria-labelledby="first-steps" className="anim-rise rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
+        <section aria-labelledby="first-steps" data-tour="hoy-first-steps" className="anim-rise rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="first-steps" className="text-xl font-medium">
               {t("hoy.stepsTitle")}
@@ -238,7 +238,7 @@ export default async function HoyPage({ params, searchParams }: { params: Promis
       {firstRun ? null : (
       <>
       {/* ── Cartões com gráficos finos ── */}
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3 [&>*]:min-w-0">
+      <section data-tour="hoy-charts" className="grid grid-cols-1 gap-4 md:grid-cols-3 [&>*]:min-w-0">
         <Card className="anim-rise delay-1 p-6 md:col-span-2">
           <div className="flex items-start justify-between gap-4">
             <div>

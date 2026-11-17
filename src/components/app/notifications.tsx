@@ -219,6 +219,7 @@ export function NotificationBell() {
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger
+        data-tour="notifications"
         aria-label={`${t("open")} · ${t("unread", { count: unread })}`}
         className="relative inline-flex size-11 items-center justify-center rounded-full border border-ink/10 bg-card text-foreground transition-colors hover:border-ink/30"
       >

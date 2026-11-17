@@ -4,6 +4,7 @@ import { BrandMark } from "@/components/brand/mark";
 import { LocaleSwitch } from "./locale-switch";
 import { ConnectionIndicator } from "./connection-indicator";
 import { NotificationBell } from "./notifications";
+import { TourHelpButton } from "@/components/app/tour/product-tour";
 import { UpgradePill } from "./upgrade-pill";
 
 export function TopBar({ workshopName, showUpgrade = false, upgradePrice }: { workshopName: string; showUpgrade?: boolean; upgradePrice?: string }) {
@@ -17,6 +18,7 @@ export function TopBar({ workshopName, showUpgrade = false, upgradePrice }: { wo
         </Link>
         {showUpgrade ? <UpgradePill price={upgradePrice} /> : null}
         <ConnectionIndicator />
+        <TourHelpButton />
         <NotificationBell />
         <Suspense>
           <LocaleSwitch />

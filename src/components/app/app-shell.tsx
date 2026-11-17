@@ -11,6 +11,7 @@ import { authMode } from "@/lib/auth/server";
 import { isAdminEmail } from "@/lib/admin";
 import { needsReconcile, pricingOffer, reconcileSubscription } from "@/server/billing";
 import { formatBRL } from "@/lib/money";
+import { ProductTour } from "@/components/app/tour/product-tour";
 
 /** Moldura do painel: sidebar à esquerda (computador), barra de cima e navegação inferior (celular). Conteúdo em largura total. */
 export async function AppShell({ ctx, children }: { ctx: WorkshopContext; children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export async function AppShell({ ctx, children }: { ctx: WorkshopContext; childr
           <main id="conteudo" className="w-full px-4 pb-32 pt-6 sm:px-6 lg:px-10 lg:pb-16">
             {children}
           </main>
+          <ProductTour />
         </div>
       </div>
       <BottomNav />

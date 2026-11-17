@@ -1676,5 +1676,61 @@
     "no_file": "A foto não chegou; o registro foi salvo sem ela.",
     "read_only": "Sua conta está em modo leitura: a foto não foi enviada.",
     "server_error": "A foto não foi enviada; o registro foi salvo sem ela."
+  },
+  "tour": {
+    "open": "Ver o tour desta tela",
+    "next": "Próximo",
+    "prev": "Voltar",
+    "done": "Entendi",
+    "close": "Fechar o tour",
+    "progress": "{current} de {total}",
+    "hoy": {
+      "welcomeTitle": "Bem-vindo ao Carretel",
+      "welcomeBody": "Em 1 minuto você conhece o painel. Pode pular quando quiser.",
+      "newBatchTitle": "Registre um corte",
+      "newBatchBody": "Cada pacote que chega vira um corte: cliente, quantidade e preço por peça. Leva 20 segundos.",
+      "numbersTitle": "Seu dia em números",
+      "numbersBody": "Quanto te devem, peças em produção e o acerto do sábado. Toque em cada número para ver o detalhe.",
+      "stepsTitle": "Primeiros passos",
+      "stepsBody": "Três passos e seu taller já cobra com comprovante. Eles se marcam sozinhos quando você faz.",
+      "chartsTitle": "Gráficos da oficina",
+      "chartsBody": "Produção por dia, quanto entrou no mês, quem mais te deve e a equipe. Passe o dedo ou o mouse para ver os valores.",
+      "cobrosTitle": "Cobranças",
+      "cobrosBody": "Quem já aceitou a entrega e quem te deve. Cobre pelo WhatsApp com um toque.",
+      "produccionTitle": "Produção e equipe",
+      "produccionBody": "Anote as peças de cada pessoa e feche o acerto da semana sem fazer conta de cabeça.",
+      "bellTitle": "Avisos",
+      "bellBody": "Quando um cliente confirma uma entrega ou uma cobrança atrasa, aparece aqui.",
+      "helpTitle": "Ver de novo",
+      "helpBody": "Toque aqui quando quiser ver as explicações desta tela de novo."
+    },
+    "nuevo": {
+      "clientTitle": "Quem mandou o corte",
+      "clientBody": "Escolha o cliente ou cadastre um novo aqui mesmo.",
+      "quantityTitle": "Quantidade de peças",
+      "quantityBody": "Digite o número ou toque no microfone e fale.",
+      "priceTitle": "Preço por peça",
+      "priceBody": "Quanto o cliente paga por peça. O total é calculado sozinho.",
+      "saveTitle": "Total e salvar",
+      "saveBody": "Confira o total aqui embaixo e salve. Funciona sem sinal: é enviado quando a internet voltar."
+    },
+    "cobros": {
+      "totalTitle": "O que te devem",
+      "totalBody": "Soma das entregas aceitas e ainda não pagas.",
+      "awaitingTitle": "A confirmar",
+      "awaitingBody": "Comprovante enviado e o cliente ainda não aceitou. Você pode reenviar pelo WhatsApp.",
+      "confirmedTitle": "A receber",
+      "confirmedBody": "Entregas aceitas. Cobre pelo WhatsApp e registre o pagamento quando chegar.",
+      "pixTitle": "Sua chave Pix",
+      "pixBody": "Cadastre e o Pix Copia e Cola vai junto com cada cobrança."
+    },
+    "produccion": {
+      "tabsTitle": "Três abas",
+      "tabsBody": "Hoje: a produção do dia. Acerto: o fechamento da semana. Equipe: as pessoas da oficina.",
+      "settleTitle": "Acerto da semana",
+      "settleBody": "Produção menos vales: o sistema faz a conta e gera o recibo.",
+      "teamTitle": "Equipe",
+      "teamBody": "Cadastre as costureiras e o valor por peça de cada uma."
+    }
   }
 }
