@@ -8,6 +8,7 @@ import { SeebPosition } from "@/components/app/seeb-position";
 import { routing } from "@/i18n/routing";
 import { fontSans, fontDisplay, fontMono, fontSerif } from "@/styles/fonts";
 import { ServiceWorkerRegister } from "@/components/app/sw-register";
+import { ErrorReporter } from "@/components/app/error-reporter";
 import { appUrl } from "@/config/brand";
 import { BRAND_HEX } from "@/config/brand-colors";
 import "@/styles/globals.css";
@@ -73,6 +74,7 @@ export default async function LocaleLayout({ children, params }: { children: Rea
             <div id="portal-root" />
           </NextIntlClientProvider>
           <ServiceWorkerRegister />
+          <ErrorReporter />
           <SeebPosition />
         </div>
         <Script src={process.env.NEXT_PUBLIC_SEEB_WIDGET_URL ?? "https://seeb-widget.pages.dev/widget.js"} strategy="lazyOnload" />

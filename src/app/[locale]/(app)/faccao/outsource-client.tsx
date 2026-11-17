@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast, withRef } from "@/components/app/error-toast";
 import { Plus, Trash2, Truck, MessageCircle } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -114,10 +115,10 @@ function ShipmentCard({ s, locale, canWrite, onReturn }: { s: ShipmentView; loca
   const errMsg = useErr();
   const [pending, start] = React.useTransition();
   const d = (iso: string) => formatDate(iso, locale);
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>) =>
+  const run = (fn: () => Promise<{ ok: boolean; error?: string; ref?: string }>) =>
     start(async () => {
       const r = await fn();
-      if (!r.ok) toast.error(errMsg(r.error));
+      if (!r.ok) errorToast(errMsg(r.error), r.ref);
       else router.refresh();
     });
   const sum = s.summary;
@@ -254,7 +255,7 @@ function ShipmentForm({ batches, onDone }: { batches: BatchOption[]; onDone: () 
         if (Object.values(errs).some(Boolean)) return;
         start(async () => {
           const r = await createShipmentAction({ batchId: batchId || null, partnerName, partnerPhone: partnerPhone || null, reference: reference || null, quantity: qty, sentOn, dueOn: dueOn || null });
-          if (!r.ok) return void toast.error(errMsg(r.error));
+          if (!r.ok) return void errorToast(errMsg(r.error), r.ref);
           toast.success(t("saved"));
           onDone();
           router.refresh();
@@ -347,7 +348,7 @@ function ReturnForm({ s, onDone }: { s: ShipmentView; onDone: () => void }) {
         setError(null);
         start(async () => {
           const r = await registerReturnAction({ shipmentId: s.id, returnedOn, goodQty: n(good), defectQty: n(defect), missingQty: n(missing) });
-          if (!r.ok) return setError(errMsg(r.error));
+          if (!r.ok) return setError(withRef(errMsg(r.error), r.ref));
           toast.success(r.data?.status === "returned" ? t("returnedAll") : t("returnSaved"));
           onDone();
           router.refresh();

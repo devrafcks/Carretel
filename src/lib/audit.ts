@@ -2,6 +2,7 @@
 import "server-only";
 import { headers } from "next/headers";
 import { insertAuditLog } from "@/db/public";
+import { reportError } from "@/server/log";
 
 export type AuditEvent =
   | "auth.login"
@@ -32,6 +33,7 @@ export type AuditEvent =
   | "admin.end_grant"
   | "admin.refund_resolved"
   | "admin.note"
+  | "admin.error_resolved"
   | "admin.reset_free"
   | "admin.delete_user"
   | "auth.password_reset_request";
@@ -69,6 +71,6 @@ export async function audit(
       userAgent: meta.ua,
     });
   } catch (err) {
-    console.error(JSON.stringify({ level: "error", msg: "audit_failed", event, err: String(err) }));
+    reportError("audit_failed", err, { source: "system", level: "warn", lookupRequest: false, context: { event } });
   }
 }

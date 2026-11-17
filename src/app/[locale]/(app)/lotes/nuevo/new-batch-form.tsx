@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast } from "@/components/app/error-toast";
 import { Minus, Plus, Trash2 } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -139,7 +140,7 @@ export function NewBatchForm({
         toast.success(t("batch.saved"));
         router.push(r.serverId ? `/lotes/${r.serverId}` : "/hoy");
       } else {
-        toast.error(t.has(`errors.${r.error}`) ? t(`errors.${r.error}` as "errors.server_error") : t("common.errorGeneric"));
+        errorToast(t.has(`errors.${r.error}`) ? t(`errors.${r.error}` as "errors.server_error") : t("common.errorGeneric"), r.ref);
         setBusy(false);
       }
     } catch {

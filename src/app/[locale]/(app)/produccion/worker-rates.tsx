@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast, withRef } from "@/components/app/error-toast";
 import { Banknote, Lock, Trash2 } from "@/components/icons";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -67,7 +68,7 @@ export function WorkerRates({ workerId, workerName, rates, canWrite, locked = fa
                         onClick={() =>
                           start(async () => {
                             const res = await deleteWorkerRateAction(r.id);
-                            if (!res.ok) toast.error(err(res.error));
+                            if (!res.ok) errorToast(err(res.error), res.ref);
                             else router.refresh();
                           })
                         }
@@ -93,7 +94,7 @@ export function WorkerRates({ workerId, workerName, rates, canWrite, locked = fa
                   setError(null);
                   start(async () => {
                     const res = await setWorkerRateAction({ workerId, machine: machine || null, reference: reference || null, pieceRateCents: cents });
-                    if (!res.ok) return setError(err(res.error));
+                    if (!res.ok) return setError(withRef(err(res.error), res.ref));
                     toast.success(t("workerRates.saved"));
                     setRate("");
                     setReference("");

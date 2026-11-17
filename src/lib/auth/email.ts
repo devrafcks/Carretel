@@ -10,6 +10,7 @@ import nodemailer from "nodemailer";
 import { appUrl } from "@/config/brand";
 import { legal } from "@/config/legal";
 import { codeEmailHtml, codeEmailText } from "./email-template";
+import { logError } from "@/server/log";
 
 const SUBJECT: Record<string, Record<"pt-BR" | "es", string>> = {
   "forget-password": { "pt-BR": "Seu código para trocar a senha", es: "Su código para cambiar la contraseña" },
@@ -64,7 +65,7 @@ export async function sendAuthCode(email: string, otp: string, type: string, loc
       html: codeEmailHtml(data),
     });
   } catch (err) {
-    console.error(JSON.stringify({ level: "error", msg: "auth_email_failed", err: String(err).slice(0, 300) }));
+    await logError("auth_email_failed", err, { source: "email", lookupRequest: false });
     throw new Error("email_failed");
   }
 }

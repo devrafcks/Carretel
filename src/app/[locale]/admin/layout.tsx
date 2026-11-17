@@ -29,6 +29,9 @@ export default async function AdminLayout({ children, params }: { children: Reac
             <Link href="/admin/usuarios" className="rounded-full px-3 py-1.5 hover:bg-mint-50">
               Usuários
             </Link>
+            <Link href="/admin/erros" className="rounded-full px-3 py-1.5 hover:bg-mint-50">
+              Erros
+            </Link>
           </nav>
           <span className="ml-auto hidden text-xs text-muted-foreground sm:inline">{admin.email}</span>
           <Link href="/hoy" className="rounded-full border border-ink/15 px-4 py-1.5 text-sm hover:border-ink/40">

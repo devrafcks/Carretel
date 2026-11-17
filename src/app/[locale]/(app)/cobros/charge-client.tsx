@@ -7,6 +7,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast } from "@/components/app/error-toast";
 import { Banknote, Copy, Lock, MessageCircle, QrCode, Sparkles } from "@/components/icons";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -286,7 +287,7 @@ function ChargeDialog({ items, workshopName, pix, canMarkPaid, onDone }: { items
                   if (cents <= 0) return toast.error(t("amountRequired"));
                   start(async () => {
                     const r = await payClientChargeAction({ receivableIds: selected.map((i) => i.id), amountCents: cents, paidOn, method: "pix" });
-                    if (!r.ok) return void toast.error(te.has(r.error) ? te(r.error as "server_error") : te("server_error"));
+                    if (!r.ok) return void errorToast(te.has(r.error) ? te(r.error as "server_error") : te("server_error"), r.ref);
                     toast.success(t("paid", { amount: formatBRL(r.data?.appliedCents ?? cents, locale) }));
                     onDone();
                     router.refresh();

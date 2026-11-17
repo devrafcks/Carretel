@@ -8,6 +8,7 @@ import { z } from "zod";
 import { consumeRateLimit } from "@/db/public";
 import { PASSWORD_FIELDS, authRulesFor, clientIp, ipBucket, rateKey, type RateRule } from "@/lib/rate-limit";
 import { checkPassword, PASSWORD_MAX_LENGTH, type StrengthLocale } from "@/lib/password-strength";
+import { reportError } from "@/server/log";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
@@ -49,7 +50,7 @@ async function overLimit(rule: RateRule, subject: string): Promise<number | null
     return d.allowed ? null : d.retryAfterSeconds;
   } catch (err) {
     // banco fora do ar não pode trancar o login de todo mundo: segue (o Neon Auth tem limite próprio)
-    console.error(JSON.stringify({ level: "error", msg: "rate_limit_failed", rule: rule.name, err: String(err) }));
+    reportError("rate_limit_failed", err, { source: "auth", level: "warn", lookupRequest: false, context: { rule: rule.name } });
     return null;
   }
 }

@@ -295,3 +295,79 @@ export async function adminAttention(): Promise<AdminAttention> {
   const [e] = await q<{ n: number }>(sql`select count(*)::int n from billing_webhook_events where error is not null and received_at > now() - interval '7 days'`);
   return { pastDue, refunds, staleCheckouts: c?.n ?? 0, webhookErrors7: e?.n ?? 0 };
 }
+
+/* ───── erros do sistema (/admin/erros) ───── */
+export type AdminErrorGroup = {
+  fingerprint: string;
+  event: string;
+  source: string;
+  level: string;
+  message: string | null;
+  path: string | null;
+  total: number;
+  open: number;
+  users: number;
+  first_at: string;
+  last_at: string;
+  last_id: number;
+  last_ref: string;
+};
+
+export async function adminErrorStats() {
+  const [r] = await q<{ d1: number; d7: number; open_groups: number; open1: number }>(sql`
+    select
+      count(*) filter (where occurred_at > now() - interval '24 hours')::int d1,
+      count(*) filter (where occurred_at > now() - interval '7 days')::int d7,
+      count(distinct fingerprint) filter (where resolved_at is null and level = 'error')::int open_groups,
+      count(*) filter (where resolved_at is null and level = 'error' and occurred_at > now() - interval '24 hours')::int open1
+    from error_logs`);
+  return r ?? { d1: 0, d7: 0, open_groups: 0, open1: 0 };
+}
+
+/**
+ * Erros agrupados (o mesmo erro repetido vira uma linha com contagem). Busca por código, e-mail, mensagem ou página.
+ * status "open" = tem ocorrência ainda não resolvida (um erro que volta depois de resolvido reaparece aqui).
+ */
+export async function adminErrorGroups(opts: { q?: string; status?: "open" | "all"; level?: "error" | "warn" | "all"; days?: number }): Promise<AdminErrorGroup[]> {
+  const term = (opts.q ?? "").trim().slice(0, 120);
+  const like = `%${term.replace(/[\%_]/g, (m) => "\\" + m)}%`;
+  const days = Math.min(Math.max(opts.days ?? 30, 1), 90);
+  const level = opts.level ?? "all";
+  return q<AdminErrorGroup>(sql`
+    with base as (
+      select e.*, u.email from error_logs e left join app_auth."user" u on u.id::text = e.user_id
+      where e.occurred_at > now() - make_interval(days => ${days})
+        and (${level} = 'all' or e.level = ${level})
+        and (${term} = '' or e.ref = ${term.toUpperCase()} or e.ref = ${term} or e.digest = ${term}
+             or e.message ilike ${like} or e.event ilike ${like} or e.path ilike ${like} or u.email ilike ${like})
+    ), g as (
+      select fingerprint, count(*)::int total, count(*) filter (where resolved_at is null)::int open,
+        count(distinct user_id)::int users, min(occurred_at) first_at, max(occurred_at) last_at
+      from base group by fingerprint
+    )
+    select g.*, l.event, l.source, l.level, l.message, l.path, l.id last_id, l.ref last_ref
+    from g join lateral (select * from base b where b.fingerprint = g.fingerprint order by b.occurred_at desc limit 1) l on true
+    where (${opts.status ?? "open"} = 'all' or g.open > 0)
+    order by g.last_at desc limit 200`);
+}
+
+export async function adminErrorDetail(id: number) {
+  const [row] = await q<Record<string, unknown> & { fingerprint: string; user_id: string | null; workshop_id: string | null }>(sql`
+    select e.*, u.email user_email, w.name workshop_name
+    from error_logs e
+    left join app_auth."user" u on u.id::text = e.user_id
+    left join workshops w on w.id = coalesce(e.workshop_id, (select m.workshop_id from workshop_members m where m.user_id = e.user_id limit 1))
+    where e.id = ${id}`);
+  if (!row) return null;
+  const others = await q<{ id: number; ref: string; occurred_at: string; path: string | null; email: string | null; resolved_at: string | null }>(sql`
+    select e.id, e.ref, e.occurred_at, e.path, u.email, e.resolved_at from error_logs e left join app_auth."user" u on u.id::text = e.user_id
+    where e.fingerprint = ${row.fingerprint} order by e.occurred_at desc limit 30`);
+  const [c] = await q<{ total: number; open: number }>(sql`select count(*)::int total, count(*) filter (where resolved_at is null)::int open from error_logs where fingerprint = ${row.fingerprint}`);
+  return { row, others, total: c?.total ?? 0, open: c?.open ?? 0 };
+}
+
+/** Marca como resolvidas todas as ocorrências deste erro até agora (se acontecer de novo, volta como aberto). */
+export async function adminResolveErrorGroup(fingerprint: string, resolved: boolean) {
+  if (resolved) await q(sql`update error_logs set resolved_at = now() where fingerprint = ${fingerprint} and resolved_at is null`);
+  else await q(sql`update error_logs set resolved_at = null where fingerprint = ${fingerprint}`);
+}

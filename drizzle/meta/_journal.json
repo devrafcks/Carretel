@@ -78,6 +78,13 @@
       "when": 1794927887201,
       "tag": "0010_admin_grants",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794930414222,
+      "tag": "0011_error_logs",
+      "breakpoints": true
     }
   ]
 }

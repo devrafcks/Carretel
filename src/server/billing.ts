@@ -39,6 +39,7 @@ import {
   type PriceTier,
 } from "@/lib/pricing";
 import { appUrl, brand } from "@/config/brand";
+import { logError, reportError } from "@/server/log";
 
 const API = "https://api.abacatepay.com/v2";
 /** Folga depois do vencimento do ciclo antes de bloquear (o banco/cartão pode demorar). */
@@ -175,7 +176,7 @@ export async function pricingOffer(
       if (opts.cached) foundersMemo = { at: Date.now(), n: taken };
     }
   } catch (err) {
-    console.warn(JSON.stringify({ level: "warn", msg: "count_founders_failed", err: String(err) }));
+    reportError("count_founders_failed", err, { source: "billing", level: "warn", lookupRequest: false });
   }
   const history = hasPaidHistory(sub);
   const lockedTier = sub?.priceTier === "founder" || sub?.priceTier === "standard" ? sub.priceTier : null;
@@ -245,7 +246,7 @@ export async function startCheckout(ctx: WorkshopContext, method: "PIX" | "CARD"
       customerId = customer.id;
     } catch (err) {
       // sem cliente pré-cadastrado o checkout pede os dados; não bloqueia a assinatura
-      console.warn(JSON.stringify({ level: "warn", msg: "abacate_customer_failed", err: String(err) }));
+      reportError("abacate_customer_failed", err, { source: "billing", level: "warn", workshopId: ctx.workshop.id });
     }
   }
 
@@ -352,7 +353,7 @@ export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "
       if (bill.status !== "PAID") return null;
       return await applyAnnualPayment(sub, ctx.workshop.planStatus, bill.id);
     } catch (err) {
-      console.warn(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
+      reportError("abacate_reconcile_failed", err, { source: "billing", level: "warn", lookupRequest: false, workshopId: ctx.workshop.id });
       return null;
     }
   }
@@ -367,7 +368,7 @@ export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "
       remote = await abacate<RemoteSubscription>("/subscriptions/get", { query: { id: sub.abacateSubscriptionId } });
     }
   } catch (err) {
-    console.warn(JSON.stringify({ level: "warn", msg: "abacate_reconcile_failed", err: String(err) }));
+    reportError("abacate_reconcile_failed", err, { source: "billing", level: "warn", lookupRequest: false, workshopId: ctx.workshop.id });
     return null;
   }
   if (!remote) return null;
@@ -490,7 +491,7 @@ export async function requestRefund(ctx: WorkshopContext): Promise<{ accessUntil
       await abacate("/checkouts/refund", { body: { id: sub.abacateCheckoutId, reason: "Reembolso pedido pelo taller na tela Conta (prazo de 7 dias)." } });
     } catch (err) {
       // fica registrado (refundRequestedAt) para estornar pelo painel
-      console.error(JSON.stringify({ level: "error", msg: "abacate_refund_failed", err: String(err) }));
+      await logError("abacate_refund_failed", err, { source: "billing", workshopId: ctx.workshop.id, context: { checkoutId: sub.abacateCheckoutId } });
     }
   }
   return cancelSubscription(ctx, { endAccessNow: true });

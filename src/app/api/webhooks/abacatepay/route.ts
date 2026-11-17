@@ -7,6 +7,7 @@
 import { ABACATEPAY_PUBLIC_HMAC_KEY, verifyAbacateWebhook } from "@/lib/webhook";
 import { markWebhookProcessed, recordWebhookEvent } from "@/db/public";
 import { applySubscriptionEvent, eventExternalId, eventType, workshopIdFromExternal, type AbacateEvent } from "@/server/billing";
+import { logError } from "@/server/log";
 
 export async function POST(req: Request) {
   const raw = await req.text();
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     await applySubscriptionEvent(evt);
     await markWebhookProcessed(evt.id, null);
   } catch (err) {
-    console.error(JSON.stringify({ level: "error", msg: "webhook_apply_failed", id: evt.id, err: String(err) }));
+    await logError("webhook_apply_failed", err, { source: "webhook", lookupRequest: false, context: { eventId: evt.id, type: eventType(evt) } });
     await markWebhookProcessed(evt.id, String(err).slice(0, 500));
   }
   return Response.json({ ok: true });

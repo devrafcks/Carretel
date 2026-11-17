@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast, withRef } from "@/components/app/error-toast";
 import { Banknote, CircleCheck, ExternalLink, Lock, MessageCircle, Plus, RotateCcw, Scale, UserPlus, UserX, Sparkles } from "@/components/icons";
 import { useRouter, Link } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -356,10 +357,10 @@ export function SettlementPanel({
   const errMsg = useErr();
   const [pending, start] = React.useTransition();
   const [adjustFor, setAdjustFor] = React.useState<SettlementRow | null>(null);
-  const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg?: string) =>
+  const run = (fn: () => Promise<{ ok: boolean; error?: string; ref?: string }>, okMsg?: string) =>
     start(async () => {
       const r = await fn();
-      if (!r.ok) toast.error(errMsg(r.error));
+      if (!r.ok) errorToast(errMsg(r.error), r.ref);
       else {
         if (okMsg) toast.success(okMsg);
         router.refresh();
@@ -511,7 +512,7 @@ function AdjustForm({ id, onDone }: { id: string; onDone: () => void }) {
         if (!c || !note.trim()) return;
         start(async () => {
           const r = await createAdjustmentAction(id, neg ? -c : c, note);
-          if (!r.ok) toast.error(errMsg(r.error));
+          if (!r.ok) errorToast(errMsg(r.error), r.ref);
           else {
             toast.success(t("production.adjustSaved"));
             onDone();
@@ -659,7 +660,7 @@ export function TeamPanel({
                     if (!window.confirm(t("production.anonymizeConfirm"))) return;
                     start(async () => {
                       const r = await anonymizeWorkerAction(w.id);
-                      if (!r.ok) toast.error(errMsg(r.error));
+                      if (!r.ok) errorToast(errMsg(r.error), r.ref);
                       else router.refresh();
                     });
                   }}

@@ -40,10 +40,12 @@ import {
 import { cancelSubscription, requestRefund, startCheckout, applySubscriptionEvent, billingMode } from "@/server/billing";
 import { TenantNotFoundError } from "@/db/tenant";
 import { nextPlanStatus } from "@/lib/subscription";
+import { reportError } from "@/server/log";
 
-export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string; field?: string };
+/** ref: código do erro inesperado (a tela mostra e a pessoa manda no pedido de suporte). */
+export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string; field?: string; ref?: string };
 
-function fail(err: unknown): { ok: false; error: string; field?: string } {
+function fail(err: unknown): { ok: false; error: string; field?: string; ref?: string } {
   if (err instanceof DomainError) return { ok: false, error: err.code };
   if (err instanceof TenantNotFoundError) return { ok: false, error: "not_found" };
   if (err instanceof z.ZodError) {
@@ -54,8 +56,9 @@ function fail(err: unknown): { ok: false; error: string; field?: string } {
   if (msg.includes("delivery_proof_locked")) return { ok: false, error: "proof_locked" };
   if (msg.includes("settlement_locked")) return { ok: false, error: "settlement_locked" };
   if (msg === "pix_unavailable" || msg === "already_subscribed" || msg === "billing_disabled" || msg === "no_subscription") return { ok: false, error: msg };
-  console.error(JSON.stringify({ level: "error", msg: "action_failed", err: msg }));
-  return { ok: false, error: "server_error" };
+  // erro inesperado: registra (log da Vercel + /admin/erros) e devolve o código para a tela mostrar
+  const ref = reportError("action_failed", err, { source: "action" });
+  return { ok: false, error: "server_error", ref };
 }
 
 /** ids vêm do cliente: só uuid (evita erro de banco com lixo e deixa a entrada explícita) */

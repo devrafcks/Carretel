@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast } from "@/components/app/error-toast";
 import QRCode from "qrcode";
 import { Banknote, Copy, Eye, EyeOff, MessageCircle, QrCode, CircleCheck, TriangleAlert, Clock } from "@/components/icons";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -192,7 +193,7 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid, mod
                         onClick={() =>
                           start(async () => {
                             const r = await assumeReceivableAction(i.id);
-                            if (!r.ok) toast.error(errMsg(r.error));
+                            if (!r.ok) errorToast(errMsg(r.error), r.ref);
                             else router.refresh();
                           })
                         }
@@ -209,7 +210,7 @@ export function ReceivableList({ items, workshopName, canWrite, canMarkPaid, mod
                           if (!window.confirm(t("cobros.writeOffConfirm"))) return;
                           start(async () => {
                             const r = await writeOffAction(i.id);
-                            if (!r.ok) toast.error(errMsg(r.error));
+                            if (!r.ok) errorToast(errMsg(r.error), r.ref);
                             else router.refresh();
                           });
                         }}

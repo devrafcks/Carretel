@@ -31,11 +31,11 @@ export const SIGNUP_FIRST = new Set(["calculadora"]);
 /** APIs do taller logado: sem cookie de sessão nem chegam ao handler. */
 const PRIVATE_API = ["/api/sync", "/api/upload", "/api/media", "/api/export", "/api/notifications", "/api/reports", "/api/admin"];
 
-/** APIs que se autenticam sozinhas (Neon Auth, webhook assinado, cron com segredo, link público por token). */
-const SELF_AUTH_API = ["/api/auth", "/api/webhooks", "/api/cron", "/api/public-media", "/api/dev-auth"];
+/** APIs que se autenticam sozinhas (Neon Auth, webhook assinado, cron com segredo, link público por token, erro do navegador com limite por IP). */
+const SELF_AUTH_API = ["/api/auth", "/api/webhooks", "/api/cron", "/api/public-media", "/api/dev-auth", "/api/client-errors"];
 
 /** Dessas, as que só o nosso próprio formulário chama: escrita exige mesma origem (login CSRF / uso de fora). */
-const FIRST_PARTY_SELF_AUTH = ["/api/auth", "/api/dev-auth"];
+const FIRST_PARTY_SELF_AUTH = ["/api/auth", "/api/dev-auth", "/api/client-errors"];
 
 export type RouteKind =
   | { kind: "app"; locale: string; segment: string }

@@ -6,6 +6,7 @@
  */
 import "server-only";
 import { del, get, put } from "@vercel/blob";
+import { reportError } from "@/server/log";
 
 export function blobEnabled(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
@@ -20,7 +21,7 @@ export async function putBlob(workshopId: string, key: string, buf: Buffer, mime
     const r = await put(`media/${workshopId}/${key}.${EXT[mime] ?? "bin"}`, buf, { access: "private", contentType: mime, addRandomSuffix: false });
     return r.pathname;
   } catch (err) {
-    console.error(JSON.stringify({ level: "error", msg: "blob_put_failed", err: String(err) }));
+    reportError("blob_put_failed", err, { source: "storage" });
     return null;
   }
 }
@@ -33,7 +34,7 @@ export async function readMedia(m: { storage: string; storageKey: string; data: 
     if (!r || r.statusCode !== 200) return null;
     return new Uint8Array(await new Response(r.stream).arrayBuffer());
   } catch (err) {
-    console.error(JSON.stringify({ level: "error", msg: "blob_get_failed", err: String(err) }));
+    reportError("blob_get_failed", err, { source: "storage", level: "warn" });
     return null;
   }
 }
@@ -45,7 +46,7 @@ export async function deleteBlobs(pathnames: string[]): Promise<void> {
     try {
       await del(pathnames.slice(i, i + 100));
     } catch (err) {
-      console.error(JSON.stringify({ level: "error", msg: "blob_delete_failed", err: String(err) }));
+      reportError("blob_delete_failed", err, { source: "storage", level: "warn", lookupRequest: false });
     }
   }
 }

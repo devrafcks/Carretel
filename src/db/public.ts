@@ -11,6 +11,7 @@ import { deleteBlobs } from "@/server/media-store";
 import { slidingWindowDecision, windowStartFor, type RateDecision } from "@/lib/rate-limit";
 import {
   accessAuditLogs,
+  errorLogs,
   billingWebhookEvents,
   deliveryProofs,
   devAuthCodes,
@@ -358,6 +359,13 @@ export async function consumeDevCode(email: string, codeHash: string): Promise<b
 export async function purgeOldAuditLogs(olderThan: Date): Promise<number> {
   const db = await getDb();
   const rows = await db.delete(accessAuditLogs).where(lt(accessAuditLogs.occurredAt, olderThan)).returning({ id: accessAuditLogs.id });
+  return rows.length;
+}
+
+/** Erros do sistema ficam 90 dias (dá tempo de investigar; depois não servem mais). */
+export async function purgeOldErrorLogs(olderThan = new Date(Date.now() - 90 * 86_400_000)): Promise<number> {
+  const db = await getDb();
+  const rows = await db.delete(errorLogs).where(lt(errorLogs.occurredAt, olderThan)).returning({ id: errorLogs.id });
   return rows.length;
 }
 

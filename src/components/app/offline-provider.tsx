@@ -16,7 +16,7 @@ interface OfflineCtx {
     type: MutationType,
     payload: Record<string, unknown>,
     opts?: { photos?: QueuedMutation["photos"]; photoField?: string },
-  ) => Promise<{ queued: boolean; ok: boolean; error?: string; serverId?: string }>;
+  ) => Promise<{ queued: boolean; ok: boolean; error?: string; ref?: string; serverId?: string }>;
 }
 
 const Ctx = React.createContext<OfflineCtx | null>(null);

@@ -21,6 +21,7 @@ import {
   setWorkerRateCore,
 } from "@/server/core";
 import type { ActionResult } from "./actions";
+import { reportError } from "@/server/log";
 
 const uuid = z.uuid();
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -35,12 +36,12 @@ const optText = (max: number) =>
     .nullable()
     .transform((v) => (v ? v : null));
 
-function fail(err: unknown): { ok: false; error: string; field?: string } {
+function fail(err: unknown): { ok: false; error: string; field?: string; ref?: string } {
   if (err instanceof DomainError) return { ok: false, error: err.code };
   if (err instanceof TenantNotFoundError) return { ok: false, error: "not_found" };
   if (err instanceof z.ZodError) return { ok: false, error: "validation", field: err.issues[0]?.path.join(".") };
-  console.error(JSON.stringify({ level: "error", msg: "module_action_failed", err: String((err as Error)?.message ?? err) }));
-  return { ok: false, error: "server_error" };
+  const ref = reportError("module_action_failed", err, { source: "action" });
+  return { ok: false, error: "server_error", ref };
 }
 
 function done() {

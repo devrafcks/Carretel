@@ -9,6 +9,7 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 import { createHash, createHmac } from "node:crypto";
 import { auth } from "./better";
+import { reportError } from "@/server/log";
 
 export type SessionUser = { id: string; email: string; name: string | null };
 export type AuthMode = "neon" | "dev";
@@ -69,7 +70,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
       if (!u) return null;
       return { id: u.id, email: u.email, name: u.name ?? null };
     } catch (err) {
-      console.error(JSON.stringify({ level: "error", msg: "auth_session_failed", err: String(err) }));
+      reportError("auth_session_failed", err, { source: "auth", lookupRequest: false });
       return null;
     }
   }

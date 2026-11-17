@@ -3,6 +3,7 @@ import * as React from "react";
 import { useActionState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { withRef } from "@/components/app/error-toast";
 import { CircleCheck, RefreshCw, Sparkles, TriangleAlert } from "@/components/icons";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -69,7 +70,7 @@ export function CancelSubscription({ refundEligible, trialing = false, accessUnt
       // a confirmação fica na tela; o cartão do plano só atualiza ao fechar (se atualizar antes, o botão some e leva o diálogo junto)
       setStep({ kind: "done", accessUntil: r.data?.accessUntil ?? null, refund });
     } else {
-      setStep({ kind: "error", message: errMsg(r.error) });
+      setStep({ kind: "error", message: withRef(errMsg(r.error), r.ref) });
     }
   };
   const fmt = (iso: string | null) => (iso ? new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(iso)) : "");
@@ -157,7 +158,7 @@ function SaveStatus({ state, okMsg }: { state: ActionResult | null; okMsg: strin
     );
   return (
     <p role="alert" className="font-semibold text-destructive">
-      {state.error === "doc_invalid" ? t("docInvalid") : errMsg(state.error)}
+      {state.error === "doc_invalid" ? t("docInvalid") : withRef(errMsg(state.error), state.ref)}
     </p>
   );
 }
@@ -296,7 +297,7 @@ export function DangerZone({ workshopName }: { workshopName: string }) {
               onClick={() =>
                 start(async () => {
                   const r = await deleteAccountAction(confirm);
-                  if (!r.ok) return setError(r.error === "name_mismatch" ? t("deleteMismatch") : errMsg(r.error));
+                  if (!r.ok) return setError(r.error === "name_mismatch" ? t("deleteMismatch") : withRef(errMsg(r.error), r.ref));
                   toast.success(t("deleted"));
                   window.location.assign("/");
                 })

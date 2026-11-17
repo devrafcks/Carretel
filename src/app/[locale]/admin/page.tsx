@@ -1,7 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { adminActiveGrants, adminAttention, adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
+import { adminActiveGrants, adminAttention, adminErrorStats, adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
 import { cyclePriceCents, foundersLeft, isPriceTier } from "@/lib/pricing";
 import { brand } from "@/config/brand";
 import { formatBRL } from "@/lib/money";
@@ -33,7 +33,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin();
-  const [o, recent, hooks, pr, att, backups, grants] = await Promise.all([
+  const [o, recent, hooks, pr, att, backups, grants, errs] = await Promise.all([
     adminOverview(),
     adminListUsers(),
     adminRecentWebhooks(8),
@@ -41,6 +41,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
     adminAttention(),
     listBackups().catch(() => []),
     adminActiveGrants(),
+    adminErrorStats().catch(() => ({ d1: 0, d7: 0, open_groups: 0, open1: 0 })),
   ]);
   // cortesia (liberado pelo admin) não paga: fica fora dos pagantes
   const paying = Math.max(0, (o.plans.active ?? 0) + (o.plans.past_due ?? 0) - o.courtesy);
@@ -76,7 +77,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
     { label: "Cortes registrados", value: String(o.batches), hint: `+${o.batches30} em 30 dias` },
     { label: "Comprovantes", value: String(o.proofs), hint: `a receber nos talleres: ${brl(o.openReceivablesCents)}` },
   ];
-  const attentionCount = att.pastDue.length + att.refunds.length + att.staleCheckouts + att.webhookErrors7;
+  const attentionCount = att.pastDue.length + att.refunds.length + att.staleCheckouts + att.webhookErrors7 + (errs.open1 ? 1 : 0);
   const planTotal = Object.values(o.plans).reduce((a, n) => a + n, 0);
 
   const statGrid = (title: string, items: Stat[]) => (
@@ -121,10 +122,18 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
               </li>
             ))}
             {att.staleCheckouts ? <li>{att.staleCheckouts} checkout{att.staleCheckouts === 1 ? "" : "s"} aberto{att.staleCheckouts === 1 ? "" : "s"} há mais de 1 dia sem pagamento</li> : null}
+            {errs.open1 ? (
+              <li>
+                <Link href="/admin/erros" className="font-medium underline underline-offset-4">
+                  {errs.open1} erro{errs.open1 === 1 ? "" : "s"} nas últimas 24 h
+                </Link>
+                <span className="text-muted-foreground"> · {errs.open_groups} tipo{errs.open_groups === 1 ? "" : "s"} de erro em aberto</span>
+              </li>
+            ) : null}
             {att.webhookErrors7 ? <li>{att.webhookErrors7} evento{att.webhookErrors7 === 1 ? "" : "s"} da AbacatePay com erro nos últimos 7 dias</li> : null}
           </ul>
         ) : (
-          <p className="mt-1 text-sm text-muted-foreground">Sem cobrança falhando, reembolso pedido, checkout parado ou erro de webhook.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Sem cobrança falhando, reembolso pedido, checkout parado, erro de webhook ou erro novo no sistema.</p>
         )}
       </section>
 

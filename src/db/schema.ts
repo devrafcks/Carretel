@@ -574,6 +574,41 @@ export const accessAuditLogs = pgTable(
   ],
 );
 
+/**
+ * Erros do sistema (servidor e navegador) para o admin investigar depois. Sem senha, token nem corpo de formulário:
+ * a mensagem passa por src/server/log.ts (limpa segredos e corta tamanho). Guardados por 90 dias.
+ * ref = código que a pessoa vê na tela e manda no pedido de suporte; fingerprint agrupa o mesmo erro.
+ */
+export const errorLogs = pgTable(
+  "error_logs",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    ref: text("ref").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    level: text("level", { enum: ["error", "warn"] }).notNull().default("error"),
+    /** onde aconteceu: render, action, route, webhook, cron, client, boundary… */
+    source: text("source").notNull(),
+    event: text("event").notNull(),
+    message: text("message"),
+    stack: text("stack"),
+    digest: text("digest"),
+    path: text("path"),
+    method: text("method"),
+    userId: text("user_id"),
+    workshopId: uuid("workshop_id"),
+    userAgent: text("user_agent"),
+    context: jsonb("context"),
+    resolvedAt: ts("resolved_at"),
+    occurredAt: ts("occurred_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("error_logs_occurred_idx").on(t.occurredAt),
+    index("error_logs_fingerprint_idx").on(t.fingerprint, t.occurredAt),
+    index("error_logs_ref_idx").on(t.ref),
+    index("error_logs_digest_idx").on(t.digest),
+  ],
+);
+
 /* ─────────────── 13. Offline e mídia ─────────────── */
 export const offlineSyncQueue = pgTable(
   "offline_sync_queue",

@@ -30,6 +30,7 @@ import { hitRateLimit } from "@/db/public";
 import { TenantNotFoundError } from "@/db/tenant";
 import type { WorkshopContext } from "@/lib/session";
 import { revalidatePath } from "next/cache";
+import { logError } from "@/server/log";
 
 type Outcome = { clientMutationId: string; status: "applied" | "duplicate" | "rejected"; serverId?: string; error?: string };
 
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
             : err && typeof err === "object" && "issues" in err
               ? "validation"
               : "server_error";
-      if (code === "server_error") console.error(JSON.stringify({ level: "error", msg: "sync_apply_failed", type: m.type, err: String(err) }));
+      if (code === "server_error") await logError("sync_apply_failed", err, { source: "sync", userId: ctx.user.id, workshopId: ctx.workshop.id, context: { type: m.type } });
       // Erros de regra ficam registrados (não reprocessa); erro de servidor permite retry.
       if (code !== "server_error") {
         await ctx.tdb

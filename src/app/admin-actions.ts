@@ -2,6 +2,7 @@
 /** Ações do painel admin. Cada uma confere o admin de novo no servidor, valida a entrada e registra auditoria. */
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { reportError } from "@/server/log";
 import { requireAdmin } from "@/lib/admin";
 import { audit } from "@/lib/audit";
 import { authMode } from "@/lib/auth/server";
@@ -12,6 +13,7 @@ import {
   adminExtendGrant,
   adminGrantPlan,
   adminHasPaidPlan,
+  adminResolveErrorGroup,
   adminResolveRefund,
   adminSaveNote,
   adminResetFreeUsage,
@@ -36,8 +38,11 @@ function done(path = "/[locale]/admin", message?: string): AdminResult {
   return { ok: true, message };
 }
 
+/** Erro de validação aparece como veio; erro inesperado é registrado e mostra o código (procure em /admin/erros). */
 function errorText(e: unknown): string {
-  return e instanceof Error ? e.message.slice(0, 200) : "erro";
+  if (e instanceof z.ZodError) return "Dados inválidos: " + (e.issues[0]?.message ?? "confira os campos");
+  const ref = reportError("admin_action_failed", e, { source: "action", level: "warn" });
+  return `${e instanceof Error ? e.message.slice(0, 160) : "erro"} (código ${ref})`;
 }
 
 export async function adminSetPasswordAction(userId: string, newPassword: string): Promise<AdminResult> {
@@ -228,6 +233,18 @@ export async function adminSaveNoteAction(workshopId: string, note: string): Pro
     await adminSaveNote(id, n);
     await audit("admin.note", { userId: admin.id, workshopId: id });
     return done("/[locale]/admin", "Anotação salva");
+  } catch (e) {
+    return { ok: false, error: errorText(e) };
+  }
+}
+
+export async function adminResolveErrorAction(fingerprint: string, resolved: boolean): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  try {
+    const fp = z.string().regex(/^[0-9a-f]{16}$/).parse(fingerprint);
+    await adminResolveErrorGroup(fp, z.boolean().parse(resolved));
+    await audit("admin.error_resolved", { userId: admin.id, resource: `${fp}:${resolved ? "resolvido" : "reaberto"}` });
+    return done("/[locale]/admin", resolved ? "Marcado como resolvido" : "Reaberto");
   } catch (e) {
     return { ok: false, error: errorText(e) };
   }

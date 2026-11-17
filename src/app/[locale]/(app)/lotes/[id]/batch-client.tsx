@@ -2,6 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { errorToast, withRef } from "@/components/app/error-toast";
 import { Check, Copy, ExternalLink, Eye, EyeOff, Link2Off, MessageCircle, Scissors, Truck, Ban, RotateCcw, CircleCheck, TriangleAlert, Banknote } from "@/components/icons";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,7 @@ export function BatchActions({
   const change = (s: string) =>
     start(async () => {
       const r = await setBatchStatusAction(batchId, s);
-      if (!r.ok) toast.error(errMsg(r.error));
+      if (!r.ok) errorToast(errMsg(r.error), r.ref);
       else router.refresh();
     });
 
@@ -151,7 +152,7 @@ function DeliveryForm({
         previousProofId,
       );
       if (!r.ok) {
-        setError(errMsg(r.error));
+        setError(withRef(errMsg(r.error), r.ref));
         setBusy(false);
         return;
       }
@@ -274,7 +275,7 @@ export function OperationsEditor({ batchId, ops, canWrite }: { batchId: string; 
             if (!c) return;
             start(async () => {
               const r = await upsertOperationAction(batchId, machine, c);
-              if (!r.ok) toast.error(errMsg(r.error));
+              if (!r.ok) errorToast(errMsg(r.error), r.ref);
               else {
                 setRate("");
                 router.refresh();
@@ -440,7 +441,7 @@ export function DeliveryList({
                       if (!window.confirm(t("delivery.revokeConfirm"))) return;
                       start(async () => {
                         const r = await revokeProofAction(p.id);
-                        if (!r.ok) toast.error(errMsg(r.error));
+                        if (!r.ok) errorToast(errMsg(r.error), r.ref);
                         else router.refresh();
                       });
                     }}
