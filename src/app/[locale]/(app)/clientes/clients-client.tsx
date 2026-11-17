@@ -29,7 +29,7 @@ export function ClientsManager({ clients, canWrite }: { clients: C[]; canWrite: 
   return (
     <div className="space-y-4">
       {canWrite ? (
-        <Button onClick={() => setEdit("new")}>
+        <Button data-tour="clients-new" onClick={() => setEdit("new")}>
           <Plus aria-hidden="true" />
           {t("clients.addShort")}
         </Button>

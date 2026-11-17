@@ -1731,6 +1731,84 @@
       "settleBody": "Producción menos adelantos: el sistema hace la cuenta y genera el recibo.",
       "teamTitle": "Equipo",
       "teamBody": "Registre a las costureras y el valor por pieza de cada una."
+    },
+    "lotes": {
+      "filterTitle": "Abiertos o todos",
+      "filterBody": "Vea solo los cortes en curso o también los entregados y cerrados.",
+      "listTitle": "Cada corte",
+      "listBody": "Cliente, referencia, piezas, valor y la etapa. Toque para ver el detalle y registrar la entrega.",
+      "newTitle": "Nuevo corte",
+      "newBody": "Registre cada paquete que llega en 20 segundos.",
+      "excelTitle": "Exportar a Excel",
+      "excelBody": "Baje la lista de cortes en una planilla ordenada."
+    },
+    "lote": {
+      "summaryTitle": "Resumen del corte",
+      "summaryBody": "Cantidad, precio, total, cuánto ya se entregó y se produjo.",
+      "actionsTitle": "Próximo paso",
+      "actionsBody": "Mueva el corte de etapa y registre la entrega: se genera el comprobante para el cliente.",
+      "operationsTitle": "Pago por operación",
+      "operationsBody": "Cuánto gana la costurera por pieza en cada máquina. Es la base del pago de la semana.",
+      "deliveriesTitle": "Entregas y comprobantes",
+      "deliveriesBody": "Cada entrega con su enlace: vea si el cliente lo abrió y lo aceptó."
+    },
+    "clientes": {
+      "newTitle": "Registre clientes",
+      "newBody": "Nombre y WhatsApp de quien le manda cortes. También puede crearlos al registrar un corte.",
+      "cardTitle": "Cuánto le debe cada uno",
+      "cardBody": "Lo que debe, los cortes abiertos y el total trabajado con cada cliente.",
+      "excelTitle": "Exportar a Excel",
+      "excelBody": "La lista de clientes con deuda y plazos de pago en una planilla."
+    },
+    "mas": {
+      "accountTitle": "Su cuenta",
+      "accountBody": "Plan, datos del taller, llave Pix y foto de perfil.",
+      "workshopTitle": "Todo el taller",
+      "workshopBody": "Cortes, clientes, equipo, facción, calculadora e informes en un solo lugar.",
+      "helpTitle": "Ayuda e información",
+      "helpBody": "Accesibilidad, privacidad y términos de uso."
+    },
+    "cuenta": {
+      "planTitle": "Su plan",
+      "planBody": "Situación del plan, próximo cobro y, si quiere, la cancelación.",
+      "dataTitle": "Datos del taller",
+      "dataBody": "Nombre, barrio y cantidad de máquinas. Aparecen en los comprobantes.",
+      "pixTitle": "Llave Pix",
+      "pixBody": "Con ella el cobro ya va con Pix Copia y Pega.",
+      "settleTitle": "Pago al equipo",
+      "settleBody": "Semanal o quincenal, y el límite de horas por día."
+    },
+    "relatorios": {
+      "monthTitle": "Este mes",
+      "monthBody": "Los números principales del mes: cortes, valor, precio medio y entregas.",
+      "chartsTitle": "Gráficos",
+      "chartsBody": "Pase el dedo o el mouse por las barras y líneas para ver cada valor.",
+      "excelTitle": "Informe en Excel",
+      "excelBody": "Baje todo en una planilla con resumen, meses, clientes y equipo."
+    },
+    "calculadora": {
+      "offerTitle": "Lo que ofrecen",
+      "offerBody": "Precio por pieza y cantidad del corte.",
+      "paceTitle": "Ritmo",
+      "paceBody": "Cuántas piezas hace una persona por hora. Si no sabe, cuéntelo durante una hora.",
+      "resultTitle": "¿Deja ganancia?",
+      "resultBody": "El resultado aparece aquí: ganancia o pérdida y el precio mínimo saludable.",
+      "costsTitle": "Costos del taller",
+      "costsBody": "Se completa una vez: alquiler, luz, equipo y horas. Con eso calculamos su costo por minuto."
+    },
+    "notificaciones": {
+      "listTitle": "Sus avisos",
+      "listBody": "Clientes que confirmaron, cobros atrasados y plazos de cortes. Toque para abrir.",
+      "actionsTitle": "Avisos en el celular",
+      "actionsBody": "Active los avisos en este aparato o marque todo como leído."
+    },
+    "faccao": {
+      "newTitle": "Envío a facción",
+      "newBody": "Registre las piezas que manda a otro taller.",
+      "filterTitle": "Filtros",
+      "filterBody": "Vea lo que está afuera, todo o lo que ya volvió.",
+      "cardTitle": "Lo que volvió",
+      "cardBody": "Piezas enviadas, devueltas, con defecto y faltantes de cada envío."
     }
   }
 }

@@ -25,7 +25,13 @@ function visible(el: Element | null): el is HTMLElement {
 
 function firstVisible(selectors: string[]): HTMLElement | null {
   for (const s of selectors) {
-    for (const el of Array.from(document.querySelectorAll(s))) if (visible(el)) return el;
+    let list: Element[] = [];
+    try {
+      list = Array.from(document.querySelectorAll(s));
+    } catch {
+      continue; // seletor que o navegador não entende: ignora só ele
+    }
+    for (const el of list) if (visible(el)) return el;
   }
   return null;
 }
@@ -96,7 +102,11 @@ export function ProductTour() {
         steps,
         popoverClass: "carretel-tour",
         animate: !reduce,
-        smoothScroll: !reduce,
+        // a rolagem é nossa: centraliza o alvo (a barra fixa de baixo do celular escondia elementos "visíveis")
+        smoothScroll: false,
+        onHighlightStarted: (el) => {
+          if (el instanceof HTMLElement) el.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" });
+        },
         overlayColor: "#121815",
         overlayOpacity: 0.55,
         stagePadding: 6,

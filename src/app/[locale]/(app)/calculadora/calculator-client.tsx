@@ -221,7 +221,7 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
         </section>
 
       {/* resultado */}
-      <section aria-live="polite" aria-label={t("title")} className="xl:sticky xl:top-24 xl:col-start-2 xl:row-span-2 xl:row-start-1">
+      <section data-tour="calc-result" aria-live="polite" aria-label={t("title")} className="xl:sticky xl:top-24 xl:col-start-2 xl:row-span-2 xl:row-start-1">
         {r ? (
           <div className="overflow-hidden rounded-3xl border border-ink/[0.06] bg-card shadow-soft">
             <div className={cn("p-6", r.profitable ? "bg-mint-soft" : "bg-overdue-calote-bg")}>
@@ -298,7 +298,7 @@ function CalculatorInner({ loggedIn, profile }: { loggedIn: boolean; profile: Ca
       </section>
 
         {/* 2 — custos do taller (uma vez) */}
-        <section className="rounded-3xl xl:col-start-1 xl:row-start-2 border border-ink/[0.06] bg-card p-6 shadow-soft">
+        <section data-tour="calc-costs" className="rounded-3xl xl:col-start-1 xl:row-start-2 border border-ink/[0.06] bg-card p-6 shadow-soft">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <StepTitle n={2} title={t("step2")} hint={t("step2Hint")} />
             {!showCostFields ? (

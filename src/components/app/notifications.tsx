@@ -286,7 +286,7 @@ export function NotificationList() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-muted-foreground">{t("unread", { count: data.unread })}</p>
-        <div className="flex flex-wrap items-center gap-3">
+        <div data-tour="notif-actions" className="flex flex-wrap items-center gap-3">
           <BrowserAlertsToggle />
           {data.unread > 0 ? (
             <button type="button" onClick={() => void markRead("all")} className="inline-flex min-h-10 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/85">
@@ -297,7 +297,7 @@ export function NotificationList() {
         </div>
       </div>
       {data.items.length ? (
-        <ul className="divide-y divide-ink/[0.05] overflow-hidden rounded-3xl border border-ink/[0.06] bg-card shadow-soft">
+        <ul data-tour="notif-list" className="divide-y divide-ink/[0.05] overflow-hidden rounded-3xl border border-ink/[0.06] bg-card shadow-soft">
           {data.items.map((n) => (
             <li key={n.id}>
               <NoticeRow n={n} compact />

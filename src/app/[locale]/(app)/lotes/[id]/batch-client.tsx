@@ -62,7 +62,7 @@ export function BatchActions({
   const showCancel = status !== "canceled" && status !== "closed" && status !== "delivered";
   if (!canWrite || (!showDelivery && !showCancel && !open)) return null;
   return (
-    <Card className="anim-rise p-5">
+    <Card data-tour="batch-actions" className="anim-rise p-5">
       <h2 className="sr-only">{t("batch.actions")}</h2>
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {status === "received" ? (
@@ -248,7 +248,7 @@ export function OperationsEditor({ batchId, ops, canWrite }: { batchId: string; 
   const [pending, start] = React.useTransition();
 
   return (
-    <Card className="anim-rise p-5">
+    <Card data-tour="batch-operations" className="anim-rise p-5">
       <h2 className="font-display text-lg">{t("batch.operationsTitle")}</h2>
       {ops.length ? (
         <ul className="mt-3 divide-y divide-border rounded-lg border border-border">
