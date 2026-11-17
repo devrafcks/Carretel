@@ -2,14 +2,19 @@
 import * as React from "react";
 import { toast } from "sonner";
 import { useRouter } from "@/i18n/navigation";
-import { Ban, KeyRound, LogOut, Mail, RotateCcw, Trash2, Sparkles, X } from "@/components/icons";
+import { Ban, CalendarDue, CircleCheck, CircleX, KeyRound, LogOut, Mail, Pencil, RotateCcw, Trash2, Sparkles, X } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import {
   adminBanAction,
   adminCancelSubscriptionAction,
   adminDeleteUserAction,
+  adminEndGrantAction,
+  adminExtendGrantAction,
+  adminGrantPlanAction,
+  adminResolveRefundAction,
+  adminSaveNoteAction,
   adminResetFreeAction,
   adminRevokeSessionsAction,
   adminCreateResetCodeAction,
@@ -18,7 +23,46 @@ import {
   type AdminResult,
 } from "@/app/admin-actions";
 
-type Dlg = null | "password" | "ban" | "plan" | "delete" | "cancel" | "code";
+type Dlg = null | "password" | "ban" | "plan" | "delete" | "cancel" | "code" | "grant" | "extend" | "endgrant";
+
+/** Prazos prontos da cortesia (0 = sem prazo). */
+const GRANT_PRESETS: [number, string][] = [
+  [7, "7 dias"],
+  [30, "1 mês"],
+  [90, "3 meses"],
+  [180, "6 meses"],
+  [365, "1 ano"],
+  [0, "Sem prazo"],
+];
+const EXTEND_PRESETS: [number, string][] = [
+  [7, "+7 dias"],
+  [30, "+1 mês"],
+  [90, "+3 meses"],
+  [365, "+1 ano"],
+];
+
+function Chips({ items, value, onChange }: { items: [number, string][]; value: number; onChange: (n: number) => void }) {
+  return (
+    <div role="radiogroup" className="flex flex-wrap gap-2">
+      {items.map(([n, label]) => (
+        <button
+          key={n}
+          type="button"
+          role="radio"
+          aria-checked={value === n}
+          onClick={() => onChange(n)}
+          className={
+            value === n
+              ? "min-h-11 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground"
+              : "min-h-11 rounded-full border border-ink/10 bg-card px-4 text-sm hover:bg-mint-50"
+          }
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function Item({ icon: Icon, label, hint, onClick, danger, disabled, busy }: { busy?: boolean; icon: typeof Ban; label: string; hint: string; onClick: () => void; danger?: boolean; disabled?: boolean }) {
   return (
@@ -47,6 +91,9 @@ export function AdminUserActions({
   isSelf,
   workshopId,
   planStatus,
+  grant,
+  refundPending,
+  adminNote,
 }: {
   locale: string;
   userId: string;
@@ -55,6 +102,10 @@ export function AdminUserActions({
   isSelf: boolean;
   workshopId: string | null;
   planStatus: string | null;
+  /** cortesia ativa (null se não tem): até quando e motivo */
+  grant: { until: string | null; untilLabel: string; note: string | null } | null;
+  refundPending: boolean;
+  adminNote: string | null;
 }) {
   const router = useRouter();
   const [dlg, setDlg] = React.useState<Dlg>(null);
@@ -65,6 +116,12 @@ export function AdminUserActions({
   const [days, setDays] = React.useState("30");
   const [confirm, setConfirm] = React.useState("");
   const [resetCode, setResetCode] = React.useState("");
+  const [today] = React.useState(() => Date.now());
+  const [grantDays, setGrantDays] = React.useState(30);
+  const [grantNote, setGrantNote] = React.useState("");
+  const [extendDays, setExtendDays] = React.useState(30);
+  const [note, setNote] = React.useState(adminNote ?? "");
+  const noteChanged = note.trim() !== (adminNote ?? "").trim();
   const resetLink = `${typeof window === "undefined" ? "" : window.location.origin}/${locale}/esqueci-senha?email=${encodeURIComponent(email)}`;
   const resetMsg = `Seu código para criar uma senha nova no Carretel: ${resetCode}\nVale por 30 minutos. Abra ${resetLink}, toque em "Já tenho um código" e digite o código.`;
 
@@ -112,9 +169,36 @@ export function AdminUserActions({
       {workshopId ? (
         <section className="rounded-3xl border border-ink/[0.06] bg-card p-3 shadow-soft">
           <h2 className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Plano</h2>
-          <Item busy={pending} icon={Sparkles} label="Mudar plano manualmente" hint="Liberar dias, voltar para grátis, modo leitura…" onClick={() => setDlg("plan")} />
+          {grant ? (
+            <div className="mx-3 mb-2 mt-1 rounded-2xl bg-mint-50 px-3 py-2.5 text-sm">
+              <p className="font-medium">Cortesia ativa · {grant.untilLabel}</p>
+              {grant.note ? <p className="mt-0.5 text-xs text-muted-foreground">{grant.note}</p> : null}
+            </div>
+          ) : null}
+          <Item busy={pending} icon={Sparkles} label={grant ? "Trocar prazo da cortesia" : "Dar plano completo"} hint="Libera tudo sem cobrar nada: 7 dias, 1 mês, 1 ano ou sem prazo" onClick={() => setDlg("grant")} />
+          {grant?.until ? <Item busy={pending} icon={CalendarDue} label="Estender cortesia" hint="Soma dias ao prazo atual" onClick={() => setDlg("extend")} /> : null}
+          {grant ? <Item busy={pending} icon={CircleX} label="Encerrar cortesia" hint="Volta para o plano grátis agora; os dados ficam" onClick={() => setDlg("endgrant")} danger /> : null}
+          {refundPending ? (
+            <Item busy={pending} icon={CircleCheck} label="Reembolso resolvido" hint="Já devolvi o dinheiro na AbacatePay: tira do “Precisa de atenção”" onClick={() => run(() => adminResolveRefundAction(workshopId), "Reembolso resolvido")} />
+          ) : null}
+          <Item busy={pending} icon={Pencil} label="Ajuste avançado do plano" hint="Teste, grátis, cancelado, modo leitura…" onClick={() => setDlg("plan")} />
           <Item busy={pending} icon={RotateCcw} label="Zerar cortes grátis" hint="Recomeça os 3 cortes e os 30 dias grátis" onClick={() => run(() => adminResetFreeAction(workshopId), "Cota grátis zerada")} />
           {subscribed ? <Item busy={pending} icon={X} label="Cancelar assinatura" hint="Cancela na AbacatePay; acesso até o fim do período" onClick={() => setDlg("cancel")} danger /> : null}
+        </section>
+      ) : null}
+
+      {workshopId ? (
+        <section className="rounded-3xl border border-ink/[0.06] bg-card p-4 shadow-soft">
+          <Field id="adm-note" label="Anotação interna" hint="Só os admins veem. Ex.: “amiga da Ana, cortesia até lançar a coleção”.">
+            {(a) => <Textarea {...a} rows={3} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />}
+          </Field>
+          {noteChanged ? (
+            <div className="mt-3 flex justify-end">
+              <Button disabled={pending} onClick={() => run(() => adminSaveNoteAction(workshopId, note), "Anotação salva")}>
+                Salvar anotação
+              </Button>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -183,8 +267,51 @@ export function AdminUserActions({
               </Button>
             </div>
           </DialogContent>
+        ) : dlg === "grant" && workshopId ? (
+          <DialogContent title={grant ? "Trocar prazo da cortesia" : "Dar plano completo"} description="A pessoa usa tudo do plano completo sem pagar. Nada é cobrado na AbacatePay." closeLabel="Fechar">
+            <p className="mb-2 text-sm font-medium">Por quanto tempo</p>
+            <Chips items={GRANT_PRESETS} value={grantDays} onChange={setGrantDays} />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {grantDays ? `Vale até ${new Date(today + grantDays * 86_400_000).toLocaleDateString("pt-BR")}. Depois volta sozinho para o plano grátis.` : "Fica liberado até você encerrar."}
+            </p>
+            <Field id="gn" label="Motivo (opcional)" hint="Aparece só aqui no admin, não para o cliente" className="mt-4">
+              {(a) => <Input {...a} maxLength={300} value={grantNote} onChange={(e) => setGrantNote(e.target.value)} placeholder="Ex.: parceria, cliente antigo, teste maior" />}
+            </Field>
+            <div className="mt-5 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setDlg(null)}>
+                Voltar
+              </Button>
+              <Button disabled={pending} onClick={() => run(() => adminGrantPlanAction(workshopId, grantDays, grantNote), "Plano liberado", () => setGrantNote(""))}>
+                Liberar plano
+              </Button>
+            </div>
+          </DialogContent>
+        ) : dlg === "extend" && workshopId ? (
+          <DialogContent title="Estender cortesia" description={grant ? `Hoje vale até ${grant.untilLabel}.` : undefined} closeLabel="Fechar">
+            <Chips items={EXTEND_PRESETS} value={extendDays} onChange={setExtendDays} />
+            <div className="mt-5 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setDlg(null)}>
+                Voltar
+              </Button>
+              <Button disabled={pending} onClick={() => run(() => adminExtendGrantAction(workshopId, extendDays), "Cortesia estendida")}>
+                Estender
+              </Button>
+            </div>
+          </DialogContent>
+        ) : dlg === "endgrant" && workshopId ? (
+          <DialogContent title="Encerrar cortesia" closeLabel="Fechar">
+            <p className="text-muted-foreground">O taller volta agora para o plano grátis (com os limites dele). Nenhum dado é apagado e a pessoa pode assinar quando quiser.</p>
+            <div className="mt-5 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setDlg(null)}>
+                Voltar
+              </Button>
+              <Button variant="destructive" disabled={pending} onClick={() => run(() => adminEndGrantAction(workshopId), "Cortesia encerrada")}>
+                Encerrar cortesia
+              </Button>
+            </div>
+          </DialogContent>
         ) : dlg === "plan" && workshopId ? (
-          <DialogContent title="Mudar plano manualmente" closeLabel="Fechar">
+          <DialogContent title="Ajuste avançado do plano" description="Para liberar o plano completo, prefira “Dar plano completo”: ele volta sozinho para o grátis no fim do prazo." closeLabel="Fechar">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="pl" label="Plano">
                 {(a) => (

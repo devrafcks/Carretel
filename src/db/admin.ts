@@ -27,6 +27,8 @@ export type AdminOverview = {
   photoBytes: number;
   dbBytes: number;
   openReceivablesCents: number;
+  /** planos ativos liberados pelo admin (sem cobrança) */
+  courtesy: number;
 };
 
 export async function adminOverview(): Promise<AdminOverview> {
@@ -40,6 +42,10 @@ export async function adminOverview(): Promise<AdminOverview> {
   const [p] = await q<{ n: number }>(sql`select count(*)::int n from delivery_proofs`);
   const [m] = await q<{ n: number; bytes: string }>(sql`select count(*)::int n, coalesce(sum(bytes),0)::bigint bytes from media_assets where deleted_at is null`);
   const [d] = await q<{ bytes: string }>(sql`select pg_database_size(current_database())::bigint bytes`);
+  const [g] = await q<{ n: number }>(sql`
+    select count(*)::int n from workshops w left join subscriptions s on s.workshop_id = w.id
+    where w.deleted_at is null and w.plan_status in ('active', 'trialing')
+      and (s.granted_at is not null or s.id is null or (s.abacate_subscription_id is null and s.abacate_checkout_id is null and s.first_charged_at is null))`);
   const [r] = await q<{ cents: string }>(sql`select coalesce(sum(amount_cents - paid_cents),0)::bigint cents from receivables where status in ('open','partially_paid','awaiting_confirmation','disputed')`);
   return {
     users: u?.total ?? 0,
@@ -54,6 +60,7 @@ export async function adminOverview(): Promise<AdminOverview> {
     photoBytes: Number(m?.bytes ?? 0),
     dbBytes: Number(d?.bytes ?? 0),
     openReceivablesCents: Number(r?.cents ?? 0),
+    courtesy: g?.n ?? 0,
   };
 }
 
@@ -72,7 +79,7 @@ export async function adminPricing(): Promise<AdminPricing> {
   const paying = await q<{ tier: string; cycle: string; n: number }>(sql`
     select coalesce(s.price_tier, 'founder') tier, s.billing_cycle cycle, count(*)::int n
     from subscriptions s join workshops w on w.id = s.workshop_id
-    where w.deleted_at is null and w.plan_status in ('active', 'past_due')
+    where w.deleted_at is null and w.plan_status in ('active', 'past_due') and s.granted_at is null
     group by 1, 2`);
   return { founders: f?.n ?? 0, paying };
 }
@@ -129,9 +136,10 @@ export async function adminUserDetail(userId: string) {
     plan_status: string;
     free_batches_used: number;
     created_at: string;
+    admin_note: string | null;
     role: string;
   }>(sql`
-    select w.id::text id, w.name, w.city, w.plan_status, w.free_batches_used, w.created_at, m.role
+    select w.id::text id, w.name, w.city, w.plan_status, w.free_batches_used, w.created_at, w.admin_note, m.role
     from workshop_members m join workshops w on w.id = m.workshop_id
     where m.user_id::text = ${userId} and w.deleted_at is null limit 1`);
   let counts: Record<string, number> = {};
@@ -148,7 +156,7 @@ export async function adminUserDetail(userId: string) {
         (select coalesce(sum(bytes),0)::bigint from media_assets where workshop_id = ${ws.id}::uuid and deleted_at is null) photo_bytes`);
     counts = Object.fromEntries(Object.entries(c ?? {}).map(([k, v]) => [k, Number(v)]));
     const subs = await q(sql`
-      select status, method, price_tier, billing_cycle, abacate_subscription_id, abacate_checkout_id, abacate_customer_id, current_period_end, trial_ends_at, first_charged_at, canceled_at, refund_requested_at
+      select status, method, price_tier, billing_cycle, abacate_subscription_id, abacate_checkout_id, abacate_customer_id, current_period_end, trial_ends_at, first_charged_at, canceled_at, refund_requested_at, refund_resolved_at, granted_at, grant_note
       from subscriptions where workshop_id = ${ws.id}::uuid`);
     sub = subs[0] ?? null;
     audit = await q(sql`select event, occurred_at, actor, resource from access_audit_logs where workshop_id = ${ws.id}::uuid order by occurred_at desc limit 15`);
@@ -177,6 +185,68 @@ export async function adminSetPlan(workshopId: string, status: string, periodEnd
 
 export async function adminResetFreeUsage(workshopId: string) {
   await q(sql`update workshops set free_batches_used = 0, free_started_at = now(), updated_at = now() where id = ${workshopId}::uuid`);
+}
+
+/* ───── cortesia (plano liberado pelo admin, sem cobrança) ───── */
+/** Assinatura paga de verdade em andamento: o admin não deve sobrepor com cortesia (cancele antes). */
+export async function adminHasPaidPlan(workshopId: string): Promise<boolean> {
+  const [r] = await q<{ n: number }>(sql`
+    select count(*)::int n from subscriptions s join workshops w on w.id = s.workshop_id
+    where s.workshop_id = ${workshopId}::uuid and s.granted_at is null
+      and w.plan_status in ('active', 'trialing', 'past_due')
+      and (s.abacate_subscription_id is not null or s.first_charged_at is not null)`);
+  return (r?.n ?? 0) > 0;
+}
+
+/** Libera o plano completo. periodEnd null = sem prazo. Solta ids antigos da AbacatePay para a conciliação não sobrescrever. */
+export async function adminGrantPlan(workshopId: string, periodEnd: Date | null, note: string | null) {
+  const db = await getDb();
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`
+      insert into subscriptions (workshop_id, status, current_period_end, granted_at, grant_note)
+      values (${workshopId}::uuid, 'active', ${periodEnd}, now(), ${note})
+      on conflict (workshop_id) do update set status = 'active', current_period_end = excluded.current_period_end,
+        granted_at = now(), grant_note = excluded.grant_note, abacate_subscription_id = null, abacate_checkout_id = null,
+        checkout_url = null, trial_ends_at = null, canceled_at = null, billing_cycle = 'monthly', updated_at = now()`);
+    await tx.execute(sql`update workshops set plan_status = 'active', updated_at = now() where id = ${workshopId}::uuid`);
+  });
+}
+
+/** Soma dias à cortesia (a partir do fim atual, ou de hoje se já passou) e reativa se tinha vencido. */
+export async function adminExtendGrant(workshopId: string, days: number): Promise<boolean> {
+  const rows = await q(sql`
+    update subscriptions set status = 'active', canceled_at = null,
+      current_period_end = greatest(current_period_end, now()) + make_interval(days => ${days}), updated_at = now()
+    where workshop_id = ${workshopId}::uuid and granted_at is not null and current_period_end is not null returning id`);
+  if (rows.length) await q(sql`update workshops set plan_status = 'active', updated_at = now() where id = ${workshopId}::uuid`);
+  return rows.length > 0;
+}
+
+/** Encerra a cortesia agora: volta para o plano grátis (os dados ficam). */
+export async function adminEndGrant(workshopId: string) {
+  await q(sql`update subscriptions set status = 'canceled', current_period_end = now(), canceled_at = now(), updated_at = now() where workshop_id = ${workshopId}::uuid and granted_at is not null`);
+  await q(sql`update workshops set plan_status = 'free', updated_at = now() where id = ${workshopId}::uuid`);
+}
+
+export async function adminResolveRefund(workshopId: string) {
+  await q(sql`update subscriptions set refund_resolved_at = now(), updated_at = now() where workshop_id = ${workshopId}::uuid and refund_requested_at is not null`);
+}
+
+export async function adminSaveNote(workshopId: string, note: string | null) {
+  await q(sql`update workshops set admin_note = ${note}, updated_at = now() where id = ${workshopId}::uuid`);
+}
+
+export type AdminGrantRow = { id: string; name: string; email: string | null; user_id: string | null; until: string | null; note: string | null };
+
+/** Cortesias ativas: as que vencem primeiro no topo (sem prazo por último). */
+export async function adminActiveGrants(limit = 50): Promise<AdminGrantRow[]> {
+  return q<AdminGrantRow>(sql`
+    select w.id::text id, w.name, u.email, u.id::text user_id, s.current_period_end until, s.grant_note note
+    from subscriptions s join workshops w on w.id = s.workshop_id
+    left join workshop_members m on m.workshop_id = w.id and m.role = 'owner'
+    left join app_auth."user" u on u.id::text = m.user_id
+    where s.granted_at is not null and w.deleted_at is null and w.plan_status in ('active', 'trialing')
+    order by s.current_period_end asc nulls last limit ${limit}`);
 }
 
 /** Apaga o usuário e o taller dele de vez (dados em cascata). Irreversível. */
@@ -219,7 +289,7 @@ export async function adminAttention(): Promise<AdminAttention> {
     where w.deleted_at is null and w.plan_status = 'past_due' order by s.updated_at asc limit 10`);
   const refunds = await q<{ id: string; name: string; at: string }>(sql`
     select w.id::text id, w.name, s.refund_requested_at at from subscriptions s join workshops w on w.id = s.workshop_id
-    where s.refund_requested_at > now() - interval '30 days' order by s.refund_requested_at desc limit 10`);
+    where s.refund_requested_at > now() - interval '30 days' and s.refund_resolved_at is null order by s.refund_requested_at desc limit 10`);
   const [c] = await q<{ n: number }>(sql`
     select count(*)::int n from subscriptions where status = 'pending_checkout' and abacate_checkout_id is not null and updated_at < now() - interval '1 day'`);
   const [e] = await q<{ n: number }>(sql`select count(*)::int n from billing_webhook_events where error is not null and received_at > now() - interval '7 days'`);

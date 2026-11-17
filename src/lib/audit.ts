@@ -27,6 +27,11 @@ export type AuditEvent =
   | "admin.revoke_sessions"
   | "admin.cancel_subscription"
   | "admin.set_plan"
+  | "admin.grant_plan"
+  | "admin.extend_grant"
+  | "admin.end_grant"
+  | "admin.refund_resolved"
+  | "admin.note"
   | "admin.reset_free"
   | "admin.delete_user"
   | "auth.password_reset_request";

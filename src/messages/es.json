@@ -1352,7 +1352,8 @@
     "headlineComplimentary": "Acceso completo liberado",
     "subComplimentary": "Liberado por el administrador. No hay cobro automático: no se cobra nada en tarjeta ni Pix.",
     "noCharge": "Sin cobro",
-    "tierComplimentary": "Cortesía"
+    "tierComplimentary": "Cortesía",
+    "noEnd": "Sin plazo"
   },
   "premium": {
     "badge": "PRO",

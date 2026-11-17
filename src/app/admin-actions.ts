@@ -8,6 +8,12 @@ import { authMode } from "@/lib/auth/server";
 import { auth } from "@/lib/auth/better";
 import {
   adminDeleteUser,
+  adminEndGrant,
+  adminExtendGrant,
+  adminGrantPlan,
+  adminHasPaidPlan,
+  adminResolveRefund,
+  adminSaveNote,
   adminResetFreeUsage,
   adminRevokeSessions,
   adminSetBanned,
@@ -155,6 +161,73 @@ export async function adminDeleteUserAction(userId: string, confirmEmail: string
     await adminDeleteUser(id);
     await audit("admin.delete_user", { userId: admin.id, resource: `${id}:${detail.user.email}` });
     return done();
+  } catch (e) {
+    return { ok: false, error: errorText(e) };
+  }
+}
+
+/** Libera o plano completo sem cobrança. days 0 = sem prazo. */
+export async function adminGrantPlanAction(workshopId: string, days: number, note: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  try {
+    const id = z.string().uuid().parse(workshopId);
+    const d = z.number().int().min(0).max(3650).parse(days);
+    const n = z.string().max(300).parse(note || "").trim() || null;
+    if (await adminHasPaidPlan(id)) return { ok: false, error: "Este taller tem assinatura paga em andamento. Cancele a assinatura antes de dar cortesia." };
+    const end = d ? new Date(Date.now() + d * 86_400_000) : null;
+    await adminGrantPlan(id, end, n);
+    await audit("admin.grant_plan", { userId: admin.id, workshopId: id, resource: d ? `${d}d` : "sem_prazo" });
+    return done("/[locale]/admin", d ? `Plano completo liberado por ${d} dias` : "Plano completo liberado sem prazo");
+  } catch (e) {
+    return { ok: false, error: errorText(e) };
+  }
+}
+
+export async function adminExtendGrantAction(workshopId: string, days: number): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  try {
+    const id = z.string().uuid().parse(workshopId);
+    const d = z.number().int().min(1).max(3650).parse(days);
+    if (!(await adminExtendGrant(id, d))) return { ok: false, error: "Não há cortesia com prazo para estender" };
+    await audit("admin.extend_grant", { userId: admin.id, workshopId: id, resource: `+${d}d` });
+    return done("/[locale]/admin", `+${d} dias de cortesia`);
+  } catch (e) {
+    return { ok: false, error: errorText(e) };
+  }
+}
+
+export async function adminEndGrantAction(workshopId: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  try {
+    const id = z.string().uuid().parse(workshopId);
+    await adminEndGrant(id);
+    await audit("admin.end_grant", { userId: admin.id, workshopId: id });
+    return done("/[locale]/admin", "Cortesia encerrada: voltou para o plano grátis");
+  } catch (e) {
+    return { ok: false, error: errorText(e) };
+  }
+}
+
+export async function adminResolveRefundAction(workshopId: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  try {
+    const id = z.string().uuid().parse(workshopId);
+    await adminResolveRefund(id);
+    await audit("admin.refund_resolved", { userId: admin.id, workshopId: id });
+    return done("/[locale]/admin", "Reembolso marcado como resolvido");
+  } catch (e) {
+    return { ok: false, error: errorText(e) };
+  }
+}
+
+export async function adminSaveNoteAction(workshopId: string, note: string): Promise<AdminResult> {
+  const admin = await requireAdmin();
+  try {
+    const id = z.string().uuid().parse(workshopId);
+    const n = z.string().max(2000).parse(note || "").trim() || null;
+    await adminSaveNote(id, n);
+    await audit("admin.note", { userId: admin.id, workshopId: id });
+    return done("/[locale]/admin", "Anotação salva");
   } catch (e) {
     return { ok: false, error: errorText(e) };
   }

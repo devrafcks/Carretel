@@ -393,6 +393,7 @@ export async function reconcileSubscription(ctx: Pick<WorkshopContext, "tdb" | "
       currentPeriodEnd: inTrial ? trialEnds : sameSub && periodOk && !leavingTrial ? sub.currentPeriodEnd : periodEndFrom(now),
       firstChargedAt: sub.firstChargedAt ?? (inTrial ? null : now),
       canceledAt: null,
+      grantedAt: null, // passou a pagar: deixa de ser cortesia
     });
     await setPlanStatus(ctx.workshop.id, desired);
     return desired;
@@ -432,6 +433,7 @@ async function applyAnnualPayment(sub: SubscriptionRow, current: PlanStatus, che
     trialEndsAt: null,
     firstChargedAt: sub.firstChargedAt ?? now,
     canceledAt: null,
+    grantedAt: null,
     // a assinatura mensal antiga (se havia) já foi cancelada; o anual não tem assinatura na AbacatePay
     abacateSubscriptionId: null,
   });
@@ -566,10 +568,12 @@ export async function applySubscriptionEvent(evt: AbacateEvent): Promise<{ works
     set.currentPeriodEnd = periodEndFrom(now);
     set.trialEndsAt = null;
     if (!sub.firstChargedAt) set.firstChargedAt = now;
+    set.grantedAt = null;
   }
   if (type === "subscription.trial_started") {
     set.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : new Date(now.getTime() + brand.cardTrialDays * 86_400_000);
     set.currentPeriodEnd = set.trialEndsAt;
+    set.grantedAt = null;
   }
   if (type === "subscription.cancelled") set.canceledAt = now;
   await updateSubscriptionById(sub.id, set);

@@ -22,6 +22,11 @@ export default async function AdminUserPage({ params }: { params: Promise<{ loca
   };
   const sub = d.subscription as Record<string, unknown> | null;
   const isSelf = d.user.id === admin.id;
+  const grantActive = Boolean(sub?.granted_at) && (d.workshop?.plan_status === "active" || d.workshop?.plan_status === "trialing");
+  const grant = grantActive
+    ? { until: sub?.current_period_end ? String(sub.current_period_end) : null, untilLabel: sub?.current_period_end ? `até ${dt(sub.current_period_end)}` : "sem prazo", note: sub?.grant_note ? String(sub.grant_note) : null }
+    : null;
+  const refundPending = Boolean(sub?.refund_requested_at) && !sub?.refund_resolved_at;
 
   const info: [string, React.ReactNode][] = [
     ["E-mail", d.user.email],
@@ -98,6 +103,9 @@ export default async function AdminUserPage({ params }: { params: Promise<{ loca
                     ["1ª cobrança", dt(sub.first_charged_at)],
                     ["Cancelada em", dt(sub.canceled_at)],
                     ["Reembolso pedido", dt(sub.refund_requested_at)],
+                    ["Reembolso resolvido", dt(sub.refund_resolved_at)],
+                    ["Cortesia dada em", dt(sub.granted_at)],
+                    ["Motivo da cortesia", String(sub.grant_note ?? "—")],
                     ["AbacatePay (assinatura)", String(sub.abacate_subscription_id ?? "—")],
                     ["AbacatePay (checkout)", String(sub.abacate_checkout_id ?? "—")],
                     ["AbacatePay (cliente)", String(sub.abacate_customer_id ?? "—")],
@@ -137,6 +145,9 @@ export default async function AdminUserPage({ params }: { params: Promise<{ loca
           isSelf={isSelf}
           workshopId={d.workshop?.id ?? null}
           planStatus={d.workshop?.plan_status ?? null}
+          grant={grant}
+          refundPending={refundPending}
+          adminNote={d.workshop?.admin_note ?? null}
         />
       </div>
     </div>

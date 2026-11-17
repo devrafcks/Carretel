@@ -67,7 +67,8 @@ export async function SubscriptionCard({
   // o anual não tem cobrança automática nem folga: a data é o fim do acesso
   const periodEnd = accessEnd && status === "active" && !annual ? new Date(accessEnd.getTime() - 3 * 86_400_000) : accessEnd;
   // acesso liberado pelo admin: plano ativo sem assinatura no AbacatePay (nada é cobrado)
-  const complimentary = (status === "active" || status === "trialing") && !sub?.abacateSubscriptionId;
+  // (anual pago também não tem assinatura na AbacatePay, mas tem checkout/1ª cobrança)
+  const complimentary = (status === "active" || status === "trialing") && (Boolean(sub?.grantedAt) || (!sub?.abacateSubscriptionId && !sub?.abacateCheckoutId && !sub?.firstChargedAt));
   const subscribed = !complimentary && (status === "trialing" || status === "active" || status === "past_due" || status === "canceled");
 
   const headline = complimentary
@@ -100,6 +101,7 @@ export async function SubscriptionCard({
     ? [
         [t("fPrice"), t("noCharge")],
         [t("fTier"), t("tierComplimentary")],
+        [t("fAccessUntil"), accessEnd ? formatDate(accessEnd, locale, { year: "numeric" }) : t("noEnd")],
       ]
     : subscribed
     ? [

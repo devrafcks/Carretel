@@ -48,6 +48,8 @@ export const workshops = pgTable("workshops", {
   phoneE164: text("phone_e164"),
   /** Foto de perfil do taller (media_assets.id; servida por /api/media/[id] só para quem é do taller) */
   avatarMediaId: uuid("avatar_media_id"),
+  /** Anotação interna do admin sobre esta oficina (o cliente não vê). */
+  adminNote: text("admin_note"),
   defaultLocale: text("default_locale", { enum: ["es", "pt-BR"] }).notNull().default("es"),
   planStatus: text("plan_status", {
     enum: ["free", "pending_checkout", "trialing", "active", "past_due", "canceled", "read_only"],
@@ -524,6 +526,11 @@ export const subscriptions = pgTable(
     trialEndsAt: ts("trial_ends_at"),
     canceledAt: ts("canceled_at"),
     refundRequestedAt: ts("refund_requested_at"),
+    /** Admin marcou o pedido de reembolso como resolvido (sai do "Precisa de atenção"). */
+    refundResolvedAt: ts("refund_resolved_at"),
+    /** Plano dado pelo admin (cortesia): quando e por quê. Sem cobrança na AbacatePay. */
+    grantedAt: ts("granted_at"),
+    grantNote: text("grant_note"),
     /** Faixa de preço (src/lib/pricing.ts). Travada depois do primeiro pagamento ou teste: fundador fica com R$ 35 para sempre. */
     priceTier: text("price_tier", { enum: ["founder", "standard"] }),
     /** monthly = assinatura recorrente na AbacatePay; annual = pagamento único de 12 meses. */

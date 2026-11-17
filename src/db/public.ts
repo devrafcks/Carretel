@@ -379,17 +379,28 @@ export async function hardDeleteWorkshops(deletedBefore: Date): Promise<number> 
 
 export async function expireSubscriptions(now: Date): Promise<number> {
   const db = await getDb();
+  // cortesia do admin vencida: volta para o plano grátis (sem cobrança, não há nada a esperar da AbacatePay)
+  const grants = await db
+    .select({ workshopId: subscriptions.workshopId })
+    .from(subscriptions)
+    .innerJoin(workshops, eq(workshops.id, subscriptions.workshopId))
+    .where(and(isNotNull(subscriptions.grantedAt), lt(subscriptions.currentPeriodEnd, now), inArray(workshops.planStatus, ["active", "trialing"])));
+  if (grants.length) {
+    const ids = grants.map((g) => g.workshopId);
+    await db.update(workshops).set({ planStatus: "free", updatedAt: now }).where(inArray(workshops.id, ids));
+    await db.update(subscriptions).set({ status: "canceled", canceledAt: now, updatedAt: now }).where(inArray(subscriptions.workshopId, ids));
+  }
   const due = await db
     .select({ workshopId: subscriptions.workshopId })
     .from(subscriptions)
     .innerJoin(workshops, eq(workshops.id, subscriptions.workshopId))
     .where(and(lt(subscriptions.currentPeriodEnd, now), inArray(workshops.planStatus, ["past_due", "canceled"])));
-  if (due.length === 0) return 0;
+  if (due.length === 0) return grants.length;
   await db
     .update(workshops)
     .set({ planStatus: "read_only", updatedAt: now })
     .where(inArray(workshops.id, due.map((d) => d.workshopId)));
-  return due.length;
+  return due.length + grants.length;
 }
 
 /* ───── Contadores da oficina (tabela workshops não tem workshop_id) ───── */

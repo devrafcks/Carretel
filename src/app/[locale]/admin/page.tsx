@@ -1,7 +1,7 @@
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { requireAdmin } from "@/lib/admin";
-import { adminAttention, adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
+import { adminActiveGrants, adminAttention, adminListUsers, adminOverview, adminPricing, adminRecentWebhooks } from "@/db/admin";
 import { cyclePriceCents, foundersLeft, isPriceTier } from "@/lib/pricing";
 import { brand } from "@/config/brand";
 import { formatBRL } from "@/lib/money";
@@ -24,12 +24,27 @@ const PLAN_BAR: Record<string, string> = {
 /** Limite de armazenamento do plano grátis do Supabase (500 MB por projeto). */
 const DB_FREE_BYTES = 500 * 1024 * 1024;
 
+/** Hora atual fora do render (regra de pureza do lint). */
+function nowMs(): number {
+  return Date.now();
+}
+
 export default async function AdminHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin();
-  const [o, recent, hooks, pr, att, backups] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8), adminPricing(), adminAttention(), listBackups().catch(() => [])]);
-  const paying = (o.plans.active ?? 0) + (o.plans.past_due ?? 0);
+  const [o, recent, hooks, pr, att, backups, grants] = await Promise.all([
+    adminOverview(),
+    adminListUsers(),
+    adminRecentWebhooks(8),
+    adminPricing(),
+    adminAttention(),
+    listBackups().catch(() => []),
+    adminActiveGrants(),
+  ]);
+  // cortesia (liberado pelo admin) não paga: fica fora dos pagantes
+  const paying = Math.max(0, (o.plans.active ?? 0) + (o.plans.past_due ?? 0) - o.courtesy);
+  const soon = nowMs() + 7 * 86_400_000;
   const cfg = brand.pricing;
   // MRR: mensal pelo preço da faixa; anual dividido por 12
   const mrr = pr.paying.reduce((a, x) => {
@@ -48,7 +63,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   const revenue: Stat[] = [
     { label: "Receita mensal (MRR)", value: brl(mrr), hint: `${count("founder", "monthly")} × ${brl(cfg.founderMonthlyCents)} · ${count("standard", "monthly")} × ${brl(cfg.standardMonthlyCents)} · ${annualCount} anual${annualCount === 1 ? "" : "is"}` },
     { label: "Receita anualizada", value: brl(mrr * 12), hint: "MRR × 12" },
-    { label: "Assinantes pagando", value: String(paying), hint: `${o.plans.trialing ?? 0} em teste grátis · ${o.plans.past_due ?? 0} com cobrança pendente` },
+    { label: "Assinantes pagando", value: String(paying), hint: `${o.plans.trialing ?? 0} em teste grátis · ${o.plans.past_due ?? 0} com cobrança pendente · ${o.courtesy} cortesia${o.courtesy === 1 ? "" : "s"}` },
     {
       label: "Vagas de fundador",
       value: `${Math.min(pr.founders, cfg.founderSpots)} de ${cfg.founderSpots}`,
@@ -102,7 +117,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
             {att.refunds.map((w) => (
               <li key={`rf-${w.id}`}>
                 Reembolso pedido: <Link href={`/admin/usuarios?q=${encodeURIComponent(w.name)}`} className="font-medium underline underline-offset-4">{w.name}</Link>
-                <span className="text-muted-foreground"> · {formatDate(w.at, locale)} (confira o estorno no painel da AbacatePay)</span>
+                <span className="text-muted-foreground"> · {formatDate(w.at, locale)} (devolva na AbacatePay e marque “Reembolso resolvido” no usuário)</span>
               </li>
             ))}
             {att.staleCheckouts ? <li>{att.staleCheckouts} checkout{att.staleCheckouts === 1 ? "" : "s"} aberto{att.staleCheckouts === 1 ? "" : "s"} há mais de 1 dia sem pagamento</li> : null}
@@ -112,6 +127,36 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
           <p className="mt-1 text-sm text-muted-foreground">Sem cobrança falhando, reembolso pedido, checkout parado ou erro de webhook.</p>
         )}
       </section>
+
+      {grants.length ? (
+        <section aria-labelledby="grants-title" className="rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
+          <h2 id="grants-title" className="font-medium">Cortesias ativas ({grants.length})</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Plano completo liberado por você, sem cobrança. No fim do prazo volta sozinho para o grátis.</p>
+          <ul className="mt-3 divide-y divide-ink/[0.06] text-sm">
+            {grants.map((g) => {
+              const ending = g.until ? new Date(g.until).getTime() < soon : false;
+              return (
+                <li key={g.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5">
+                  <span className="min-w-0">
+                    {g.user_id ? (
+                      <Link href={`/admin/usuarios/${g.user_id}`} className="font-medium underline underline-offset-4">
+                        {g.name}
+                      </Link>
+                    ) : (
+                      <span className="font-medium">{g.name}</span>
+                    )}
+                    {g.email ? <span className="text-muted-foreground"> · {g.email}</span> : null}
+                    {g.note ? <span className="block text-xs text-muted-foreground">{g.note}</span> : null}
+                  </span>
+                  <span className={ending ? "rounded-full bg-awaiting-confirmation-bg px-2.5 py-0.5 text-xs font-medium text-awaiting-confirmation-fg" : "text-xs text-muted-foreground"}>
+                    {g.until ? `${ending ? "vence " : "até "}${formatDate(g.until, locale)}` : "sem prazo"}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
       {statGrid("Receita", revenue)}
       {statGrid("Uso", usage)}
