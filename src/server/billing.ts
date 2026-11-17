@@ -123,6 +123,8 @@ async function ensureProduct(p: { cycle: BillingCycle; cents: number; trial: boo
         externalId,
         name,
         description: "Caderno digital do taller de costura: cortes, comprovantes de entrega, acerto da equipe e cobranças.",
+        // imagem do produto no checkout da AbacatePay (precisa de endereço público; em dev usa a do site no ar)
+        imageUrl: `${/^https:\/\//.test(appUrl()) ? appUrl() : "https://carretel.vercel.app"}/brand/produto-carretel.png`,
         price: p.cents,
         currency: "BRL",
         // anual é avulso (sem cycle) para aceitar Pix comum e parcelamento no cartão
