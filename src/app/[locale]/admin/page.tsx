@@ -7,7 +7,8 @@ import { brand } from "@/config/brand";
 import { formatBRL } from "@/lib/money";
 import { formatDate } from "@/lib/dates";
 import { PlanPill, TierPill, fmtBytes } from "./ui";
-import { CircleCheck, TriangleAlert } from "@/components/icons";
+import { CircleCheck, Download, TriangleAlert } from "@/components/icons";
+import { BACKUP_KEEP, listBackups } from "@/server/backup";
 
 const PLAN_ORDER = ["active", "trialing", "past_due", "pending_checkout", "free", "canceled", "read_only"] as const;
 const PLAN_BAR: Record<string, string> = {
@@ -20,14 +21,14 @@ const PLAN_BAR: Record<string, string> = {
   read_only: "bg-ink/65",
 };
 
-/** Limite de armazenamento do plano grátis do Neon (0,5 GB por projeto). */
-const NEON_FREE_BYTES = 512 * 1024 * 1024;
+/** Limite de armazenamento do plano grátis do Supabase (500 MB por projeto). */
+const DB_FREE_BYTES = 500 * 1024 * 1024;
 
 export default async function AdminHome({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   await requireAdmin();
-  const [o, recent, hooks, pr, att] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8), adminPricing(), adminAttention()]);
+  const [o, recent, hooks, pr, att, backups] = await Promise.all([adminOverview(), adminListUsers(), adminRecentWebhooks(8), adminPricing(), adminAttention(), listBackups().catch(() => [])]);
   const paying = (o.plans.active ?? 0) + (o.plans.past_due ?? 0);
   const cfg = brand.pricing;
   // MRR: mensal pelo preço da faixa; anual dividido por 12
@@ -38,7 +39,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
   }, 0);
   const count = (tier: string, cycle: string) => pr.paying.filter((x) => x.tier === tier && x.cycle === cycle).reduce((a, x) => a + x.n, 0);
   const brl = (c: number) => formatBRL(c, locale);
-  const storagePct = Math.min(100, (o.dbBytes / NEON_FREE_BYTES) * 100);
+  const storagePct = Math.min(100, (o.dbBytes / DB_FREE_BYTES) * 100);
 
   const pct = (n: number, d: number) => (d > 0 ? `${Math.round((n / d) * 100)}%` : "—");
   const left = foundersLeft(pr.founders, cfg.founderSpots);
@@ -137,7 +138,7 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
         <section className="rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
           <h2 className="font-medium">Banco de dados</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {fmtBytes(o.dbBytes)} de {fmtBytes(NEON_FREE_BYTES)} do plano grátis do Neon · fotos: {o.photos} ({fmtBytes(o.photoBytes)})
+            {fmtBytes(o.dbBytes)} de {fmtBytes(DB_FREE_BYTES)} do plano grátis do Supabase · fotos: {o.photos} ({fmtBytes(o.photoBytes)})
           </p>
           <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-mint-50">
             <div className={storagePct > 80 ? "h-full rounded-full bg-overdue-calote-fg" : "h-full rounded-full bg-vivid"} style={{ width: `${Math.max(2, storagePct)}%` }} />
@@ -188,6 +189,28 @@ export default async function AdminHome({ params }: { params: Promise<{ locale: 
           )}
         </section>
       </div>
+
+      <section className="rounded-3xl border border-ink/[0.06] bg-card p-6 shadow-soft">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-medium">Cópias do banco</h2>
+          <p className="text-xs text-muted-foreground">Todo dia às 3h (Brasília), as {BACKUP_KEEP} mais recentes, guardadas no Vercel Blob (privado).</p>
+        </div>
+        {backups.length ? (
+          <ul className="mt-3 divide-y divide-ink/[0.06] text-sm">
+            {backups.map((b) => (
+              <li key={b.pathname} className="flex items-center justify-between gap-3 py-2">
+                <span className="min-w-0 truncate font-mono text-xs">{b.pathname.replace("backups/", "")}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{fmtBytes(b.size)}</span>
+                <a href={`/api/admin/backup?name=${encodeURIComponent(b.pathname)}`} download className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-ink/15 px-3 text-xs font-medium hover:border-ink/40">
+                  <Download aria-hidden="true" className="size-3.5" /> Baixar
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">Ainda não há cópias. A primeira é feita na próxima rodada diária (ou na hora, chamando /api/cron/retention com o CRON_SECRET).</p>
+        )}
+      </section>
     </div>
   );
 }

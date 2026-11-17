@@ -23,7 +23,9 @@ describe("classifyPath", () => {
     expect(classifyPath("/api/webhooks/abacatepay").kind).toBe("self-auth-api");
     expect(classifyPath("/api/auth/sign-in/email").kind).toBe("self-auth-api");
     expect(classifyPath("/api/cron/retention").kind).toBe("self-auth-api");
-    expect(classifyPath("/api/admin").kind).toBe("unknown-api");
+    // /api/admin existe (download de backup): exige sessão aqui e e-mail de admin na rota
+    expect(classifyPath("/api/admin/backup").kind).toBe("private-api");
+    expect(classifyPath("/api/qualquer-coisa").kind).toBe("unknown-api");
     // prefixo parecido não engana
     expect(classifyPath("/api/syncX").kind).toBe("unknown-api");
     expect(classifyPath("/api/webhooks-fake").kind).toBe("unknown-api");

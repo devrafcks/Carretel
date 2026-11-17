@@ -10,6 +10,7 @@
 import "server-only";
 import { drizzle as drizzlePg, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
+import { SUPABASE_CA, isSupabaseUrl } from "./supabase-ca";
 
 export type DB = NodePgDatabase<typeof schema>;
 
@@ -18,8 +19,8 @@ const g = globalThis as G;
 
 async function createNeonDb(url: string): Promise<DB> {
   const { Pool } = await import("pg");
-  // Supabase: conexão sempre cifrada (TLS); o certificado é da Supabase e não está na cadeia pública padrão
-  const ssl = /supabase\.(co|com)/.test(url) ? { rejectUnauthorized: false } : undefined;
+  // Supabase: conexão cifrada e com o certificado conferido contra a raiz oficial do Supabase
+  const ssl = isSupabaseUrl(url) ? { ca: SUPABASE_CA, rejectUnauthorized: true } : undefined;
   const pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 10_000, ssl });
   try {
     const { attachDatabasePool } = await import("@vercel/functions");

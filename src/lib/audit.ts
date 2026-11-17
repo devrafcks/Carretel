@@ -21,6 +21,7 @@ export type AuditEvent =
   | "admin.set_password"
   | "admin.reset_link"
   | "admin.reset_code"
+  | "admin.backup_download"
   | "admin.ban"
   | "admin.unban"
   | "admin.revoke_sessions"
