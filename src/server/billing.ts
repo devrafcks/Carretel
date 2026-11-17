@@ -564,16 +564,23 @@ export async function applySubscriptionEvent(evt: AbacateEvent): Promise<{ works
   if (subscriptionId?.startsWith("subs_")) set.abacateSubscriptionId = subscriptionId;
   if (checkoutId?.startsWith("bill_")) set.abacateCheckoutId = checkoutId;
   if (method === "PIX" || method === "CARD") set.method = method;
-  if (type === "subscription.completed" || type === "subscription.renewed" || type === "checkout.completed") {
+  // cartão com teste grátis: a AbacatePay manda checkout.completed (R$ 0, só cadastrou o cartão) junto com trial_started,
+  // em qualquer ordem. Nesse caso nada foi cobrado: não marca 1ª cobrança nem troca o fim do teste por 31 dias.
+  const trialCheckout = type === "checkout.completed" && (current === "trialing" || Boolean(sub.trialEndsAt && sub.trialEndsAt > now));
+  if ((type === "subscription.completed" || type === "subscription.renewed" || type === "checkout.completed") && !trialCheckout) {
     set.currentPeriodEnd = periodEndFrom(now);
     set.trialEndsAt = null;
     if (!sub.firstChargedAt) set.firstChargedAt = now;
     set.grantedAt = null;
   }
+  if (trialCheckout) set.grantedAt = null;
   if (type === "subscription.trial_started") {
     set.trialEndsAt = trialEndsAt ? new Date(trialEndsAt) : new Date(now.getTime() + brand.cardTrialDays * 86_400_000);
     set.currentPeriodEnd = set.trialEndsAt;
     set.grantedAt = null;
+    // o checkout.completed do cadastro do cartão chegou antes e marcou "1ª cobrança": desfaz (a 1ª cobrança é no fim do teste,
+    // e o prazo de 7 dias para reembolso conta dali). Só mexe se foi marcada agora há pouco, por este mesmo checkout.
+    if (sub.firstChargedAt && now.getTime() - sub.firstChargedAt.getTime() < 6 * 3_600_000) set.firstChargedAt = null;
   }
   if (type === "subscription.cancelled") set.canceledAt = now;
   await updateSubscriptionById(sub.id, set);
