@@ -23,6 +23,8 @@ export async function runBackup(): Promise<{ pathname: string; bytes: number; ta
   const tables = Object.keys(dump.tables).length;
 
   if (!blobEnabled()) {
+    // na Vercel o disco é só leitura: sem Blob não há onde guardar (ligar o Blob no projeto resolve)
+    if (process.env.VERCEL) throw new Error("blob_disabled: conecte um Blob store ao projeto na Vercel (Storage > Blob)");
     const fs = await import("node:fs");
     const path = await import("node:path");
     const dir = path.join(process.cwd(), ".data", "backups");
