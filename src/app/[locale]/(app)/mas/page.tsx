@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Calculator, Users, Team, CreditCard, Accessibility, Shield, FileText, Info, ListChecks, ChevronRight, Package, Sparkles, ChartBar, type AppIcon, Truck } from "@/components/icons";
+import { Calculator, Users, Team, CreditCard, Accessibility, Shield, FileText, Info, ListChecks, ChevronRight, Package, Sparkles, ChartBar, type AppIcon, Truck, Lock } from "@/components/icons";
 import { sql } from "drizzle-orm";
 import { batches, clients, workers } from "@/db/schema";
 import { formatDate } from "@/lib/dates";
@@ -11,11 +11,10 @@ import { SignOutButton } from "@/components/app/sign-out";
 import { authMode } from "@/lib/auth/server";
 import { isAdminEmail } from "@/lib/admin";
 import { WorkshopAvatar } from "@/components/app/avatar";
-import { ProBadge } from "@/components/app/premium";
 
 type Entry = { href: string; icon: AppIcon; title: string; desc: string; pro?: boolean };
 
-function Section({ title, entries, showPro = false }: { title: string; entries: Entry[]; showPro?: boolean }) {
+function Section({ title, entries, showPro = false, lockedLabel = "" }: { title: string; entries: Entry[]; showPro?: boolean; lockedLabel?: string }) {
   return (
     <section>
       <h2 className="px-1 text-sm font-medium text-muted-foreground">{title}</h2>
@@ -32,7 +31,7 @@ function Section({ title, entries, showPro = false }: { title: string; entries: 
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2 font-medium">
                   {e.title}
-                  {e.pro && showPro ? <ProBadge /> : null}
+                  {e.pro && showPro ? <Lock aria-label={lockedLabel} className="size-4 text-muted-foreground" /> : null}
                 </span>
                 <span className="mt-0.5 block text-sm text-muted-foreground">{e.desc}</span>
               </span>
@@ -57,7 +56,7 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
     { href: "/lotes?f=all", icon: Package, title: t("batches"), desc: t("batchesDesc") },
     { href: "/clientes", icon: Users, title: t("clients"), desc: t("clientsDesc") },
     { href: "/produccion?tab=equipo", icon: Team, title: t("team"), desc: t("teamDesc") },
-    { href: "/faccao", icon: Truck, title: t("outsource"), desc: t("outsourceDesc") },
+    { href: "/faccao", icon: Truck, title: t("outsource"), desc: t("outsourceDesc"), pro: true },
     { href: "/calculadora", icon: Calculator, title: t("calculator"), desc: t("calculatorDesc") },
     { href: "/relatorios", icon: ChartBar, title: t("reports"), desc: t("reportsDesc"), pro: true },
   ];
@@ -143,7 +142,7 @@ export default async function MasPage({ params }: { params: Promise<{ locale: st
         </section>
 
         <div className="mt-8 space-y-8 lg:mt-0">
-          <Section title={t("sectionWorkshop")} entries={workshop} showPro={showUpgrade} />
+          <Section title={t("sectionWorkshop")} entries={workshop} showPro={showUpgrade} lockedLabel={t("locked")} />
           <Section title={t("sectionHelp")} entries={help} />
           <div className="grid gap-4 md:grid-cols-2 lg:hidden">
             <InstallHint />

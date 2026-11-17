@@ -10,7 +10,7 @@ import { todayUTCDate, formatDate } from "@/lib/dates";
 import { PageHeader } from "@/components/app/page-header";
 import { ProductionToday, SettlementPanel, TeamPanel } from "./production-client";
 import { ProductionTabs } from "./production-tabs";
-import { appUrl } from "@/config/brand";
+import { appUrl, brand } from "@/config/brand";
 import { currentLegalParam } from "@/db/public";
 
 const TABS = ["hoy", "acerto", "equipo"] as const;
@@ -102,6 +102,8 @@ export default async function ProduccionPage({ params, searchParams }: { params:
           equipo: (
             <TeamPanel
               canWrite={ctx.access.canWrite}
+              premium={isPremium(ctx.workshop.planStatus, ctx.access)}
+              teamLimit={brand.freeTeamLimit}
               workers={board.workers.map((w) => ({
                 id: w.worker.id,
                 name: w.worker.name,

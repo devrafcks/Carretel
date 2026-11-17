@@ -7,8 +7,8 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Banknote, Copy, MessageCircle, QrCode } from "@/components/icons";
-import { useRouter } from "@/i18n/navigation";
+import { Banknote, Copy, Lock, MessageCircle, QrCode, Sparkles } from "@/components/icons";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -39,7 +39,7 @@ type PixConfig = { key: string; merchantName: string; city: string } | null;
 
 const PERIODS: ChargePeriod[] = ["week", "fortnight", "month", "all"];
 
-export function ClientCharges({ items, workshopName, pix, canMarkPaid }: { items: ChargeItem[]; workshopName: string; pix: PixConfig; canMarkPaid: boolean }) {
+export function ClientCharges({ items, workshopName, pix, canMarkPaid, locked = false }: { items: ChargeItem[]; workshopName: string; pix: PixConfig; canMarkPaid: boolean; locked?: boolean }) {
   const t = useTranslations("charge");
   const locale = useLocale();
   const [openFor, setOpenFor] = React.useState<string | null>(null);
@@ -55,6 +55,27 @@ export function ClientCharges({ items, workshopName, pix, canMarkPaid }: { items
 
   if (!groups.length) return null;
   const current = groups.find((g) => g.clientId === openFor) ?? null;
+
+  // plano grátis: mostra o que daria para cobrar de uma vez, com cadeado
+  if (locked) {
+    const total = groups.reduce((a, g) => a + g.total, 0);
+    return (
+      <section aria-labelledby="sec-charge" className="flex flex-wrap items-center gap-4 rounded-3xl border border-ink/[0.06] bg-card p-5 shadow-soft">
+        <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <Lock aria-hidden="true" className="size-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 id="sec-charge" className="font-medium">
+            {t("title")}
+          </h2>
+          <p className="text-sm text-muted-foreground">{t("lockedTeaser", { count: groups.length, amount: formatBRL(total, locale) })}</p>
+        </div>
+        <Link href="/assinar" className={buttonVariants({ size: "sm" })}>
+          <Sparkles aria-hidden="true" /> {t("unlock")}
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section aria-labelledby="sec-charge" className="space-y-3">

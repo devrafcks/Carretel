@@ -13,6 +13,9 @@ export interface BrandConfig {
   esTreatment: "usted" | "tú";
   freeBatchLimit: number;
   freeDaysLimit: number;
+  /** grátis: quantos clientes ativos e pessoas na equipe dá para cadastrar */
+  freeClientLimit: number;
+  freeTeamLimit: number;
   cardTrialDays: number;
   settlementDay: Weekday;
   accountDeletionDays: number;
@@ -52,7 +55,9 @@ export const brand: BrandConfig = {
   defaultLocale: process.env.NEXT_PUBLIC_DEFAULT_LOCALE === "pt-BR" ? "pt-BR" : "es",
   esTreatment: "usted",
   freeBatchLimit: 3,
-  freeDaysLimit: 30,
+  freeDaysLimit: 14,
+  freeClientLimit: 3,
+  freeTeamLimit: 3,
   cardTrialDays: 7,
   settlementDay: "saturday",
   accountDeletionDays: 30,

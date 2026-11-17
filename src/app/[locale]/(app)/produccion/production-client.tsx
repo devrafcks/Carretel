@@ -2,7 +2,7 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Banknote, CircleCheck, ExternalLink, Lock, MessageCircle, Plus, RotateCcw, Scale, UserPlus, UserX } from "@/components/icons";
+import { Banknote, CircleCheck, ExternalLink, Lock, MessageCircle, Plus, RotateCcw, Scale, UserPlus, UserX, Sparkles } from "@/components/icons";
 import { useRouter, Link } from "@/i18n/navigation";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, Notice } from "@/components/ui/card";
@@ -534,7 +534,18 @@ function AdjustForm({ id, onDone }: { id: string; onDone: () => void }) {
 }
 
 /* ─────────── Aba Equipe ─────────── */
-export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: string; phone: string | null; isEmployee: boolean; docLast3: string | null; rates: WorkerRateRow[] }[]; canWrite: boolean }) {
+export function TeamPanel({
+  workers,
+  canWrite,
+  premium = true,
+  teamLimit,
+}: {
+  workers: { id: string; name: string; phone: string | null; isEmployee: boolean; docLast3: string | null; rates: WorkerRateRow[] }[];
+  canWrite: boolean;
+  premium?: boolean;
+  /** plano grátis: limite de pessoas (some com o plano completo) */
+  teamLimit?: number;
+}) {
   const t = useTranslations();
   const router = useRouter();
   const errMsg = useErr();
@@ -548,13 +559,29 @@ export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: 
   const [error, setError] = React.useState<string | null>(null);
   const [pending, start] = React.useTransition();
 
+  const teamFull = !premium && teamLimit !== undefined && workers.length >= teamLimit;
+
   return (
     <div className="space-y-5">
-      {canWrite ? (
+      {canWrite && teamFull ? (
+        <Card className="anim-rise flex flex-wrap items-center gap-4 p-5">
+          <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <Lock aria-hidden="true" className="size-5" />
+          </span>
+          <p className="min-w-0 flex-1">{t("production.freeTeamFull", { limit: teamLimit })}</p>
+          <Link href="/assinar" className={buttonVariants({ size: "sm" })}>
+            <Sparkles aria-hidden="true" /> {t("premium.unlock")}
+          </Link>
+        </Card>
+      ) : null}
+      {canWrite && !teamFull ? (
         <Card className="anim-rise p-5">
           <h2 className="flex items-center gap-2 font-display text-lg">
             <UserPlus aria-hidden="true" className="size-5 text-primary" /> {t("production.addPerson")}
           </h2>
+          {!premium && teamLimit !== undefined ? (
+            <p className="mt-1 text-sm text-muted-foreground">{t("production.freeTeamNote", { used: workers.length, limit: teamLimit })}</p>
+          ) : null}
           <form
             className="mt-3 space-y-4"
             noValidate
@@ -621,7 +648,7 @@ export function TeamPanel({ workers, canWrite }: { workers: { id: string; name: 
                   {w.phone ? <span className="tabular-money"> · {w.phone}</span> : null}
                 </p>
               </div>
-              <WorkerRates workerId={w.id} workerName={w.name} rates={w.rates} canWrite={canWrite} />
+              <WorkerRates workerId={w.id} workerName={w.name} rates={w.rates} canWrite={canWrite} locked={!premium} />
               {canWrite ? (
                 <Button
                   variant="ghost"

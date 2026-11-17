@@ -3,9 +3,9 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Banknote, Trash2 } from "@/components/icons";
-import { useRouter } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
+import { Banknote, Lock, Trash2 } from "@/components/icons";
+import { Link, useRouter } from "@/i18n/navigation";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
 import { deleteWorkerRateAction, setWorkerRateAction } from "@/app/module-actions";
@@ -16,7 +16,7 @@ type Machine = (typeof MACHINES)[number];
 
 export type WorkerRateRow = { id: string; machine: string | null; reference: string | null; cents: number };
 
-export function WorkerRates({ workerId, workerName, rates, canWrite }: { workerId: string; workerName: string; rates: WorkerRateRow[]; canWrite: boolean }) {
+export function WorkerRates({ workerId, workerName, rates, canWrite, locked = false }: { workerId: string; workerName: string; rates: WorkerRateRow[]; canWrite: boolean; locked?: boolean }) {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
@@ -30,6 +30,16 @@ export function WorkerRates({ workerId, workerName, rates, canWrite }: { workerI
   const label = (r: WorkerRateRow) =>
     [r.reference ? `${t("common.reference")} ${r.reference}` : null, r.machine ? t(`machines.${r.machine}` as "machines.recta") : null].filter(Boolean).join(" · ") ||
     t("workerRates.anyWork");
+
+  if (locked) {
+    // plano grátis: o recurso aparece com cadeado e leva para a assinatura
+    return (
+      <Link href="/assinar" className={buttonVariants({ variant: "ghost", size: "sm" })} aria-label={`${t("workerRates.open", { name: workerName })} · ${t("premium.lockedTitle")}`}>
+        <Lock aria-hidden="true" />
+        <span className="hidden sm:inline">{t("workerRates.button")}</span>
+      </Link>
+    );
+  }
 
   return (
     <>

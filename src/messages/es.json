@@ -77,7 +77,8 @@
     "groupPeople": "Personas",
     "groupTools": "Herramientas",
     "reports": "Informes",
-    "outsource": "Facción"
+    "outsource": "Facción",
+    "locked": "Del plan completo"
   },
   "status": {
     "paid": "Pagado",
@@ -211,7 +212,7 @@
     "pricingTitleB": "pague cuando valga.",
     "planFreeName": "Para empezar",
     "planFreePrice": "Gratis",
-    "planFreeNote": "3 cortes o 30 días",
+    "planFreeNote": "3 cortes o 14 días",
     "planFreeCta": "Crear cuenta gratis",
     "planProName": "Plan completo",
     "planProNote": "por mes · Pix Automático o tarjeta",
@@ -301,7 +302,7 @@
     "price": "R$ 35",
     "perMonth": "/mes",
     "includes": "Incluye todo: cortes ilimitados, comprobantes, cobros por WhatsApp, pago semanal con recibo, calculadora, exportación de datos.",
-    "free": "Empiece con 3 cortes gratis (o 30 días), sin tarjeta y sin CNPJ.",
+    "free": "Empiece con 3 cortes gratis (o 14 días), sin tarjeta y sin CNPJ.",
     "pixTitle": "Pix Automático",
     "pixBody": "Autoriza una vez en la app del banco. Garantía de 7 días: si no le sirve, cancela y le devolvemos.",
     "cardTitle": "Tarjeta",
@@ -622,7 +623,9 @@
     "inactive": "Inactivo",
     "active": "Activo",
     "adjustment": "Ajuste",
-    "piecesShort": "pzs"
+    "piecesShort": "pzs",
+    "freeTeamNote": "Plan gratis: {used} de {limit} personas.",
+    "freeTeamFull": "Llegó a {limit} personas en el plan gratis. Active el plan completo para registrar más."
   },
   "cobros": {
     "title": "Cobros",
@@ -903,7 +906,8 @@
     "reports": "Informes",
     "reportsDesc": "Facturado x cobrado, clientes y producción del equipo.",
     "outsource": "Facción",
-    "outsourceDesc": "Piezas enviadas afuera y lo que volvió."
+    "outsourceDesc": "Piezas enviadas afuera y lo que volvió.",
+    "locked": "Del plan completo"
   },
   "clients": {
     "title": "Clientes",
@@ -1051,7 +1055,10 @@
     "already_subscribed": "Su plan ya está activo.",
     "owner_only": "Solo el dueño del taller puede hacer esto.",
     "already_canceled": "Esta suscripción ya está cancelada.",
-    "return_exceeds_sent": "Ese retorno supera lo que falta volver."
+    "return_exceeds_sent": "Ese retorno supera lo que falta volver.",
+    "free_limit_clients": "El plan gratis permite hasta 3 clientes. Active el plan completo para registrar más.",
+    "free_limit_team": "El plan gratis permite hasta 3 personas en el equipo. Active el plan completo para registrar más.",
+    "premium_required": "Esto es del plan completo. Actívelo para usar."
   },
   "theme": {
     "toggle": "Cambiar tema",
@@ -1603,7 +1610,9 @@
     "allocationNote": "El valor paga las entregas de la más antigua a la más nueva.",
     "saving": "Guardando…",
     "confirmPaid": "Registrar pago",
-    "registerPaid": "Recibí este pago"
+    "registerPaid": "Recibí este pago",
+    "lockedTeaser": "{count, plural, one {# cliente tiene} other {# clientes tienen}} {amount} por cobrar. Con el plan completo manda un solo cobro con todo el período.",
+    "unlock": "Activar plan"
   },
   "outsource": {
     "title": "Facción",
@@ -1666,7 +1675,10 @@
     "returnLead": "Fueron {sent} piezas; faltan {pending} por volver.",
     "previewDetail": "{good} buenas de {sent} enviadas · {pending} todavía por volver",
     "returnDate": "Fecha del retorno",
-    "saveReturn": "Guardar retorno"
+    "saveReturn": "Guardar retorno",
+    "lockedLead": "Controle lo que manda a otros talleres y lo que vuelve.",
+    "lockedTitle": "Facción es del plan completo",
+    "lockedTeaser": "Piezas enviadas, devueltas, con defecto y faltantes de cada envío, con aviso de atraso."
   },
   "photoErrors": {
     "generic": "La foto no se envió; el registro se guardó sin ella.",

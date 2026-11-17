@@ -134,6 +134,7 @@ export default async function CobrosPage({ params }: { params: Promise<{ locale:
           items={chargeItems}
           workshopName={ws.name}
           canMarkPaid={ctx.access.canMarkPaid}
+          locked={!isPremium(ws.planStatus, ctx.access)}
           pix={hasPix ? { key: ws.pixKey!, merchantName: ws.pixMerchantName!, city: ws.pixCity! } : null}
         />
       ) : null}

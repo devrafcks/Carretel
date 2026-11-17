@@ -20,7 +20,7 @@ export const legal: LegalConfig = {
   accessLogRetentionMonths: 6,
   purgeMarginDays: 30,
   documentVersions: {
-    terms: "2026-11-14-draft",
+    terms: "2026-11-17",
     privacy: "2026-11-14-draft",
     no_forced_labor: "2026-11-14-draft",
     dpa: "2026-11-14-draft",

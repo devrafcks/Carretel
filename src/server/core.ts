@@ -40,6 +40,8 @@ import { toE164 } from "@/lib/validators";
 import { computeSettlement, pickWorkerRate } from "@/lib/settlement";
 import { currentLegalParam, incrementFreeBatches } from "@/db/public";
 import { todayISO } from "@/lib/dates";
+import { isPremium } from "@/lib/subscription";
+import { brand } from "@/config/brand";
 import { maxReturnable, shipmentStatus, summarizeShipment } from "@/lib/outsource";
 
 export class DomainError extends Error {
@@ -67,6 +69,25 @@ export function requireWrite(ctx: Ctx) {
   if (!ctx.access.canWrite) throw new DomainError("read_only");
 }
 
+/** Recursos do plano completo (cadeado na interface): bloqueados também aqui, não só na tela. */
+export function requirePremium(ctx: Pick<Ctx, "workshop" | "access">) {
+  if (!isPremium(ctx.workshop.planStatus, ctx.access)) throw new DomainError("premium_required");
+}
+
+/** Plano grátis: até brand.freeClientLimit clientes ativos. */
+async function assertClientSlot(ctx: Ctx, tdb: Ctx["tdb"] = ctx.tdb) {
+  if (isPremium(ctx.workshop.planStatus, ctx.access)) return;
+  const n = await tdb.query((db, scope) => db.select({ n: sql<number>`count(*)::int` }).from(clients).where(and(scope(clients), isNull(clients.anonymizedAt))));
+  if ((n[0]?.n ?? 0) >= brand.freeClientLimit) throw new DomainError("free_limit_clients");
+}
+
+/** Plano grátis: até brand.freeTeamLimit pessoas ativas na equipe. */
+async function assertTeamSlot(ctx: Ctx) {
+  if (isPremium(ctx.workshop.planStatus, ctx.access)) return;
+  const n = await ctx.tdb.query((db, scope) => db.select({ n: sql<number>`count(*)::int` }).from(workers).where(and(scope(workers), eq(workers.active, true))));
+  if ((n[0]?.n ?? 0) >= brand.freeTeamLimit) throw new DomainError("free_limit_team");
+}
+
 /** Só quem é dono do taller mexe em assinatura, dados do taller e exclusão da conta. */
 export function requireOwner(ctx: Pick<WorkshopContext, "role">) {
   if (ctx.role !== "owner") throw new DomainError("owner_only");
@@ -76,6 +97,11 @@ export function requireOwner(ctx: Pick<WorkshopContext, "role">) {
 export async function createClientCore(ctx: Ctx, input: z.input<typeof clientCreateSchema>, cmid?: string) {
   requireWrite(ctx);
   const v = clientCreateSchema.parse(input);
+  if (cmid) {
+    const existing = await ctx.tdb.first(clients, eq(clients.clientMutationId, cmid));
+    if (existing) return existing;
+  }
+  await assertClientSlot(ctx);
   const values = {
     name: v.name,
     phoneE164: v.phone ? toE164(v.phone) : null,
@@ -98,6 +124,11 @@ export async function anonymizeClientCore(ctx: Ctx, clientId: string) {
 export async function createWorkerCore(ctx: Ctx, input: z.input<typeof workerCreateSchema>, cmid?: string) {
   requireWrite(ctx);
   const v = workerCreateSchema.parse(input);
+  if (cmid) {
+    const existing = await ctx.tdb.first(workers, eq(workers.clientMutationId, cmid));
+    if (existing) return existing;
+  }
+  await assertTeamSlot(ctx);
   const values = {
     name: v.name,
     phoneE164: v.phone ? toE164(v.phone) : null,
@@ -147,6 +178,7 @@ export async function createBatchCore(ctx: Ctx, v: BatchCreateInput, cmid?: stri
       }
     }
     if (!clientId && v.newClientName) {
+      await assertClientSlot(ctx, tx);
       const c = await tx.insert(clients, { name: v.newClientName, preferredLocale: "pt-BR", usualReference: v.reference ?? null, usualUnitPriceCents: v.unitPriceCents });
       clientId = c.id;
     }
@@ -253,6 +285,7 @@ export async function logProductionCore(ctx: Ctx, v: ProductionLogInput, cmid?: 
 /** Valor por peça de uma costureira (modelo e/ou máquina; vazio = qualquer). Substitui o que já existir para a mesma combinação. */
 export async function setWorkerRateCore(ctx: Ctx, v: { workerId: string; machine: Machine | null; reference: string | null; pieceRateCents: number }) {
   requireWrite(ctx);
+  requirePremium(ctx);
   await ctx.tdb.get(workers, eq(workers.id, v.workerId), "worker");
   const reference = v.reference?.trim() || null;
   const same = (await ctx.tdb.select(workerRates, eq(workerRates.workerId, v.workerId))).find(
@@ -545,6 +578,7 @@ export async function markChargedCore(ctx: Ctx, receivableId: string) {
 /* ───── Cliente recorrente ───── */
 export async function setClientUsualServiceCore(ctx: Ctx, clientId: string, v: { reference: string | null; unitPriceCents: number | null }) {
   requireWrite(ctx);
+  requirePremium(ctx);
   await ctx.tdb.get(clients, eq(clients.id, clientId), "client");
   await ctx.tdb.update(clients, { usualReference: v.reference?.trim() || null, usualUnitPriceCents: v.unitPriceCents, updatedAt: new Date() }, eq(clients.id, clientId));
 }
@@ -556,6 +590,7 @@ export async function setClientUsualServiceCore(ctx: Ctx, clientId: string, v: {
  */
 export async function payClientChargeCore(ctx: Ctx, v: { receivableIds: string[]; amountCents: number; paidOn: string; method: "pix" | "cash" | "other" }) {
   if (!ctx.access.canMarkPaid) throw new DomainError("read_only");
+  requirePremium(ctx);
   return ctx.tdb.transaction(async (tx) => {
     const rows = await tx.select(receivables, inArray(receivables.id, v.receivableIds), { orderBy: [asc(receivables.issuedOn), asc(receivables.createdAt)] });
     if (rows.length !== v.receivableIds.length) throw new DomainError("not_found");
@@ -580,6 +615,7 @@ export async function payClientChargeCore(ctx: Ctx, v: { receivableIds: string[]
 
 export async function markChargedManyCore(ctx: Ctx, receivableIds: string[]) {
   if (!receivableIds.length) return;
+  requirePremium(ctx);
   await ctx.tdb.update(receivables, { lastChargedAt: new Date() }, inArray(receivables.id, receivableIds));
 }
 
@@ -589,6 +625,7 @@ export async function createShipmentCore(
   v: { batchId: string | null; partnerName: string; partnerPhone: string | null; reference: string | null; quantity: number; sentOn: string; dueOn: string | null; note: string | null },
 ) {
   requireWrite(ctx);
+  requirePremium(ctx);
   let reference = v.reference?.trim() || null;
   if (v.batchId) {
     const b = await ctx.tdb.get(batches, eq(batches.id, v.batchId), "batch");
@@ -608,11 +645,13 @@ export async function createShipmentCore(
 
 export async function markShipmentInProductionCore(ctx: Ctx, shipmentId: string) {
   requireWrite(ctx);
+  requirePremium(ctx);
   await ctx.tdb.update(outsourceShipments, { status: "in_production", updatedAt: new Date() }, and(eq(outsourceShipments.id, shipmentId), eq(outsourceShipments.status, "sent"))!);
 }
 
 export async function registerReturnCore(ctx: Ctx, v: { shipmentId: string; returnedOn: string; goodQty: number; defectQty: number; missingQty: number; note: string | null }) {
   requireWrite(ctx);
+  requirePremium(ctx);
   if (v.goodQty + v.defectQty + v.missingQty <= 0) throw new DomainError("validation");
   return ctx.tdb.transaction(async (tx) => {
     const sh = await tx.get(outsourceShipments, eq(outsourceShipments.id, v.shipmentId), "shipment");
@@ -628,6 +667,7 @@ export async function registerReturnCore(ctx: Ctx, v: { shipmentId: string; retu
 
 export async function deleteReturnCore(ctx: Ctx, returnId: string) {
   requireWrite(ctx);
+  requirePremium(ctx);
   await ctx.tdb.transaction(async (tx) => {
     const r = await tx.get(outsourceReturns, eq(outsourceReturns.id, returnId), "return");
     const sh = await tx.get(outsourceShipments, eq(outsourceShipments.id, r.shipmentId), "shipment");
@@ -639,6 +679,7 @@ export async function deleteReturnCore(ctx: Ctx, returnId: string) {
 
 export async function deleteShipmentCore(ctx: Ctx, shipmentId: string) {
   requireWrite(ctx);
+  requirePremium(ctx);
   await ctx.tdb.get(outsourceShipments, eq(outsourceShipments.id, shipmentId), "shipment");
   await ctx.tdb.delete(outsourceShipments, eq(outsourceShipments.id, shipmentId));
 }

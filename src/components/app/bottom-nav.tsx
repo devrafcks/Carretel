@@ -2,12 +2,11 @@
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
-import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield, ChartBar, Truck } from "@/components/icons";
+import { Home, Scissors, Wallet, Menu, Plus, Calculator, Users, Package, Team, CreditCard, Help, Sparkles, Shield, ChartBar, Truck, Lock } from "@/components/icons";
 import type { AppIcon } from "@/components/icons";
 import { BrandLockup } from "@/components/brand/mark";
 import { cn } from "@/lib/utils";
 import { SignOutNavItem } from "./sign-out";
-import { ProBadge } from "./premium";
 import { WorkshopAvatar } from "./avatar";
 
 const items = [
@@ -84,7 +83,7 @@ const groups: { label: "groupDay" | "groupPeople" | "groupTools"; items: Item[] 
     items: [
       { href: "/clientes", key: "clients", icon: Users, match: starts("/clientes") },
       { href: "/produccion?tab=equipo", key: "team", icon: Team, match: (p, tab) => starts("/produccion")(p) && tab === "equipo" },
-      { href: "/faccao", key: "outsource", icon: Truck, match: starts("/faccao") },
+      { href: "/faccao", key: "outsource", icon: Truck, match: starts("/faccao"), pro: true },
     ],
   },
   {
@@ -114,7 +113,12 @@ function NavLink({ it, active, showPro = false }: { it: Item; active: boolean; s
     >
       <it.icon aria-hidden="true" className="size-5 shrink-0" />
       <span className="min-w-0 flex-1 truncate">{t(it.key)}</span>
-      {showPro && it.pro ? <ProBadge /> : null}
+      {showPro && it.pro ? (
+        <span className="inline-flex items-center" title={t("locked")}>
+          <Lock aria-hidden="true" className="size-4 text-muted-foreground" />
+          <span className="sr-only">{t("locked")}</span>
+        </span>
+      ) : null}
     </Link>
   );
 }

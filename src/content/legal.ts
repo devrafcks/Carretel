@@ -248,7 +248,7 @@ export const terms: Record<"es" | "pt-BR", LegalDoc> = {
       {
         h: "Plano e preço",
         p: [
-          "Começa grátis com 3 cortes ou 30 dias, o que vier primeiro. Sem fidelidade e sem taxa de cancelamento.",
+          "Começa grátis com 3 cortes ou 14 dias, o que vier primeiro, com até 3 clientes e 3 pessoas na equipe. Relatórios, Excel, facção, valor por pessoa, cliente recorrente e cobrança por período são do plano completo. Sem fidelidade e sem taxa de cancelamento.",
           `Plano mensal: ${FOUNDER} por mês para as ${P.founderSpots} primeiras oficinas que assinam (preço de fundador) e ${STANDARD} por mês para as seguintes, por Pix Automático ou cartão. A faixa é definida no momento da assinatura.`,
           `Preço de fundador travado enquanto a assinatura estiver ativa: nas renovações você continua pagando ${FOUNDER} por mês. Se cancelar e assinar de novo depois, vale o preço do momento da nova assinatura. Com a assinatura ativa, o preço do seu plano nunca sobe na renovação.`,
           `Plano anual: 12 mensalidades com ${OFF}% de desconto (${ANNUAL_FOUNDER} por ano no preço de fundador, ${ANNUAL} por ano no preço padrão), em pagamento único por Pix ou cartão (em até ${P.annualMaxInstallments}x). Não renova sozinho: nos últimos ${P.annualRenewWindowDays} dias você pode renovar por mais 12 meses, no mesmo preço.`,
@@ -315,7 +315,7 @@ export const terms: Record<"es" | "pt-BR", LegalDoc> = {
       {
         h: "Plan y precio",
         p: [
-          "Empieza gratis con 3 cortes o 30 días, lo que llegue primero. Sin fidelidad y sin multa por cancelar.",
+          "Empieza gratis con 3 cortes o 14 días, lo que llegue primero, con hasta 3 clientes y 3 personas en el equipo. Informes, Excel, facción, valor por persona, cliente recurrente y cobro por período son del plan completo. Sin fidelidad y sin multa por cancelar.",
           `Plan mensual: ${FOUNDER} por mes para los ${P.founderSpots} primeros talleres que se suscriben (precio de fundador) y ${STANDARD} por mes para los siguientes, por Pix Automático o tarjeta. El precio se define al momento de suscribirse.`,
           `Precio de fundador fijo mientras la suscripción esté activa: en las renovaciones sigue pagando ${FOUNDER} por mes. Si cancela y vuelve a suscribirse después, vale el precio del momento de la nueva suscripción. Con la suscripción activa, el precio de su plan nunca sube al renovar.`,
           `Plan anual: 12 mensualidades con ${OFF}% de descuento (${ANNUAL_FOUNDER} por año con precio de fundador, ${ANNUAL} por año con precio normal), en pago único por Pix o tarjeta (hasta ${P.annualMaxInstallments} cuotas). No se renueva solo: en los últimos ${P.annualRenewWindowDays} días puede renovar por 12 meses más, al mismo precio.`,
