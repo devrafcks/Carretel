@@ -4,7 +4,6 @@ import { workshopSettings } from "@/db/schema";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, Notice } from "@/components/ui/card";
 import { brand } from "@/config/brand";
-import { legal, dpoContact } from "@/config/legal";
 import { billingMode, canRenewAnnual, reconcileSubscription } from "@/server/billing";
 import { cyclePriceCents, isPriceTier } from "@/lib/pricing";
 import { redirect } from "next/navigation";
@@ -107,26 +106,6 @@ export default async function CuentaPage({ params, searchParams }: { params: Pro
           <Download aria-hidden="true" /> {t("account.export")}
         </a>
         <DangerZone workshopName={ws.name} />
-      </Card>
-
-      <Card className="p-4">
-        <h2 className="font-display text-lg">{t("account.legal")}</h2>
-        <dl className="mt-2 space-y-1">
-          {(
-            [
-              [t("legal.cnpj"), legal.cnpj],
-              [t("legal.email"), legal.supportEmail],
-              [t("legal.dpo"), dpoContact()],
-            ] as [string, string][]
-          )
-            .filter(([, v]) => v.trim() !== "")
-            .map(([k, v]) => (
-              <div key={k} className="flex flex-wrap gap-x-2">
-                <dt className="font-semibold">{k}:</dt>
-                <dd className="break-words">{v}</dd>
-              </div>
-            ))}
-        </dl>
       </Card>
     </div>
   );
