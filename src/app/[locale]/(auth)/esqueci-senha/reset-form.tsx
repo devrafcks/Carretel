@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { CircleCheck, Eye, EyeOff } from "@/components/icons";
+import { CircleCheck, Eye, EyeOff, Mail } from "@/components/icons";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Notice } from "@/components/ui/card";
@@ -112,6 +112,10 @@ export function ResetPasswordForm({ initialEmail = "" }: { initialEmail?: string
         </form>
       ) : (
         <form onSubmit={reset} className="mt-6 space-y-4" noValidate>
+          <Notice tone="awaiting" icon={<Mail />}>
+            <p className="font-medium">{t("spamTitle")}</p>
+            <p className="text-sm">{t("spamBody")}</p>
+          </Notice>
           <Field id="otp" label={t("code")}>
             {(a) => (
               <Input

@@ -63,7 +63,7 @@ export async function adminSendResetLinkAction(userId: string, locale: string): 
     const detail = await adminUserDetail(userIdSchema.parse(userId));
     if (!detail) return { ok: false, error: "usuário não encontrado" };
     void locale;
-    // mesmo fluxo do "Esqueci minha senha": código de 6 números pelo e-mail (Resend)
+    // mesmo fluxo do "Esqueci minha senha": código de 6 números pelo e-mail (Gmail/SMTP)
     const res = await fetch(`${appUrl()}/api/auth/email-otp/request-password-reset`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Origin: appUrl() },

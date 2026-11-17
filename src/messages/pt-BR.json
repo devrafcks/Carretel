@@ -355,7 +355,7 @@
     "forgotLead": "Enviamos um código de 6 números para o e-mail da sua conta.",
     "sendResetCode": "Enviar código",
     "haveCode": "Já tenho o código",
-    "resetCodeLead": "Se existir uma conta com {email}, o código já está a caminho. Olhe também no spam.",
+    "resetCodeLead": "Se existir uma conta com {email}, o código já está a caminho.",
     "newPassword": "Senha nova",
     "confirmPassword": "Repita a senha",
     "passwordsDiffer": "As senhas não são iguais.",
@@ -364,7 +364,9 @@
     "goLogin": "Entrar com a senha nova",
     "resetInvalid": "O código não é válido ou venceu. Peça um novo.",
     "backToLogin": "Voltar para entrar",
-    "resendCode": "Enviar outro código"
+    "resendCode": "Enviar outro código",
+    "spamTitle": "Não chegou? Olhe na caixa de spam",
+    "spamBody": "Às vezes o e-mail cai em Spam ou Promoções. Se estiver lá, marque como \"Não é spam\" para os próximos chegarem certinho."
   },
   "onboarding": {
     "title": "Dados do taller",

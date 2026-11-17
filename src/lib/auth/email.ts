@@ -1,9 +1,12 @@
 /**
- * E-mails do login (código de 6 números do "Esqueci minha senha") pelo Resend.
- * Sem RESEND_API_KEY (desenvolvimento) o código só aparece no console do servidor.
- * Atenção: sem domínio verificado no Resend, ele só entrega para o e-mail dono da conta Resend.
+ * E-mails do login (código de 6 números do "Esqueci minha senha") por SMTP — por padrão o Gmail do dono
+ * (grátis, até ~500 por dia, entrega para qualquer endereço, sem domínio próprio).
+ *   SMTP_USER=seuemail@gmail.com   SMTP_PASS=senha de app do Google (16 letras)
+ *   opcionais: SMTP_HOST (smtp.gmail.com), SMTP_PORT (465), EMAIL_FROM_NAME (Carretel)
+ * Sem SMTP configurado (desenvolvimento) o código só aparece no console do servidor.
  */
 import "server-only";
+import nodemailer from "nodemailer";
 
 const SUBJECT: Record<string, Record<"pt-BR" | "es", string>> = {
   "forget-password": { "pt-BR": "Seu código para trocar a senha", es: "Su código para cambiar la contraseña" },
@@ -11,10 +14,27 @@ const SUBJECT: Record<string, Record<"pt-BR" | "es", string>> = {
   "email-verification": { "pt-BR": "Confirme seu e-mail", es: "Confirme su correo" },
 };
 
+let transport: nodemailer.Transporter | null = null;
+function smtp(): nodemailer.Transporter | null {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!user || !pass) return null;
+  if (!transport) {
+    const port = Number(process.env.SMTP_PORT || 465);
+    transport = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port,
+      secure: port === 465,
+      auth: { user, pass: pass.replace(/\s+/g, "") }, // a senha de app do Google vem com espaços
+    });
+  }
+  return transport;
+}
+
 export async function sendAuthCode(email: string, otp: string, type: string, locale: "pt-BR" | "es" = "pt-BR") {
-  const key = process.env.RESEND_API_KEY;
   const subject = SUBJECT[type]?.[locale] ?? SUBJECT["forget-password"]![locale];
-  if (!key) {
+  const t = smtp();
+  if (!t) {
     console.info(`\n[carretel] ${subject} para ${email}: ${otp}\n`);
     return;
   }
@@ -29,13 +49,16 @@ export async function sendAuthCode(email: string, otp: string, type: string, loc
 <tr><td style="padding-top:24px"><div style="font-size:34px;letter-spacing:10px;font-weight:bold;background:#eafaf0;border-radius:14px;padding:16px;text-align:center">${otp}</div></td></tr>
 <tr><td style="padding-top:24px;font-size:12px;color:#515b57">${ignore}</td></tr>
 </table></td></tr></table></body></html>`;
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM || "Carretel <onboarding@resend.dev>", to: [email], subject, html, text: `${subject}: ${otp}\n${lead}` }),
-  });
-  if (!res.ok) {
-    console.error(JSON.stringify({ level: "error", msg: "auth_email_failed", status: res.status, body: (await res.text()).slice(0, 300) }));
+  try {
+    await t.sendMail({
+      from: { name: process.env.EMAIL_FROM_NAME || "Carretel", address: process.env.SMTP_USER! },
+      to: email,
+      subject,
+      text: `${subject}: ${otp}\n${lead}\n${ignore}`,
+      html,
+    });
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", msg: "auth_email_failed", err: String(err).slice(0, 300) }));
     throw new Error("email_failed");
   }
 }
