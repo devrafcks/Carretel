@@ -11,7 +11,8 @@ export async function GET(req: Request) {
   // backup primeiro: é o que mais importa se algo der errado depois
   const backup = await runBackup().catch((err) => {
     console.error(JSON.stringify({ level: "error", msg: "backup_failed", err: String(err).slice(0, 300) }));
-    return { error: "backup_failed" };
+    // a resposta só sai para quem tem o CRON_SECRET: mostra o motivo para facilitar o diagnóstico
+    return { error: "backup_failed", reason: String(err).slice(0, 200), blob: Boolean(process.env.BLOB_READ_WRITE_TOKEN) };
   });
   const now = Date.now();
   const logsCutoff = new Date(now - (legal.accessLogRetentionMonths * 30 + legal.purgeMarginDays) * 86_400_000);
